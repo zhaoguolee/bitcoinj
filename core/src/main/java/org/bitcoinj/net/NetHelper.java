@@ -25,7 +25,11 @@ import java.util.Random;
 public class NetHelper {
     private String[] cashAcctServers = new String[]{
             "https://cashacct.imaginary.cash",
-            "https://api.cashaccount.info"
+            "https://api.cashaccount.info",
+            "https://electrum.imaginary.cash",
+            "https://cashaccounts.bchdata.cash",
+            "https://cashacct.electroncash.dk",
+            "https://rest.bitcoin.com/v2/cashAccounts"
     };
 
     private String[] blockExplorers = new String[]{
@@ -130,11 +134,69 @@ public class NetHelper {
         String name = splitAccount[0];
         String block = splitAccount[1];
 
-        if (!block.contains(".")) {
+        if(!lookupServer.contains("rest.bitcoin.com"))
+        {
+            if (!block.contains(".")) {
+                InputStream is = null;
+
+                try {
+                    is = (new URL(lookupServer + "/lookup/" + block + "/" + name)).openStream();
+                } catch (IOException var56) {
+                    var56.printStackTrace();
+                }
+
+                try {
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
+                    JSONObject json = new JSONObject(jsonText);
+                    txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
+                } catch (JSONException | IOException var53) {
+                    var53.printStackTrace();
+                } finally {
+                    try {
+                        is.close();
+                    } catch (IOException var47) {
+                        var47.printStackTrace();
+                    }
+
+                }
+            } else {
+                String[] splitBlock = block.split("\\.");
+                String mainBlock = splitBlock[0];
+                String collision = splitBlock[1];
+                InputStream is = null;
+
+                try {
+                    is = (new URL(lookupServer + "/lookup/" + mainBlock + "/" + name + "/" + collision)).openStream();
+                } catch (IOException var52) {
+                    var52.printStackTrace();
+                }
+
+                try {
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
+                    JSONObject json = new JSONObject(jsonText);
+                    txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
+                } catch (JSONException | IOException var49) {
+                    var49.printStackTrace();
+                } finally {
+                    try {
+                        if (is != null) {
+                            is.close();
+                        }
+                    } catch (IOException var48) {
+                        var48.printStackTrace();
+                    }
+
+                }
+            }
+        }
+        else
+        {
             InputStream is = null;
 
             try {
-                is = (new URL(lookupServer + "/lookup/" + block + "/" + name)).openStream();
+                is = (new URL(lookupServer + "/check/" + name + "/" + block)).openStream();
             } catch (IOException var56) {
                 var56.printStackTrace();
             }
@@ -151,35 +213,6 @@ public class NetHelper {
                     is.close();
                 } catch (IOException var47) {
                     var47.printStackTrace();
-                }
-
-            }
-        } else {
-            String[] splitBlock = block.split("\\.");
-            String mainBlock = splitBlock[0];
-            String collision = splitBlock[1];
-            InputStream is = null;
-
-            try {
-                is = (new URL(lookupServer + "/lookup/" + mainBlock + "/" + name + "/" + collision)).openStream();
-            } catch (IOException var52) {
-                var52.printStackTrace();
-            }
-
-            try {
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                JSONObject json = new JSONObject(jsonText);
-                txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
-            } catch (JSONException | IOException var49) {
-                var49.printStackTrace();
-            } finally {
-                try {
-                    if (is != null) {
-                        is.close();
-                    }
-                } catch (IOException var48) {
-                    var48.printStackTrace();
                 }
 
             }
@@ -250,62 +283,125 @@ public class NetHelper {
         String[] splitAccount = cashAccount.split("#");
         String name = splitAccount[0];
         String block = splitAccount[1];
-        if (!block.contains(".")) {
-            InputStream is = null;
 
-            try {
-                is = (new URL(lookupServer + "/account/" + block + "/" + name)).openStream();
-            } catch (IOException var56) {
-                var56.printStackTrace();
-            }
+        if(!lookupServer.contains("rest.bitcoin.com")) {
+            if (!block.contains(".")) {
+                InputStream is = null;
 
-            try {
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                JSONObject json = new JSONObject(jsonText);
-                address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-            } catch (JSONException var53) {
-                var53.printStackTrace();
-            } catch (IOException var54) {
-                var54.printStackTrace();
-            } finally {
                 try {
-                    is.close();
-                } catch (IOException var48) {
-                    var48.printStackTrace();
+                    is = (new URL(lookupServer + "/account/" + block + "/" + name)).openStream();
+                } catch (IOException var56) {
+                    var56.printStackTrace();
                 }
 
-            }
-        } else {
-            String[] splitBlock = block.split("\\.");
-            String mainBlock = splitBlock[0];
-            String collision = splitBlock[1];
-            InputStream is = null;
-
-            try {
-                is = (new URL(lookupServer + "/account/" + mainBlock + "/" + name + "/" + collision)).openStream();
-            } catch (IOException var52) {
-                var52.printStackTrace();
-            }
-
-            try {
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                JSONObject json = new JSONObject(jsonText);
-                address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-            } catch (JSONException var49) {
-                var49.printStackTrace();
-            } catch (IOException var50) {
-                var50.printStackTrace();
-            } finally {
                 try {
-                    if (is != null) {
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
+                    JSONObject json = new JSONObject(jsonText);
+                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                } catch (JSONException var53) {
+                    var53.printStackTrace();
+                } catch (IOException var54) {
+                    var54.printStackTrace();
+                } finally {
+                    try {
                         is.close();
+                    } catch (IOException var48) {
+                        var48.printStackTrace();
                     }
-                } catch (IOException var47) {
-                    var47.printStackTrace();
+
+                }
+            } else {
+                String[] splitBlock = block.split("\\.");
+                String mainBlock = splitBlock[0];
+                String collision = splitBlock[1];
+                InputStream is = null;
+
+                try {
+                    is = (new URL(lookupServer + "/account/" + mainBlock + "/" + name + "/" + collision)).openStream();
+                } catch (IOException var52) {
+                    var52.printStackTrace();
                 }
 
+                try {
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
+                    JSONObject json = new JSONObject(jsonText);
+                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                } catch (JSONException var49) {
+                    var49.printStackTrace();
+                } catch (IOException var50) {
+                    var50.printStackTrace();
+                } finally {
+                    try {
+                        if (is != null) {
+                            is.close();
+                        }
+                    } catch (IOException var47) {
+                        var47.printStackTrace();
+                    }
+
+                }
+            }
+        }
+        else
+        {
+            if (!block.contains(".")) {
+                InputStream is = null;
+
+                try {
+                    is = (new URL(lookupServer + "/lookup/" + name + "/" + block)).openStream();
+                } catch (IOException var56) {
+                    var56.printStackTrace();
+                }
+
+                try {
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
+                    JSONObject json = new JSONObject(jsonText);
+                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                } catch (JSONException var53) {
+                    var53.printStackTrace();
+                } catch (IOException var54) {
+                    var54.printStackTrace();
+                } finally {
+                    try {
+                        is.close();
+                    } catch (IOException var48) {
+                        var48.printStackTrace();
+                    }
+
+                }
+            } else {
+                String[] splitBlock = block.split("\\.");
+                String mainBlock = splitBlock[0];
+                String collision = splitBlock[1];
+                InputStream is = null;
+
+                try {
+                    is = (new URL(lookupServer + "/lookup/" + name + "/" + mainBlock + "/" + collision)).openStream();
+                } catch (IOException var52) {
+                    var52.printStackTrace();
+                }
+
+                try {
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
+                    JSONObject json = new JSONObject(jsonText);
+                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                } catch (JSONException var49) {
+                    var49.printStackTrace();
+                } catch (IOException var50) {
+                    var50.printStackTrace();
+                } finally {
+                    try {
+                        if (is != null) {
+                            is.close();
+                        }
+                    } catch (IOException var47) {
+                        var47.printStackTrace();
+                    }
+                }
             }
         }
 
