@@ -231,7 +231,7 @@ public class NetHelper {
             boolean isOpReturn = output.getScriptPubKey().isOpReturn();
 
             if (isOpReturn) {
-                opReturn = new String(Hex.encode(Objects.requireNonNull(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(3).data)), StandardCharsets.UTF_8);
+                opReturn = new String(Hex.encode(Objects.requireNonNull(output.getScriptPubKey().getChunks().get(3).data)), StandardCharsets.UTF_8);
                 break;
             }
         }
