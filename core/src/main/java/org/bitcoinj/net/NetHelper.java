@@ -1,10 +1,7 @@
 package org.bitcoinj.net;
 
 import com.subgraph.orchid.encoders.Hex;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.CashAddressFactory;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.HashHelper;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.utils.JSONHelper;
@@ -19,6 +16,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
@@ -154,7 +152,9 @@ public class NetHelper {
                     var53.printStackTrace();
                 } finally {
                     try {
-                        is.close();
+                        if (is != null) {
+                            is.close();
+                        }
                     } catch (IOException var47) {
                         var47.printStackTrace();
                     }
@@ -210,7 +210,9 @@ public class NetHelper {
                 var53.printStackTrace();
             } finally {
                 try {
-                    is.close();
+                    if (is != null) {
+                        is.close();
+                    }
                 } catch (IOException var47) {
                     var47.printStackTrace();
                 }
@@ -223,13 +225,15 @@ public class NetHelper {
 
     private String getOpReturn(Transaction tx)
     {
-        boolean isOpReturn = tx.getOutputs().get(0).getScriptPubKey().isOpReturn();
+        List<TransactionOutput> outputs = tx.getOutputs();
         String opReturn = null;
+        for (TransactionOutput output : outputs) {
+            boolean isOpReturn = output.getScriptPubKey().isOpReturn();
 
-        if(isOpReturn) {
-            opReturn = new String(Hex.encode(Objects.requireNonNull(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(3).data)), StandardCharsets.UTF_8);
-        } else {
-            opReturn = "not.op_return";
+            if (isOpReturn) {
+                opReturn = new String(Hex.encode(Objects.requireNonNull(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(3).data)), StandardCharsets.UTF_8);
+                break;
+            }
         }
 
         return opReturn;
@@ -299,13 +303,13 @@ public class NetHelper {
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException var53) {
+                } catch (JSONException | IOException var53) {
                     var53.printStackTrace();
-                } catch (IOException var54) {
-                    var54.printStackTrace();
                 } finally {
                     try {
-                        is.close();
+                        if (is != null) {
+                            is.close();
+                        }
                     } catch (IOException var48) {
                         var48.printStackTrace();
                     }
@@ -328,10 +332,8 @@ public class NetHelper {
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException var49) {
+                } catch (JSONException | IOException var49) {
                     var49.printStackTrace();
-                } catch (IOException var50) {
-                    var50.printStackTrace();
                 } finally {
                     try {
                         if (is != null) {
@@ -360,13 +362,13 @@ public class NetHelper {
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException var53) {
+                } catch (JSONException | IOException var53) {
                     var53.printStackTrace();
-                } catch (IOException var54) {
-                    var54.printStackTrace();
                 } finally {
                     try {
-                        is.close();
+                        if (is != null) {
+                            is.close();
+                        }
                     } catch (IOException var48) {
                         var48.printStackTrace();
                     }
@@ -389,10 +391,8 @@ public class NetHelper {
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException var49) {
+                } catch (JSONException | IOException var49) {
                     var49.printStackTrace();
-                } catch (IOException var50) {
-                    var50.printStackTrace();
                 } finally {
                     try {
                         if (is != null) {
