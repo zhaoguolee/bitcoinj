@@ -23,7 +23,6 @@ import java.util.Random;
 public class NetHelper {
     private String[] cashAcctServers = new String[]{
             "https://cashacct.imaginary.cash",
-            "https://api.cashaccount.info",
             "https://electrum.imaginary.cash",
             "https://cashaccounts.bchdata.cash",
             "https://cashacct.electroncash.dk",
