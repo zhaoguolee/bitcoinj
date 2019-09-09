@@ -113,7 +113,7 @@ public class Main extends Application {
         // Use test wallet? (published for CTOR validation branch at https://github.com/pokkst/bitcoinj-cash)
         if (useTestWallet)
             try {
-                setupWalletKit(new DeterministicSeed("era illness this crowd path elegant web critic inject orient miracle melt", null, "", 1544227200L));
+                setupWalletKit(new DeterministicSeed("your seed here for testing", null, "", 1567468800L));
             } catch (UnreadableWalletException e) {
                 e.printStackTrace();
             }
