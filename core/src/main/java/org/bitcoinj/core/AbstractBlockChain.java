@@ -742,8 +742,7 @@ public abstract class AbstractBlockChain {
         // We must send transactions to listeners ordered such that parents appear before child transactions - thus
         // when we see multiple relevant transactions in a block, we iterate over the transactions and ensure
         // any transaction with an input that relies on a transaction in the same block appear after the parent.
-        if ((filteredTxHashList != null ? filteredTxHashList.size() : 0) > 1)
-        {
+        if ((filteredTxHashList != null ? filteredTxHashList.size() : 0) > 1) {
             checkNotNull(filteredTxn);
             // not the prettiest sorter, but it is very fast in most cases ever encountered here
             List<Sha256Hash> orderedTxHashList = new ArrayList<>(filteredTxHashList);
@@ -757,6 +756,24 @@ public abstract class AbstractBlockChain {
                     Sha256Hash parentHash = input.getOutpoint().getHash();
                     // does this transaction's input depend on a transaction in our list?
                     if (filteredTxHashList.contains(parentHash)) {
+                        Transaction parentTx = filteredTxn.get(parentHash);
+                        if(parentTx == null)
+                            continue;
+
+                        for (TransactionInput parentInput : parentTx.getInputs()) {
+                            Sha256Hash parentParentHash = parentInput.getOutpoint().getHash();
+
+                            if (filteredTxHashList.contains(parentParentHash)) {
+                                int parentIndex = orderedTxHashList.indexOf(parentHash);
+                                if (parentIndex < orderedTxHashList.indexOf(parentParentHash)) {
+                                    // yes; so, remove the parent and place it directly above the child
+                                    orderedTxHashList.remove(parentParentHash);
+                                    orderedTxHashList.add(0, parentParentHash);
+                                    // step back one array element for the next loop, checking this parent is checked for a parent
+                                    i = 0;
+                                }
+                            }
+                        }
                         // yes; so, does the parent need to be moved above the child?
                         int childIndex = orderedTxHashList.indexOf(childHash);
                         if (childIndex < orderedTxHashList.indexOf(parentHash)) {
@@ -764,7 +781,7 @@ public abstract class AbstractBlockChain {
                             orderedTxHashList.remove(parentHash);
                             orderedTxHashList.add(childIndex, parentHash);
                             // step back one array element for the next loop, checking this parent is checked for a parent
-                            i--;
+                            i = 0;
                         }
                     }
                 }

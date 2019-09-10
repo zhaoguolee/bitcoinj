@@ -21,15 +21,19 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import com.subgraph.orchid.data.exitpolicy.Network;
+import com.subgraph.orchid.encoders.Hex;
 import org.bitcoin.protocols.payments.Protos.PaymentDetails;
 import org.bitcoinj.core.*;
 import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.script.ScriptChunk;
+import org.bitcoinj.script.ScriptOpCodes;
 import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.wallet.KeyChain.KeyPurpose;
 import org.bitcoinj.wallet.Wallet.MissingSigsMode;
@@ -180,6 +184,37 @@ public class SendRequest {
         checkNotNull(destination, "No address set!");
         req.tx = new Transaction(params);
         req.tx.addOutput(value, destination);
+        return req;
+    }
+
+    /**
+     * <p>Creates a new SendRequest with an OP_RETURN that registers a Cash Account (https://cashaccount.info).</p>
+     *
+     * <p>A little more than 1,000 satoshis is needed. Due to how bitcoinj works, we have to make a transaction with 3 outputs.
+     * Two to ourselves, and the OP_RETURN. Emptying the wallet into one output isn't allowed as bitcoinj doesn't allow for
+     * OP_RETURNs when emptying the wallet.</p>
+     */
+    public static SendRequest createCashAccount(NetworkParameters params, String desiredAddressForCashAccount, String cashAccountName) throws NullPointerException, AddressFormatException {
+        SendRequest req = new SendRequest();
+        Address destination = null;
+
+        if(Address.isValidCashAddr(params, desiredAddressForCashAccount)) {
+            destination = Address.fromCashAddr(params, desiredAddressForCashAccount);
+        } else if(Address.isValidLegacyAddress(params, desiredAddressForCashAccount)){
+            destination = Address.fromBase58(params, desiredAddressForCashAccount);
+        }
+
+        checkNotNull(params, "Address is for an unknown network");
+        checkNotNull(destination, "No address set!");
+        String hash160 = new String(Hex.encode(destination.getHash160()), StandardCharsets.UTF_8);
+        req.tx = new Transaction(params);
+        req.tx.addOutput(Coin.parseCoin("0.00001"), destination);
+        ScriptBuilder scriptBuilder = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN);
+        scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, Hex.decode("01010101")));
+        scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, cashAccountName.getBytes()));
+        scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, Hex.decode("01" + hash160)));
+        Script script = scriptBuilder.build();
+        req.tx.addOutput(Coin.ZERO, script);
         return req;
     }
 

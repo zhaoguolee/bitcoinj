@@ -22,18 +22,14 @@
 package org.bitcoinj.params;
 
 import java.math.BigInteger;
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.Utils;
+
+import org.bitcoinj.core.*;
 
 import java.util.Date;
 
 import com.google.common.base.Preconditions;
-import org.bitcoinj.core.AbstractBlockChain;
 import org.bitcoinj.core.Block;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 
@@ -69,6 +65,13 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         String genesisHash = genesisBlock.getHashAsString();
         checkState(genesisHash.equals("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
+
+        checkpoints.put(546, Sha256Hash.wrap("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70"));
+        checkpoints.put(1155876, Sha256Hash.wrap("00000000000e38fef93ed9582a7df43815d5c2ba9fd37ef70c9a0ea4a285b8f5")); //August 1, 2017
+        checkpoints.put(1188697, Sha256Hash.wrap("0000000000170ed0918077bde7b4d36cc4c91be69fa09211f748240dabe047fb")); //November 13, 2017
+        checkpoints.put(1233070, Sha256Hash.wrap("0000000000000253c6201a2076663cfe4722e4c75f537552cc4ce989d15f7cd5")); //May 15, 2018
+        checkpoints.put(1267996, Sha256Hash.wrap("00000000000001fae0095cd4bea16f1ce8ab63f3f660a03c6d8171485f484b24")); //November 15, 2018
+        checkpoints.put(1303885, Sha256Hash.wrap("00000000000000479138892ef0e4fa478ccc938fb94df862ef5bde7e8dee23d3")); //May 15, 2019
 
         dnsSeeds = new String[] {
                "testnet-seed.bitcoinabc.org",
