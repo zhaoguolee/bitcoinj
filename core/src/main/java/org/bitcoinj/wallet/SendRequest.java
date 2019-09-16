@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.math.BigInteger;
+import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
@@ -187,6 +188,35 @@ public class SendRequest {
         return req;
     }
 
+    public static SendRequest to(NetworkParameters params, String recipient, Coin value, Proxy proxy) throws NullPointerException, AddressFormatException {
+        NetHelper netHelper = new NetHelper();
+
+        SendRequest req = new SendRequest();
+        Address destination = null;
+
+        if(recipient.contains("#"))
+        {
+            String cashAcctAddress = netHelper.getCashAccountAddress(params, recipient, proxy);
+            if(Address.isValidCashAddr(params, cashAcctAddress)) {
+                destination = Address.fromCashAddr(params, cashAcctAddress);
+            } else if(Address.isValidLegacyAddress(params, cashAcctAddress)){
+                destination = Address.fromBase58(params, cashAcctAddress);
+            }
+        } else {
+            if(Address.isValidCashAddr(params, recipient)) {
+                destination = Address.fromCashAddr(params, recipient);
+            } else if(Address.isValidLegacyAddress(params, recipient)){
+                destination = Address.fromBase58(params, recipient);
+            }
+        }
+
+        checkNotNull(params, "Address is for an unknown network");
+        checkNotNull(destination, "No address set!");
+        req.tx = new Transaction(params);
+        req.tx.addOutput(value, destination);
+        return req;
+    }
+
     /**
      * <p>Creates a new SendRequest with an OP_RETURN that registers a Cash Account (https://cashaccount.info).</p>
      *
@@ -249,6 +279,36 @@ public class SendRequest {
         if(recipient.contains("#"))
         {
             String cashAcctAddress = netHelper.getCashAccountAddress(params, recipient);
+            if(Address.isValidCashAddr(params, cashAcctAddress)) {
+                destination = Address.fromCashAddr(params, cashAcctAddress);
+            } else if(Address.isValidLegacyAddress(params, cashAcctAddress)){
+                destination = Address.fromBase58(params, cashAcctAddress);
+            }
+        } else {
+            if(Address.isValidCashAddr(params, recipient)) {
+                destination = Address.fromCashAddr(params, recipient);
+            } else if(Address.isValidLegacyAddress(params, recipient)){
+                destination = Address.fromBase58(params, recipient);
+            }
+        }
+
+        checkNotNull(params, "Address is for an unknown network");
+        checkNotNull(destination, "No address set!");
+        req.tx = new Transaction(params);
+        req.tx.addOutput(Coin.ZERO, destination);
+        req.emptyWallet = true;
+        return req;
+    }
+
+    public static SendRequest emptyWallet(NetworkParameters params, String recipient, Proxy proxy) throws NullPointerException, AddressFormatException {
+        NetHelper netHelper = new NetHelper();
+
+        SendRequest req = new SendRequest();
+        Address destination = null;
+
+        if(recipient.contains("#"))
+        {
+            String cashAcctAddress = netHelper.getCashAccountAddress(params, recipient, proxy);
             if(Address.isValidCashAddr(params, cashAcctAddress)) {
                 destination = Address.fromCashAddr(params, cashAcctAddress);
             } else if(Address.isValidLegacyAddress(params, cashAcctAddress)){
