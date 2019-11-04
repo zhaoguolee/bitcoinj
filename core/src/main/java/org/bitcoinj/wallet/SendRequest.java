@@ -239,10 +239,10 @@ public class SendRequest {
         String hash160 = new String(Hex.encode(destination.getHash160()), StandardCharsets.UTF_8);
         req.tx = new Transaction(params);
         req.tx.addOutput(Coin.parseCoin("0.00001"), destination);
-        ScriptBuilder scriptBuilder = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN);
-        scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, Hex.decode("01010101")));
-        scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, cashAccountName.getBytes()));
-        scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, Hex.decode("01" + hash160)));
+        ScriptBuilder scriptBuilder = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN)
+                .data(Hex.decode("01010101"))
+                .data(cashAccountName.getBytes())
+                .data(Hex.decode("01" + hash160));
         Script script = scriptBuilder.build();
         req.tx.addOutput(Coin.ZERO, script);
         return req;
