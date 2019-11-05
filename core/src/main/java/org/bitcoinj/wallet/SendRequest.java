@@ -24,6 +24,7 @@ import java.math.BigInteger;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 
 import com.subgraph.orchid.data.exitpolicy.Network;
 import com.subgraph.orchid.encoders.Hex;
@@ -115,6 +116,11 @@ public class SendRequest {
      * You can get this from a password by doing wallet.getKeyCrypter().deriveKey(password).
      */
     public KeyParameter aesKey = null;
+
+    /**
+     * UTXOs to use when sending. If left null, then the wallet automatically determine the UTXOs to use.
+     */
+    public List<TransactionOutput> utxos = null;
 
     /**
      * If not null, the {@link org.bitcoinj.wallet.CoinSelector} to use instead of the wallets default. Coin selectors are

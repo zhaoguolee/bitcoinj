@@ -3692,7 +3692,7 @@ public class Wallet extends BaseTaggableObject
      * transaction, commit to the wallet and broadcast it to the network all in one go. This method is lower level
      * and lets you see the proposed transaction before anything is done with it.</p>
      *
-     * <p>This is a helper method that is equivalent to using {@link SendRequest#to(Address, Coin)}
+     * <p>This is a helper method that is equivalent to using {@link SendRequest#to(NetworkParameters, String, Coin)}
      * followed by {@link Wallet#completeTx(SendRequest)} and returning the requests transaction object.
      * Note that this means a fee may be automatically added if required, if you want more control over the process,
      * just do those two steps yourself.</p>
@@ -3954,7 +3954,12 @@ public class Wallet extends BaseTaggableObject
             // with the actual outputs that'll be used to gather the required amount of value. In this way, users
             // can customize coin selection policies. The call below will ignore immature coinbases and outputs
             // we don't have the keys for.
-            List<TransactionOutput> candidates = calculateAllSpendCandidates(true, req.missingSigsMode == MissingSigsMode.THROW);
+            List<TransactionOutput> candidates;
+            if(req.utxos == null || req.utxos.size() == 0) {
+                candidates = calculateAllSpendCandidates(true, req.missingSigsMode == MissingSigsMode.THROW);
+            } else {
+                candidates = req.utxos;
+            }
 
             CoinSelection bestCoinSelection;
             TransactionOutput bestChangeOutput = null;
@@ -4294,6 +4299,10 @@ public class Wallet extends BaseTaggableObject
         } finally {
             lock.unlock();
         }
+    }
+
+    public List<TransactionOutput> getUtxos() {
+        return this.calculateAllSpendCandidates(true, true);
     }
 
     //endregion
