@@ -14,16 +14,18 @@
 
 package wallettemplate;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.*;
 import javafx.scene.input.*;
 import okio.ByteString;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.*;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
-import org.bitcoinj.wallet.DeterministicSeed;
+import org.bitcoinj.wallet.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -32,7 +34,6 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import org.bitcoinj.wallet.UnreadableWalletException;
 import wallettemplate.controls.NotificationBarPane;
 import wallettemplate.utils.GuiUtils;
 import wallettemplate.utils.TextFieldValidator;
@@ -42,12 +43,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 
 import static wallettemplate.utils.GuiUtils.*;
 
 public class Main extends Application {
     private boolean USE_TEST_WALLET = false;
-    public static NetworkParameters params = TestNet3Params.get();
+    public static NetworkParameters params = MainNetParams.get();
     public static final String APP_NAME = "WalletTemplate";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
@@ -119,6 +121,10 @@ public class Main extends Application {
             }
         else
             setupWalletKit(null);
+
+        SlpWallet slpWallet = new SlpWallet(MainNetParams.get());
+        System.out.println("SLP WALLET SEED " + slpWallet.getKeyChainSeed().toString());
+        System.out.println("SLP ADDRESS " + slpWallet.currentReceiveAddress().toString());
 
         if (bitcoin.isChainFileLocked()) {
             informationalAlert("Already running", "This application is already running and cannot be started twice.");

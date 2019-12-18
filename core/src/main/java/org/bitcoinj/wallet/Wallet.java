@@ -729,6 +729,15 @@ public class Wallet extends BaseTaggableObject
         }
     }
 
+    public void removeHDChainByIndex(int index) {
+        keyChainGroupLock.lock();
+        try {
+            keyChainGroup.removeHDChainByIndex(index);
+        } finally {
+            keyChainGroupLock.unlock();
+        }
+    }
+
     /** See {@link org.bitcoinj.wallet.DeterministicKeyChain#setLookaheadSize(int)} for more info on this. */
     public void setKeyChainGroupLookaheadSize(int lookaheadSize) {
         keyChainGroupLock.lock();

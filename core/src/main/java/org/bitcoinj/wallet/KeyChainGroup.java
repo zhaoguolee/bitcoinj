@@ -142,6 +142,11 @@ public class KeyChainGroup implements KeyBag {
         chains.add(chain);
     }
 
+    public void removeHDChainByIndex(int index) {
+        log.info("Removing HD chain: {}", index);
+        chains.remove(index);
+    }
+
     /**
      * Returns a key that hasn't been seen in a transaction yet, and which is suitable for displaying in a wallet
      * user interface as "a convenient key to receive funds on" when the purpose parameter is
