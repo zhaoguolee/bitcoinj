@@ -799,7 +799,7 @@ public class WalletTool {
             }
 
             SendRequest req = outputSpec.isAddress() ?
-                    SendRequest.to(outputSpec.addr, value) :
+                    SendRequest.to(params, outputSpec.addr.toBase58(), value) :
                     SendRequest.to(params, outputSpec.key, value);
             if (feePerKb != null)
                 req.feePerKb = feePerKb;
@@ -903,7 +903,7 @@ public class WalletTool {
             }
 
             SendRequest req = outputSpec.isAddress() ?
-                    SendRequest.to(outputSpec.addr, value) :
+                    SendRequest.to(params, outputSpec.addr.toBase58(), value) :
                     SendRequest.to(params, outputSpec.key, value);
             if (feePerKb != null)
                 req.feePerKb = feePerKb;
