@@ -194,6 +194,22 @@ public class SendRequest {
         return req;
     }
 
+    public static SendRequest createSlpTransaction(NetworkParameters params, String recipient, Coin value) throws NullPointerException, AddressFormatException {
+        SendRequest req = new SendRequest();
+        Address destination = null;
+        if(Address.isValidCashAddr(params, recipient)) {
+            destination = Address.fromCashAddr(params, recipient);
+        } else if(Address.isValidLegacyAddress(params, recipient)){
+            destination = Address.fromBase58(params, recipient);
+        }
+
+        checkNotNull(params, "Address is for an unknown network");
+        checkNotNull(destination, "No address set!");
+        req.tx = new Transaction(params);
+        req.tx.addOutput(value, destination);
+        return req;
+    }
+
     public static SendRequest to(NetworkParameters params, String recipient, Coin value, Proxy proxy) throws NullPointerException, AddressFormatException {
         NetHelper netHelper = new NetHelper();
 
