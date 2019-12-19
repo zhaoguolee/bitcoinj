@@ -14,37 +14,26 @@
 
 package wallettemplate;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.*;
-import javafx.scene.input.*;
-import okio.ByteString;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.*;
 import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.utils.BriefLogFormatter;
-import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import wallettemplate.controls.NotificationBarPane;
 import wallettemplate.utils.GuiUtils;
-import wallettemplate.utils.TextFieldValidator;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 
 import static wallettemplate.utils.GuiUtils.*;
 
@@ -198,17 +187,17 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        SlpWallet slpWallet = null;
-        /*try {
-            slpWallet = new SlpWallet(MainNetParams.get(), new DeterministicSeed("", null, "", 1555990593));
-        } catch (UnreadableWalletException e) {
-            e.printStackTrace();
-        }*/
+        SlpAppKit slpWallet = null;
         try {
-            slpWallet = SlpWallet.loadFromFile(new File("test.wallet"));
+            slpWallet = new SlpAppKit(MainNetParams.get(), new DeterministicSeed("", null, "", 1555990593));
         } catch (UnreadableWalletException e) {
             e.printStackTrace();
         }
+        /*try {
+            slpWallet = SlpWallet.loadFromFile(new File("test.wallet"));
+        } catch (UnreadableWalletException e) {
+            e.printStackTrace();
+        }*/
         System.out.println("SLP WALLET SEED " + slpWallet.getWallet().getKeyChainSeed().toString());
         System.out.println("SLP ADDRESS " + slpWallet.getWallet().currentReceiveAddress().toString());
         try {
