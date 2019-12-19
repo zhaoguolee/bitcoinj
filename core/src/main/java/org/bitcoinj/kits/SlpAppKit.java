@@ -38,6 +38,8 @@ public class SlpAppKit {
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<SlpUTXO>();
     private ArrayList<TransactionOutput> bchUtxos = new ArrayList<TransactionOutput>();
     private ArrayList<SlpToken> slpTokens = new ArrayList<SlpToken>();
+    private ArrayList<SlpTokenBalance> slpBalances = new ArrayList<SlpTokenBalance>();
+    private ArrayList<String> recordedSlpTxs = new ArrayList<String>();
 
     private SlpDbProcessor slpDbProcessor;
     public SlpAppKit() {
@@ -106,12 +108,7 @@ public class SlpAppKit {
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(this.tokensFile.getName()));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
             StringBuilder sb = new StringBuilder();
-            assert br != null;
             String line = br.readLine();
 
             while (line != null) {
@@ -129,8 +126,92 @@ public class SlpAppKit {
                 SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
                 this.slpTokens.add(slpToken);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                assert br != null;
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-            System.out.println(this.slpTokens);
+    private void saveTokenBalances(ArrayList<SlpTokenBalance> tokenBalances) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(walletFile.getName() + ".bal"), StandardCharsets.UTF_8))) {
+            JSONArray json = new JSONArray();
+            for(SlpTokenBalance tokenBalance : this.slpBalances) {
+                JSONObject tokenObj = new JSONObject();
+                tokenObj.put("tokenId", tokenBalance.getTokenId());
+                tokenObj.put("balance", tokenBalance.getBalance());
+                json.put(tokenObj);
+            }
+            writer.write(json.toString());
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadTokenBalances() {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(this.walletFile.getName() + ".bal"));
+            StringBuilder sb = new StringBuilder();
+            String line = br.readLine();
+
+            while (line != null) {
+                sb.append(line);
+                sb.append(System.lineSeparator());
+                line = br.readLine();
+            }
+            String jsonString = sb.toString();
+            JSONArray balancesJson = new JSONArray(jsonString);
+            for(int x = 0; x < balancesJson.length(); x++) {
+                JSONObject tokenObj = balancesJson.getJSONObject(x);
+                String tokenId = tokenObj.getString("tokenId");
+                double balance = tokenObj.getDouble("balance");
+                SlpTokenBalance tokenBalance = new SlpTokenBalance(tokenId, balance);
+                this.slpBalances.add(tokenBalance);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                assert br != null;
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void saveRecordedTxs(ArrayList<String> recordedSlpTxs) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.walletFile.getName() + ".txs"), StandardCharsets.UTF_8))) {
+            StringBuilder text = new StringBuilder();
+            for(String txHash : recordedSlpTxs) {
+                text.append(txHash).append("\n");
+            }
+            writer.write(text.toString());
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadRecordedTxs() {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(this.walletFile.getName() + ".txs"));
+            String line = br.readLine();
+            while (line != null) {
+                String txHash = line;
+                this.recordedSlpTxs.add(txHash);
+                line = br.readLine();
+            }
+
+            System.out.println(this.recordedSlpTxs);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -279,12 +360,21 @@ public class SlpAppKit {
     }
 
     private void completeSetupOfWallet() {
+        File balancesDataFile = new File(this.walletFile.getName() + ".bal");
+        if(balancesDataFile.exists()) {
+            this.loadTokenBalances();
+        }
+        File txsDataFile = new File(this.walletFile.getName() + ".txs");
+        if(txsDataFile.exists()) {
+            this.loadRecordedTxs();
+        }
         File tokenDataFile = new File(this.walletFile.getName() + ".tokens");
         this.tokensFile = tokenDataFile;
         if(tokenDataFile.exists()) {
             this.loadTokens();
         }
 
+        this.wallet.setAcceptRiskyTransactions(true);
         this.slpDbProcessor = new SlpDbProcessor();
         this.wallet.allowSpendingUnconfirmedTransactions();
         this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
@@ -332,6 +422,18 @@ public class SlpAppKit {
                                 if(!this.tokenUtxoIsMapped(slpUTXO)) {
                                     //TODO validate that the SLP tx is valid from either rest.bitcoin.com or someplace else.
                                     slpUtxos.add(slpUTXO);
+
+                                    if(this.recordedSlpTxs.indexOf(tx.getHashAsString()) == -1) {
+                                        if (this.isBalanceRecorded(tokenId)) {
+                                            this.getTokenBalance(tokenId).addToBalance(tokenAmount);
+                                        } else {
+                                            this.slpBalances.add(new SlpTokenBalance(tokenId, tokenAmount));
+                                        }
+
+                                        this.saveTokenBalances(this.slpBalances);
+                                        this.recordedSlpTxs.add(tx.getHashAsString());
+                                        this.saveRecordedTxs(this.recordedSlpTxs);
+                                    }
                                 }
 
                                 SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
@@ -345,12 +447,80 @@ public class SlpAppKit {
                                 SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, myOutput);
                                 if(!this.tokenUtxoIsMapped(slpUTXO)) {
                                     slpUtxos.add(slpUTXO);
+
+                                    if(this.recordedSlpTxs.indexOf(tx.getHashAsString()) == -1) {
+                                        if (this.isBalanceRecorded(tokenId)) {
+                                            this.getTokenBalance(tokenId).addToBalance(tokenAmount);
+                                        } else {
+                                            this.slpBalances.add(new SlpTokenBalance(tokenId, tokenAmount));
+                                        }
+
+                                        this.saveTokenBalances(this.slpBalances);
+                                        this.recordedSlpTxs.add(tx.getHashAsString());
+                                        this.saveRecordedTxs(this.recordedSlpTxs);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            } else {
+                if (tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
+                    String protocolId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1).data), StandardCharsets.UTF_8);
+                    if (protocolId.equals("534c5000")) {
+                        String tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
+                        long totalTokensSent = 0L;
+                        ArrayList<TransactionOutput> outsideOutputs = this.getOutputsThatDontBelongToUs(tx);
+                        System.out.println("OUTSIDE " + outsideOutputs.toString());
+                        for(TransactionOutput output : outsideOutputs) {
+                            int chunkPosition = output.getIndex() + 4;
+                            String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
+                            long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
+
+                            if(!this.tokenIsMapped(tokenId)) {
+                                SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
+                                JSONObject tokenData = null;
+                                try {
+                                    tokenData = slpDbProcessor.getTokenData(tokenQuery.getEncoded());
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                                int decimals = tokenData.getJSONObject("tokenDetails").getInt("decimals");
+                                String ticker = tokenData.getJSONObject("tokenDetails").getString("symbol");
+
+                                double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
+                                totalTokensSent += tokenAmount;
+                                SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
+                                slpTokens.add(slpToken);
+                                this.saveTokens(this.slpTokens);
+                            } else {
+                                SlpToken slpToken = this.getSlpToken(tokenId);
+                                int decimals = slpToken.getDecimals();
+
+                                double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
+                                totalTokensSent += tokenAmount;
+                            }
+                        }
+
+                        if(this.recordedSlpTxs.indexOf(tx.getHashAsString()) == -1) {
+                            if (this.isBalanceRecorded(tokenId)) {
+                                this.getTokenBalance(tokenId).subtractFromBalance(totalTokensSent);
+                            } else {
+                                this.slpBalances.add(new SlpTokenBalance(tokenId, -totalTokensSent));
+                            }
+
+                            this.saveTokenBalances(this.slpBalances);
+                            this.recordedSlpTxs.add(tx.getHashAsString());
+                            this.saveRecordedTxs(this.recordedSlpTxs);
+                        }
+                    }
+                }
             }
+        }
+
+        for(SlpTokenBalance tokenBalance : this.slpBalances) {
+            System.out.println(this.getSlpToken(tokenBalance.getTokenId()) + " /// Balance: " + tokenBalance.getBalance());
         }
     }
 
@@ -370,6 +540,41 @@ public class SlpAppKit {
                 if (this.wallet.isPubKeyHashMine(hash160)) {
                     return output;
                 }
+            }
+        }
+
+        return null;
+    }
+
+    private ArrayList<TransactionOutput> getOutputsThatDontBelongToUs(Transaction tx) {
+        ArrayList<TransactionOutput> utxos = new ArrayList<>();
+        for(TransactionOutput output : tx.getOutputs()) {
+            if(!output.getScriptPubKey().isOpReturn()) {
+                byte[] hash160 = output.getScriptPubKey().getToAddress(this.wallet.getParams()).getHash160();
+
+                if (!this.wallet.isPubKeyHashMine(hash160)) {
+                    utxos.add(output);
+                }
+            }
+        }
+
+        return utxos;
+    }
+
+    private boolean isBalanceRecorded(String tokenId) {
+        for(SlpTokenBalance tokenBalance : this.slpBalances) {
+            if(tokenBalance.getTokenId().equals(tokenId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private SlpTokenBalance getTokenBalance(String tokenId) {
+        for(SlpTokenBalance tokenBalance : this.slpBalances) {
+            if(tokenBalance.getTokenId().equals(tokenId)) {
+                return tokenBalance;
             }
         }
 
