@@ -306,7 +306,9 @@ public class SlpAppKit {
                             int chunkPosition = myOutput.getIndex() + 4;
                             String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
                             long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
-                            double tokenAmount = tokenAmountRaw / 100000000D;
+
+                            //TODO change -8 to negative of token decimal since not all tokens have the same decimal count
+                            double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-8).doubleValue();
 
                             SlpUTXO slpUTXO = new SlpUTXO(tokenId, (long) tokenAmount, myOutput);
                             if(!this.tokenUtxoIsMapped(slpUTXO)) {
