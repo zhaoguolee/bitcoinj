@@ -23,6 +23,7 @@ import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.*;
+import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.*;
@@ -65,86 +66,11 @@ public class Main extends Application {
 
     @Override
     public void start(Stage mainWindow) throws Exception {
-        try {
-            realStart(mainWindow, USE_TEST_WALLET);
-        } catch (Throwable e) {
-            GuiUtils.crashAlert(e);
-            throw e;
-        }
+
     }
 
     private void realStart(Stage mainWindow, boolean useTestWallet) throws IOException {
-        this.mainWindow = mainWindow;
-        instance = this;
-        // Show the crash dialog for any exceptions that we don't handle and that hit the main loop.
-        GuiUtils.handleCrashesOnThisThread();
 
-        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
-            // We could match the Mac Aqua style here, except that (a) Modena doesn't look that bad, and (b)
-            // the date picker widget is kinda broken in AquaFx and I can't be bothered fixing it.
-            // AquaFx.style();
-        }
-
-        // Load the GUI. The MainController class will be automagically created and wired up.
-        URL location = getClass().getResource("main.fxml");
-        FXMLLoader loader = new FXMLLoader(location);
-        mainUI = loader.load();
-        controller = loader.getController();
-        // Configure the window with a StackPane so we can overlay things on top of the main UI, and a
-        // NotificationBarPane so we can slide messages and progress bars in from the bottom. Note that
-        // ordering of the construction and connection matters here, otherwise we get (harmless) CSS error
-        // spew to the logs.
-        notificationBar = new NotificationBarPane(mainUI);
-        mainWindow.setTitle(APP_NAME);
-        uiStack = new StackPane();
-        Scene scene = new Scene(uiStack);
-        TextFieldValidator.configureScene(scene);   // Add CSS that we need.
-        scene.getStylesheets().add(getClass().getResource("wallet.css").toString());
-        uiStack.getChildren().add(notificationBar);
-        mainWindow.setScene(scene);
-
-        // Make log output concise.
-        BriefLogFormatter.init();
-        // Tell bitcoinj to run event handlers on the JavaFX UI thread. This keeps things simple and means
-        // we cannot forget to switch threads when adding event handlers. Unfortunately, the DownloadListener
-        // we give to the app kit is currently an exception and runs on a library thread. It'll get fixed in
-        // a future version.
-        Threading.USER_THREAD = Platform::runLater;
-
-        // Create the app kit. It won't do any heavyweight initialization until after we start it.
-        // Use test wallet? (published for CTOR validation branch at https://github.com/pokkst/bitcoinj-cash)
-        if (useTestWallet)
-            try {
-                setupWalletKit(new DeterministicSeed("your seed here for testing", null, "", 1567468800L));
-            } catch (UnreadableWalletException e) {
-                e.printStackTrace();
-            }
-        else
-            setupWalletKit(null);
-
-        SlpWallet slpWallet = new SlpWallet(MainNetParams.get());
-        System.out.println("SLP WALLET SEED " + slpWallet.getKeyChainSeed().toString());
-        System.out.println("SLP ADDRESS " + slpWallet.currentReceiveAddress().toString());
-
-        if (bitcoin.isChainFileLocked()) {
-            informationalAlert("Already running", "This application is already running and cannot be started twice.");
-            Platform.exit();
-            return;
-        }
-
-        mainWindow.show();
-
-        WalletSetPasswordController.estimateKeyDerivationTimeMsec();
-
-        bitcoin.addListener(new Service.Listener() {
-            @Override
-            public void failed(Service.State from, Throwable failure) {
-                GuiUtils.crashAlert(failure);
-            }
-        }, Platform::runLater);
-        bitcoin.startAsync();
-
-        scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.peerGroup().getDownloadPeer().close());
     }
 
     public void setupWalletKit(@Nullable DeterministicSeed seed) {
@@ -272,6 +198,23 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        launch(args);
+        SlpWallet slpWallet = null;
+        /*try {
+            slpWallet = new SlpWallet(MainNetParams.get(), new DeterministicSeed("", null, "", 1555990593));
+        } catch (UnreadableWalletException e) {
+            e.printStackTrace();
+        }*/
+        try {
+            slpWallet = SlpWallet.loadFromFile(new File("test.wallet"));
+        } catch (UnreadableWalletException e) {
+            e.printStackTrace();
+        }
+        System.out.println("SLP WALLET SEED " + slpWallet.getWallet().getKeyChainSeed().toString());
+        System.out.println("SLP ADDRESS " + slpWallet.getWallet().currentReceiveAddress().toString());
+        try {
+            slpWallet.startWallet();
+        } catch (BlockStoreException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

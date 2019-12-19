@@ -729,10 +729,10 @@ public class Wallet extends BaseTaggableObject
         }
     }
 
-    public void removeHDChainByIndex(int index) {
+    public void removeHDChain(DeterministicKeyChain chain) {
         keyChainGroupLock.lock();
         try {
-            keyChainGroup.removeHDChainByIndex(index);
+            keyChainGroup.removeHDChain(chain);
         } finally {
             keyChainGroupLock.unlock();
         }

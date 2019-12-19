@@ -142,9 +142,9 @@ public class KeyChainGroup implements KeyBag {
         chains.add(chain);
     }
 
-    public void removeHDChainByIndex(int index) {
-        log.info("Removing HD chain: {}", index);
-        chains.remove(index);
+    public void removeHDChain(DeterministicKeyChain chain) {
+        log.info("Removing HD chain: {}", chain);
+        chains.remove(chain);
     }
 
     /**

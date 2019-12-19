@@ -121,6 +121,8 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     public static final ImmutableList<ChildNumber> BIP44_ACCOUNT_SLP_PATH =
             ImmutableList.of(new ChildNumber(44, true), new ChildNumber(245, true), ChildNumber.ZERO_HARDENED);
 
+    public static ImmutableList<ChildNumber> accountPath = BIP44_ACCOUNT_ZERO_PATH;
+
     // We try to ensure we have at least this many keys ready and waiting to be handed out via getKey().
     // See docs for getLookaheadSize() for more info on what this is for. The -1 value means it hasn't been calculated
     // yet. For new chains it's set to whatever the default is, unless overridden by setLookaheadSize. For deserialized
@@ -421,11 +423,11 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
 
     /** Override in subclasses to use a different account derivation path */
     protected ImmutableList<ChildNumber> getAccountPath() {
-        return BIP44_ACCOUNT_ZERO_PATH;
+        return accountPath;
     }
 
-    protected ImmutableList<ChildNumber> getSlpAccountPath() {
-        return BIP44_ACCOUNT_SLP_PATH;
+    public static void setAccountPath(ImmutableList<ChildNumber> path) {
+        accountPath = path;
     }
 
     private DeterministicKey encryptNonLeaf(KeyParameter aesKey, DeterministicKeyChain chain,
