@@ -49,7 +49,7 @@ public class SlpAppKit {
         this.addEventListeners();
     }
 
-    public SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
+    private SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
         wallet = new Wallet(params, keyChainGroup);
         this.walletFile = file;
         DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
@@ -63,7 +63,19 @@ public class SlpAppKit {
         this.addEventListeners();
     }
 
-    public static SlpAppKit loadFromFile(File file, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+    public static SlpAppKit initialize(NetworkParameters params, File file, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
+        if(file.exists()) {
+            return loadFromFile(file);
+        } else {
+            if(seed != null) {
+                return new SlpAppKit(params, seed, file);
+            } else {
+                return new SlpAppKit(params, file);
+            }
+        }
+    }
+
+    private static SlpAppKit loadFromFile(File file, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         DeterministicKeyChain.setAccountPath(DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         try {
             FileInputStream stream = null;
