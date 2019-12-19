@@ -190,8 +190,8 @@ public class SlpAppKit {
     }
 
     public void sendToken(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
-        //TODO change the 8 so it works dynamically with tokens that have different decimal amounts.
-        long sendTokensRaw = BigDecimal.valueOf(numTokens).scaleByPowerOfTen(8).longValueExact();
+        int tokenDecimals = this.getSlpToken(tokenId).getDecimals();
+        long sendTokensRaw = BigDecimal.valueOf(numTokens).scaleByPowerOfTen(tokenDecimals).longValueExact();
         long sendSatoshi = this.MIN_DUST;
 
         ArrayList<SlpUTXO> tempSlpUtxos = new ArrayList<>();
@@ -210,7 +210,7 @@ public class SlpAppKit {
                 selectedUtxos.add(tempSlpUtxo.getTxUtxo());
                 selectedSlpUtxos.add(tempSlpUtxo);
                 //TODO change the 8 so it works dynamically with tokens that have different decimal amounts.
-                inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(8).doubleValue();
+                inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(tokenDecimals).doubleValue();
                 inputSatoshi += (tempSlpUtxo.getTxUtxo().getValue().value - 148L); // Deduct input fee
             }
         }
