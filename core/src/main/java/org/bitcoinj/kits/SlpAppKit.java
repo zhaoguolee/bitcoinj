@@ -210,11 +210,7 @@ public class SlpAppKit {
         if (changeSatoshi >= MIN_DUST) {
             req.tx.addOutput(Coin.valueOf(changeSatoshi), wallet.freshAddress(KeyChain.KeyPurpose.CHANGE));
         }
-/*
-        for(TransactionOutput selectedUtxo : selectedUtxos) {
-            req.tx.addInput(selectedUtxo);
-        }
-*/
+
         Transaction tx = wallet.sendCoinsOffline(req);
         System.out.println(new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));
     }
