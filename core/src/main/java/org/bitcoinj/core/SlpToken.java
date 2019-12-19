@@ -9,4 +9,15 @@ public class SlpToken {
         //this.ticker = ticker;
         //this.decimals = decimals;
     }
+
+    public String getTokenId() {
+        return this.tokenId;
+    }
+
+    @Override
+    public String toString() {
+        return "SLP TOKEN [" +
+                this.getTokenId() +
+                "]";
+    }
 }

@@ -188,12 +188,16 @@ public class Main extends Application {
 
     public static void main(String[] args) {
         SlpAppKit slpWallet = null;
-        slpWallet = new SlpAppKit(MainNetParams.get(), new File("test.wallet"));
         /*try {
-            slpWallet = SlpWallet.loadFromFile(new File("test.wallet"));
+            slpWallet = new SlpAppKit(MainNetParams.get(), new DeterministicSeed("trouble vacant regret early small street oppose engine fabric indicate top candy", null, "", 1555990593L), new File("test.wallet"));
         } catch (UnreadableWalletException e) {
             e.printStackTrace();
         }*/
+        try {
+            slpWallet = SlpAppKit.loadFromFile(new File("test.wallet"));
+        } catch (UnreadableWalletException e) {
+            e.printStackTrace();
+        }
         System.out.println("SLP WALLET SEED " + slpWallet.getWallet().getKeyChainSeed().toString());
         System.out.println("SLP ADDRESS " + slpWallet.getWallet().currentReceiveAddress().toString());
         try {

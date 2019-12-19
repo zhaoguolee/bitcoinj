@@ -62,20 +62,6 @@ public class SlpAppKit {
         this.populateUtxoAndTokenMap();
     }
 
-    private TransactionOutput getMyOutput(Transaction tx) {
-        for(TransactionOutput output : tx.getOutputs()) {
-            if(!output.getScriptPubKey().isOpReturn()) {
-                byte[] hash160 = output.getScriptPubKey().getToAddress(this.wallet.getParams()).getHash160();
-
-                if (this.wallet.isPubKeyHashMine(hash160)) {
-                    return output;
-                }
-            }
-        }
-
-        return null;
-    }
-
     public static SlpAppKit loadFromFile(File file, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         DeterministicKeyChain.setAccountPath(DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         try {
@@ -106,6 +92,8 @@ public class SlpAppKit {
             @Override
             public void doneDownload() {
                 System.out.println("blockchain downloaded");
+
+                System.out.println("SLP TOKENS " + slpTokens.toString());
             }
         };
 
@@ -212,7 +200,7 @@ public class SlpAppKit {
                 if(tx.getValue(wallet).value == MIN_DUST) {
                     if(tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
                         String protocolId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1).data), StandardCharsets.UTF_8);
-                        if(protocolId.equals("5262419")) {
+                        if(protocolId.equals("534c5000")) {
                             String tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
                             TransactionOutput myOutput = getMyOutput(tx);
                             int chunkPosition = myOutput.getIndex() + 4;
@@ -221,13 +209,10 @@ public class SlpAppKit {
                             double tokenAmount = tokenAmountRaw / 100000000D;
 
                             SlpUTXO slpUTXO = new SlpUTXO(tokenId, (long) tokenAmount, myOutput);
-                            if (slpUtxos.indexOf(slpUTXO) == -1) {
-                                slpUtxos.add(slpUTXO);
-                            }
-
                             SlpToken slpToken = new SlpToken(tokenId);
-                            if(slpTokens.indexOf(slpToken) == -1) {
+                            if(!this.tokenIsMapped(tokenId)) {
                                 slpTokens.add(slpToken);
+                                slpUtxos.add(slpUTXO);
                             }
                         }
                     }
@@ -242,6 +227,30 @@ public class SlpAppKit {
 
     private long sizeInBytes(long numQuantities) {
         return OP_RETURN_NUM_BYTES_BASE + numQuantities * QUANTITY_NUM_BYTES;
+    }
+
+    private TransactionOutput getMyOutput(Transaction tx) {
+        for(TransactionOutput output : tx.getOutputs()) {
+            if(!output.getScriptPubKey().isOpReturn()) {
+                byte[] hash160 = output.getScriptPubKey().getToAddress(this.wallet.getParams()).getHash160();
+
+                if (this.wallet.isPubKeyHashMine(hash160)) {
+                    return output;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean tokenIsMapped(String tokenId) {
+        for(SlpToken slpToken : this.slpTokens) {
+            if(slpToken.getTokenId().equals(tokenId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public Wallet getWallet() {
