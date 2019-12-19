@@ -1,6 +1,7 @@
 package org.bitcoinj.wallet;
 
 import com.google.common.collect.ImmutableList;
+import com.subgraph.orchid.encoders.Hex;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.ChildNumber;
@@ -12,6 +13,8 @@ import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +39,43 @@ public class SlpWallet {
 
     public SlpWallet(Wallet wallet) {
         this.wallet = wallet;
+        this.wallet.allowSpendingUnconfirmedTransactions();
+        for(Transaction tx : wallet.getRecentTransactions(0, false)) {
+            if(tx.getValue(wallet).isPositive()) {
+                if(tx.getValue(wallet).value == MIN_DUST) {
+                    if(tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
+                        //4de69e374a8ed21cbddd47f2338cc0f479dc58daa2bbe11cd604ca488eca0ddf
+                        String tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
+                        if(tokenId.equals("532fca8907107e199b89fa4b1691350edf595ee7d6fb3d053746e3b07cab568c")) {
+                            TransactionOutput myOutput = getMyOutput(tx);
+                            int chunkPosition = myOutput.getIndex() + 4;
+                            String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
+                            long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
+                            System.out.println("Token amount " + tokenAmountRaw);
+                            double tokenAmount = tokenAmountRaw / 100000000D;
+                            System.out.println("Token amount " + tokenAmount);
+                            System.out.println("Tx hash " + tx.getHashAsString());
+
+                            slpUtxos.add(new SlpUTXO(tokenId, (long)tokenAmount, myOutput));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private TransactionOutput getMyOutput(Transaction tx) {
+        for(TransactionOutput output : tx.getOutputs()) {
+            if(!output.getScriptPubKey().isOpReturn()) {
+                byte[] hash160 = output.getScriptPubKey().getToAddress(this.wallet.params).getHash160();
+
+                if (this.wallet.isPubKeyHashMine(hash160)) {
+                    return output;
+                }
+            }
+        }
+
+        return null;
     }
 
     public SlpWallet(NetworkParameters params, KeyChainGroup keyChainGroup) {
@@ -86,10 +126,15 @@ public class SlpWallet {
         peers.start();
         peers.startBlockChainDownload(bListener);
 
-        System.out.println(this.wallet.toString());
+        try {
+            this.sendToken("bitcoincash:qrz4kl5s0na247vv7mgz9zlrvyty6ne74vxz597kun", "532fca8907107e199b89fa4b1691350edf595ee7d6fb3d053746e3b07cab568c", 500L);
+        } catch (InsufficientMoneyException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void sendToken(String slpDestinationAddress, String tokenId, long tokenAmount) throws InsufficientMoneyException {
+    public void sendToken(String slpDestinationAddress, String tokenId, long numTokens) throws InsufficientMoneyException {
+        long sendTokensRaw = BigDecimal.valueOf(numTokens).scaleByPowerOfTen(8).longValueExact();
         long sendSatoshi = this.MIN_DUST;
 
         ArrayList<SlpUTXO> tempSlpUtxos = new ArrayList<>();
@@ -100,19 +145,19 @@ public class SlpWallet {
         }
 
         ArrayList<TransactionOutput> selectedUtxos = new ArrayList<>();
-        long selectedAmount = 0L;
+        long inputTokensRaw = 0L;
         long inputSatoshi = 0L;
         for(SlpUTXO tempSlpUtxo : tempSlpUtxos) {
-            if(selectedAmount < tokenAmount) {
+            if(inputTokensRaw < sendTokensRaw) {
                 selectedUtxos.add(tempSlpUtxo.getTxUtxo());
-                selectedAmount += tempSlpUtxo.getTokenAmount();
+                inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(8).longValueExact();
                 inputSatoshi += (tempSlpUtxo.getTxUtxo().getValue().value - 148L); // Deduct input fee
             }
         }
 
-        if (selectedAmount < tokenAmount) {
-            throw new RuntimeException("insufficient token balance=$inputTokensRaw");
-        } else if (selectedAmount > tokenAmount) {
+        if (inputTokensRaw < sendTokensRaw) {
+            throw new RuntimeException("insufficient token balance=" + inputTokensRaw);
+        } else if (inputTokensRaw > sendTokensRaw) {
             // If there's token change we need at least another dust limit worth of BCH
             sendSatoshi += MIN_DUST;
         }
@@ -122,20 +167,15 @@ public class SlpWallet {
             When grabbing all BCH outputs that can be used for sending the SLP tx, we ignore utxos that
             are of 546 satoshis, as it is either an SLP utxo, or a dusting attack.
              */
-            if(txOutput.getValue() != wallet.params.getMinNonDustOutput()) {
+            if(txOutput.getValue().value != MIN_DUST) {
                 bchUtxos.add(txOutput);
             }
         }
 
-        long propagationExtraFee = 50L; // When too close 1sat/byte tx's don't propagate well
+        long propagationFixFee = 600L;
         long numOutputs = 3L; // Assume three outputs in addition to the op return.
         long numQuanitites = 2L; // Assume one token receiver and the token receiver
-        long fee = this.outputFee(numOutputs) + this.sizeInBytes(numQuanitites) + propagationExtraFee;
-
-        long changeSatoshi = inputSatoshi - sendSatoshi - fee;
-        if (changeSatoshi < 0) {
-            throw new IllegalArgumentException("Insufficient BCH balance=$inputSatoshi required $sendSatoshi + fees");
-        }
+        long fee = this.outputFee(numOutputs) + this.sizeInBytes(numQuanitites) + propagationFixFee;
 
         // If we can not yet afford the fee + dust limit to send, use pure BCH utxo's
         for(TransactionOutput utxo : bchUtxos) {
@@ -145,31 +185,37 @@ public class SlpWallet {
             }
         }
 
-        long changeAmount = selectedAmount - tokenAmount;
+        long changeSatoshi = inputSatoshi - sendSatoshi - fee;
+        if (changeSatoshi < 0) {
+            throw new IllegalArgumentException("Insufficient BCH balance=" + inputSatoshi + " required " + sendSatoshi + " + fees");
+        }
+
+        long changeTokens = inputTokensRaw - sendTokensRaw;
 
         SendRequest req = SendRequest.createSlpTransaction(wallet.params);
-        req.feePerKb = Coin.valueOf(1000L);
-
-        SlpOpReturnOutput slpOpReturn = new SlpOpReturnOutput(tokenId, tokenAmount, changeAmount);
+        req.shuffleOutputs = false;
+        req.feePerKb = Coin.valueOf(2000L);
+        req.utxos = selectedUtxos;
+        SlpOpReturnOutput slpOpReturn = new SlpOpReturnOutput(tokenId, sendTokensRaw, changeTokens);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
 
         //TODO convert SLP address to normal cashaddr so it fucking works
         req.tx.addOutput(wallet.params.getMinNonDustOutput(), Address.fromCashAddr(wallet.params, slpDestinationAddress));
 
-        if(selectedAmount > tokenAmount) {
+        if(inputTokensRaw > sendTokensRaw) {
             req.tx.addOutput(wallet.params.getMinNonDustOutput(), wallet.freshAddress(KeyChain.KeyPurpose.CHANGE));
         }
 
         if (changeSatoshi >= MIN_DUST) {
             req.tx.addOutput(Coin.valueOf(changeSatoshi), wallet.freshAddress(KeyChain.KeyPurpose.CHANGE));
         }
-
+/*
         for(TransactionOutput selectedUtxo : selectedUtxos) {
             req.tx.addInput(selectedUtxo);
         }
-
+*/
         Transaction tx = wallet.sendCoinsOffline(req);
-
+        System.out.println(new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));
     }
 
     private long outputFee(long numOutputs) {
