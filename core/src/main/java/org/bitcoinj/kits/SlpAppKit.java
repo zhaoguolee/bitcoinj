@@ -184,6 +184,8 @@ public class SlpAppKit {
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
+        SlpAddress slpAddress = new SlpAddress(this.wallet.getParams(), slpDestinationAddress);
+        String destinationAddr = slpAddress.toCashAddress();
         int tokenDecimals = this.getSlpToken(tokenId).getDecimals();
         long sendTokensRaw = BigDecimal.valueOf(numTokens).scaleByPowerOfTen(tokenDecimals).longValueExact();
         long sendSatoshi = this.MIN_DUST;
@@ -251,9 +253,7 @@ public class SlpAppKit {
         req.utxos = selectedUtxos;
         SlpOpReturnOutput slpOpReturn = new SlpOpReturnOutput(tokenId, sendTokensRaw, changeTokens);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
-
-        //TODO convert SLP address to normal cashaddr so it fucking works
-        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), Address.fromCashAddr(this.wallet.getParams(), slpDestinationAddress));
+        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), Address.fromCashAddr(this.wallet.getParams(), destinationAddr));
 
         if(inputTokensRaw > sendTokensRaw) {
             req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), wallet.freshAddress(KeyChain.KeyPurpose.CHANGE));
