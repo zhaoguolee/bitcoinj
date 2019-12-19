@@ -181,15 +181,9 @@ public class SlpAppKit {
 
         peerGroup.start();
         peerGroup.startBlockChainDownload(bListener);
-
-        /*try {
-            this.sendToken("bitcoincash:qphadnkmdzzwu7xw6rr76c0fmucmpwpkgs0a80faf5", "ac5f9e698e560bb5db9fc2f028aa2992f447d15f0061f3feee8a5d90600d319b", 23.0);
-        } catch (InsufficientMoneyException e) {
-            e.printStackTrace();
-        }*/
     }
 
-    public void sendToken(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
+    public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
         int tokenDecimals = this.getSlpToken(tokenId).getDecimals();
         long sendTokensRaw = BigDecimal.valueOf(numTokens).scaleByPowerOfTen(tokenDecimals).longValueExact();
         long sendSatoshi = this.MIN_DUST;
@@ -270,10 +264,17 @@ public class SlpAppKit {
         }
 
         Transaction tx = wallet.sendCoinsOffline(req);
-        System.out.println(new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));
 
         for(SlpUTXO slpUTXO : selectedSlpUtxos) {
             this.slpUtxos.remove(slpUTXO);
+        }
+
+        return tx;
+    }
+
+    public void broadcastSlpTransaction(Transaction tx) {
+        for(Peer peer : this.peerGroup.getConnectedPeers()) {
+            peer.sendMessage(tx);
         }
     }
 
@@ -329,6 +330,7 @@ public class SlpAppKit {
                                 double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
                                 SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, myOutput);
                                 if(!this.tokenUtxoIsMapped(slpUTXO)) {
+                                    //TODO validate that the SLP tx is valid from either rest.bitcoin.com or someplace else.
                                     slpUtxos.add(slpUTXO);
                                 }
 
