@@ -189,16 +189,13 @@ public class Main extends Application {
     public static void main(String[] args) {
         SlpAppKit slpWallet = null;
         try {
-            slpWallet = SlpAppKit.initialize(MainNetParams.get(), new File("test.wallet"), null);
-        } catch (UnreadableWalletException e) {
+            slpWallet = new SlpAppKit().initialize(MainNetParams.get(), new File("test.wallet"), null);
+
+            slpWallet.startWallet();
+        } catch (UnreadableWalletException | InterruptedException | BlockStoreException | IOException e) {
             e.printStackTrace();
         }
         System.out.println("SLP WALLET SEED " + slpWallet.getWallet().getKeyChainSeed().toString());
         System.out.println("SLP ADDRESS " + slpWallet.getWallet().currentReceiveAddress().toString());
-        try {
-            slpWallet.startWallet();
-        } catch (BlockStoreException | InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 }

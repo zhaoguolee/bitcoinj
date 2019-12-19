@@ -34,6 +34,10 @@ public class SlpAppKit {
     private ArrayList<TransactionOutput> bchUtxos = new ArrayList<TransactionOutput>();
     private ArrayList<SlpToken> slpTokens = new ArrayList<SlpToken>();
 
+    public SlpAppKit() {
+
+    }
+
     public SlpAppKit(NetworkParameters params, File file) {
         this(params, new KeyChainGroup(params), file);
     }
@@ -63,7 +67,7 @@ public class SlpAppKit {
         this.addEventListeners();
     }
 
-    public static SlpAppKit initialize(NetworkParameters params, File file, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
+    public SlpAppKit initialize(NetworkParameters params, File file, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
         if(file.exists()) {
             return loadFromFile(file);
         } else {
@@ -91,7 +95,7 @@ public class SlpAppKit {
         }
     }
 
-    public void startWallet() throws BlockStoreException, InterruptedException {
+    public void startWallet() throws BlockStoreException, InterruptedException, IOException {
         File chainFile = new File(this.walletFile.getName() + ".spvchain");
         spvBlockStore = new SPVBlockStore(this.wallet.getParams(), chainFile);
         blockChain = new BlockChain(this.wallet.getParams(), spvBlockStore);
@@ -101,6 +105,7 @@ public class SlpAppKit {
         blockChain.addWallet(wallet);
         peerGroup.addWallet(wallet);
         wallet.autosaveToFile(this.walletFile, 5, TimeUnit.SECONDS, null);
+        wallet.saveToFile(this.walletFile);
         DownloadProgressTracker bListener = new DownloadProgressTracker() {
             @Override
             public void doneDownload() {
@@ -112,12 +117,6 @@ public class SlpAppKit {
 
         peerGroup.start();
         peerGroup.startBlockChainDownload(bListener);
-
-        /*try {
-            this.sendToken("bitcoincash:qrz4kl5s0na247vv7mgz9zlrvyty6ne74vxz597kun", "532fca8907107e199b89fa4b1691350edf595ee7d6fb3d053746e3b07cab568c", 500L);
-        } catch (InsufficientMoneyException e) {
-            e.printStackTrace();
-        }*/
     }
 
     public void sendToken(String slpDestinationAddress, String tokenId, long numTokens) throws InsufficientMoneyException {
