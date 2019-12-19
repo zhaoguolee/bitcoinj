@@ -22,6 +22,7 @@ public class SlpAppKit {
     private SPVBlockStore spvBlockStore;
     private BlockChain blockChain;
     private PeerGroup peerGroup;
+    private File walletFile;
 
     private long MIN_DUST = 546L;
     private long OP_RETURN_NUM_BYTES_BASE = 55;
@@ -30,15 +31,16 @@ public class SlpAppKit {
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<SlpUTXO>();
     private ArrayList<TransactionOutput> bchUtxos = new ArrayList<TransactionOutput>();
 
-    public SlpAppKit(NetworkParameters params) {
-        this(params, new KeyChainGroup(params));
+    public SlpAppKit(NetworkParameters params, File file) {
+        this(params, new KeyChainGroup(params), file);
     }
 
-    public SlpAppKit(NetworkParameters params, DeterministicSeed seed) {
-        this(params, new KeyChainGroup(params, seed));
+    public SlpAppKit(NetworkParameters params, DeterministicSeed seed, File file) {
+        this(params, new KeyChainGroup(params, seed), file);
     }
 
-    public SlpAppKit(Wallet wallet) {
+    public SlpAppKit(Wallet wallet, File file) {
+        this.walletFile = file;
         this.wallet = wallet;
         this.wallet.allowSpendingUnconfirmedTransactions();
         for(Transaction tx : wallet.getRecentTransactions(0, false)) {
@@ -65,6 +67,19 @@ public class SlpAppKit {
         }
     }
 
+    public SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
+        wallet = new Wallet(params, keyChainGroup);
+        DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
+        wallet.removeHDChain(wallet.getActiveKeyChain());
+        wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
+            @Override
+            protected ImmutableList<ChildNumber> getAccountPath() {
+                return BIP44_ACCOUNT_SLP_PATH;
+            }
+        });
+        this.walletFile = file;
+    }
+
     private TransactionOutput getMyOutput(Transaction tx) {
         for(TransactionOutput output : tx.getOutputs()) {
             if(!output.getScriptPubKey().isOpReturn()) {
@@ -79,18 +94,6 @@ public class SlpAppKit {
         return null;
     }
 
-    public SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup) {
-        wallet = new Wallet(params, keyChainGroup);
-        DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
-        wallet.removeHDChain(wallet.getActiveKeyChain());
-        wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
-            @Override
-            protected ImmutableList<ChildNumber> getAccountPath() {
-                return BIP44_ACCOUNT_SLP_PATH;
-            }
-        });
-    }
-
     public static SlpAppKit loadFromFile(File file, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         DeterministicKeyChain.setAccountPath(DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         try {
@@ -98,7 +101,7 @@ public class SlpAppKit {
             try {
                 stream = new FileInputStream(file);
                 Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-                return new SlpAppKit(wallet);
+                return new SlpAppKit(wallet, file);
             } finally {
                 if (stream != null) stream.close();
             }
@@ -108,7 +111,7 @@ public class SlpAppKit {
     }
 
     public void startWallet() throws BlockStoreException, InterruptedException {
-        File chainFile = new File("test.spvchain");
+        File chainFile = new File(this.walletFile.getName() + ".spvchain");
         spvBlockStore = new SPVBlockStore(this.wallet.getParams(), chainFile);
         blockChain = new BlockChain(this.wallet.getParams(), spvBlockStore);
         peerGroup = new PeerGroup(this.wallet.getParams(), blockChain);
@@ -116,7 +119,7 @@ public class SlpAppKit {
 
         blockChain.addWallet(wallet);
         peerGroup.addWallet(wallet);
-        wallet.autosaveToFile(new File("test.wallet"), 5, TimeUnit.SECONDS, null);
+        wallet.autosaveToFile(this.walletFile, 5, TimeUnit.SECONDS, null);
         DownloadProgressTracker bListener = new DownloadProgressTracker() {
             @Override
             public void doneDownload() {

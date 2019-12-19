@@ -188,11 +188,7 @@ public class Main extends Application {
 
     public static void main(String[] args) {
         SlpAppKit slpWallet = null;
-        try {
-            slpWallet = new SlpAppKit(MainNetParams.get(), new DeterministicSeed("", null, "", 1555990593));
-        } catch (UnreadableWalletException e) {
-            e.printStackTrace();
-        }
+        slpWallet = new SlpAppKit(MainNetParams.get(), new File("test.wallet"));
         /*try {
             slpWallet = SlpWallet.loadFromFile(new File("test.wallet"));
         } catch (UnreadableWalletException e) {
