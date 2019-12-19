@@ -46,19 +46,7 @@ public class SlpAppKit {
         this.wallet = wallet;
         this.walletFile = file;
         this.wallet.allowSpendingUnconfirmedTransactions();
-        this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
-            @Override
-            public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                populateUtxoAndTokenMap();
-            }
-        });
-        this.wallet.addCoinsSentEventListener(new WalletCoinsSentEventListener() {
-            @Override
-            public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                populateUtxoAndTokenMap();
-            }
-        });
-        this.populateUtxoAndTokenMap();
+        this.addEventListeners();
     }
 
     public SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
@@ -72,20 +60,7 @@ public class SlpAppKit {
                 return BIP44_ACCOUNT_SLP_PATH;
             }
         });
-        this.wallet.allowSpendingUnconfirmedTransactions();
-        this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
-            @Override
-            public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                populateUtxoAndTokenMap();
-            }
-        });
-        this.wallet.addCoinsSentEventListener(new WalletCoinsSentEventListener() {
-            @Override
-            public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                populateUtxoAndTokenMap();
-            }
-        });
-        this.populateUtxoAndTokenMap();
+        this.addEventListeners();
     }
 
     public static SlpAppKit loadFromFile(File file, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
@@ -218,6 +193,23 @@ public class SlpAppKit {
         for(SlpUTXO slpUTXO : selectedSlpUtxos) {
             this.slpUtxos.remove(slpUTXO);
         }
+    }
+
+    private void addEventListeners() {
+        this.wallet.allowSpendingUnconfirmedTransactions();
+        this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
+            @Override
+            public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                populateUtxoAndTokenMap();
+            }
+        });
+        this.wallet.addCoinsSentEventListener(new WalletCoinsSentEventListener() {
+            @Override
+            public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                populateUtxoAndTokenMap();
+            }
+        });
+        this.populateUtxoAndTokenMap();
     }
 
     private void populateUtxoAndTokenMap() {
