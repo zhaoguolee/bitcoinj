@@ -209,7 +209,6 @@ public class SlpAppKit {
             if(inputTokensRaw < sendTokensRaw) {
                 selectedUtxos.add(tempSlpUtxo.getTxUtxo());
                 selectedSlpUtxos.add(tempSlpUtxo);
-                //TODO change the 8 so it works dynamically with tokens that have different decimal amounts.
                 inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(tokenDecimals).doubleValue();
                 inputSatoshi += (tempSlpUtxo.getTxUtxo().getValue().value - 148L); // Deduct input fee
             }
