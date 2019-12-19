@@ -182,11 +182,11 @@ public class SlpAppKit {
         peerGroup.start();
         peerGroup.startBlockChainDownload(bListener);
 
-        try {
+        /*try {
             this.sendToken("bitcoincash:qphadnkmdzzwu7xw6rr76c0fmucmpwpkgs0a80faf5", "ac5f9e698e560bb5db9fc2f028aa2992f447d15f0061f3feee8a5d90600d319b", 23.0);
         } catch (InsufficientMoneyException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public void sendToken(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
