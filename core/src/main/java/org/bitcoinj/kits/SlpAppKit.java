@@ -43,23 +43,9 @@ public class SlpAppKit {
     }
 
     public SlpAppKit(Wallet wallet, File file) {
-        this.walletFile = file;
         this.wallet = wallet;
+        this.walletFile = file;
         this.wallet.allowSpendingUnconfirmedTransactions();
-        this.populateUtxoAndTokenMap();
-    }
-
-    public SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
-        wallet = new Wallet(params, keyChainGroup);
-        this.wallet.allowSpendingUnconfirmedTransactions();
-        DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
-        wallet.removeHDChain(wallet.getActiveKeyChain());
-        wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
-            @Override
-            protected ImmutableList<ChildNumber> getAccountPath() {
-                return BIP44_ACCOUNT_SLP_PATH;
-            }
-        });
         this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
             @Override
             public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
@@ -72,7 +58,33 @@ public class SlpAppKit {
                 populateUtxoAndTokenMap();
             }
         });
+        this.populateUtxoAndTokenMap();
+    }
+
+    public SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
+        wallet = new Wallet(params, keyChainGroup);
         this.walletFile = file;
+        DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
+        wallet.removeHDChain(wallet.getActiveKeyChain());
+        wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
+            @Override
+            protected ImmutableList<ChildNumber> getAccountPath() {
+                return BIP44_ACCOUNT_SLP_PATH;
+            }
+        });
+        this.wallet.allowSpendingUnconfirmedTransactions();
+        this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
+            @Override
+            public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                populateUtxoAndTokenMap();
+            }
+        });
+        this.wallet.addCoinsSentEventListener(new WalletCoinsSentEventListener() {
+            @Override
+            public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                populateUtxoAndTokenMap();
+            }
+        });
         this.populateUtxoAndTokenMap();
     }
 
