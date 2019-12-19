@@ -315,14 +315,6 @@ public class SlpAppKit {
                             String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
                             long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
 
-                            //TODO change -8 to negative of token decimal since not all tokens have the same decimal count
-                            double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-8).doubleValue();
-
-                            SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, myOutput);
-                            if(!this.tokenUtxoIsMapped(slpUTXO)) {
-                                slpUtxos.add(slpUTXO);
-                            }
-
                             if(!this.tokenIsMapped(tokenId)) {
                                 SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
                                 JSONObject tokenData = null;
@@ -336,9 +328,25 @@ public class SlpAppKit {
                                 System.out.println(tokenData.toString());
                                 int decimals = tokenData.getJSONObject("tokenDetails").getInt("decimals");
                                 String ticker = tokenData.getJSONObject("tokenDetails").getString("symbol");
+
+                                double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
+                                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, myOutput);
+                                if(!this.tokenUtxoIsMapped(slpUTXO)) {
+                                    slpUtxos.add(slpUTXO);
+                                }
+
                                 SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
                                 slpTokens.add(slpToken);
                                 this.saveTokens(this.slpTokens);
+                            } else {
+                                SlpToken slpToken = this.getSlpToken(tokenId);
+                                int decimals = slpToken.getDecimals();
+
+                                double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
+                                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, myOutput);
+                                if(!this.tokenUtxoIsMapped(slpUTXO)) {
+                                    slpUtxos.add(slpUTXO);
+                                }
                             }
                         }
                     }
@@ -391,6 +399,16 @@ public class SlpAppKit {
         }
 
         return false;
+    }
+
+    private SlpToken getSlpToken(String tokenId) {
+        for(SlpToken slpToken : this.slpTokens) {
+            if(slpToken.getTokenId().equals(tokenId)) {
+                return slpToken;
+            }
+        }
+
+        return null;
     }
 
     public Wallet getWallet() {
