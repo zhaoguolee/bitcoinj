@@ -172,7 +172,7 @@ public class SlpWallet {
             }
         }
 
-        long propagationFixFee = 600L;
+        long propagationFixFee = 550L;
         long numOutputs = 3L; // Assume three outputs in addition to the op return.
         long numQuanitites = 2L; // Assume one token receiver and the token receiver
         long fee = this.outputFee(numOutputs) + this.sizeInBytes(numQuanitites) + propagationFixFee;
@@ -194,7 +194,7 @@ public class SlpWallet {
 
         SendRequest req = SendRequest.createSlpTransaction(wallet.params);
         req.shuffleOutputs = false;
-        req.feePerKb = Coin.valueOf(2000L);
+        req.feePerKb = Coin.valueOf(1000L);
         req.utxos = selectedUtxos;
         SlpOpReturnOutput slpOpReturn = new SlpOpReturnOutput(tokenId, sendTokensRaw, changeTokens);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
