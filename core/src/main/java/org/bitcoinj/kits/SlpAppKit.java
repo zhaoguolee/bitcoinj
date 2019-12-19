@@ -195,6 +195,8 @@ public class SlpAppKit {
     }
 
     private void populateUtxoAndTokenMap() {
+        slpTokens.clear();
+        slpUtxos.clear();
         for(Transaction tx : wallet.getRecentTransactions(0, false)) {
             if(tx.getValue(wallet).isPositive()) {
                 if(tx.getValue(wallet).value == MIN_DUST) {
