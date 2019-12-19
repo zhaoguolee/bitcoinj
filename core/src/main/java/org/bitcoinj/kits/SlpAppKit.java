@@ -324,8 +324,6 @@ public class SlpAppKit {
                                     e.printStackTrace();
                                 }
 
-                                //TODO cache token details in a json file next to .wallet file
-                                System.out.println(tokenData.toString());
                                 int decimals = tokenData.getJSONObject("tokenDetails").getInt("decimals");
                                 String ticker = tokenData.getJSONObject("tokenDetails").getString("symbol");
 
