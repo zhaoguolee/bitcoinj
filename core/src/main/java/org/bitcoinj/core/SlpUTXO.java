@@ -2,10 +2,10 @@ package org.bitcoinj.core;
 
 public class SlpUTXO {
     private String tokenId;
-    private long tokenAmount;
+    private double tokenAmount;
     private TransactionOutput txUtxo;
 
-    public SlpUTXO(String tokenId, long tokenAmount, TransactionOutput txUtxo) {
+    public SlpUTXO(String tokenId, double tokenAmount, TransactionOutput txUtxo) {
         this.tokenId = tokenId;
         this.tokenAmount = tokenAmount;
         this.txUtxo = txUtxo;
@@ -15,7 +15,7 @@ public class SlpUTXO {
         return this.tokenId;
     }
 
-    public long getTokenAmount() {
+    public double getTokenAmount() {
         return this.tokenAmount;
     }
 

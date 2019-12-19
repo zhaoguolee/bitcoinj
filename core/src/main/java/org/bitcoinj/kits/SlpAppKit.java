@@ -181,9 +181,16 @@ public class SlpAppKit {
 
         peerGroup.start();
         peerGroup.startBlockChainDownload(bListener);
+
+        try {
+            this.sendToken("bitcoincash:qphadnkmdzzwu7xw6rr76c0fmucmpwpkgs0a80faf5", "ac5f9e698e560bb5db9fc2f028aa2992f447d15f0061f3feee8a5d90600d319b", 23.0);
+        } catch (InsufficientMoneyException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void sendToken(String slpDestinationAddress, String tokenId, long numTokens) throws InsufficientMoneyException {
+    public void sendToken(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
+        //TODO change the 8 so it works dynamically with tokens that have different decimal amounts.
         long sendTokensRaw = BigDecimal.valueOf(numTokens).scaleByPowerOfTen(8).longValueExact();
         long sendSatoshi = this.MIN_DUST;
 
@@ -202,7 +209,8 @@ public class SlpAppKit {
             if(inputTokensRaw < sendTokensRaw) {
                 selectedUtxos.add(tempSlpUtxo.getTxUtxo());
                 selectedSlpUtxos.add(tempSlpUtxo);
-                inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(8).longValueExact();
+                //TODO change the 8 so it works dynamically with tokens that have different decimal amounts.
+                inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(8).doubleValue();
                 inputSatoshi += (tempSlpUtxo.getTxUtxo().getValue().value - 148L); // Deduct input fee
             }
         }
@@ -310,7 +318,7 @@ public class SlpAppKit {
                             //TODO change -8 to negative of token decimal since not all tokens have the same decimal count
                             double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-8).doubleValue();
 
-                            SlpUTXO slpUTXO = new SlpUTXO(tokenId, (long) tokenAmount, myOutput);
+                            SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, myOutput);
                             if(!this.tokenUtxoIsMapped(slpUTXO)) {
                                 slpUtxos.add(slpUTXO);
                             }

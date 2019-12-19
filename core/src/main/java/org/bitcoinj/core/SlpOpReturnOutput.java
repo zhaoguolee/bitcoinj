@@ -12,6 +12,7 @@ public class SlpOpReturnOutput {
     private Script script;
     private byte[] lokad = new byte[] {83, 76, 80, 0};
     private byte[] type = new byte[] {1};
+    private int PUSHDATA_BYTES = 8;
     public SlpOpReturnOutput(String tokenId, long tokenAmount, long changeAmount) {
         ScriptBuilder scriptBuilder = new ScriptBuilder()
                 .op(ScriptOpCodes.OP_RETURN)
@@ -19,9 +20,9 @@ public class SlpOpReturnOutput {
                 .addChunk(new ScriptChunk(type.length, type))
                 .data("SEND".getBytes())
                 .data(Hex.decode(tokenId))
-                .data(ByteBuffer.allocate(8).putLong(tokenAmount).array());
+                .data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(tokenAmount).array());
                 if(changeAmount > 0) {
-                    scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(8).putLong(changeAmount).array());
+                    scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(changeAmount).array());
                 }
         this.script = scriptBuilder.build();
     }
