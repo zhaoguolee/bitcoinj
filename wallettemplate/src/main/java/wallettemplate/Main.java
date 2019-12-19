@@ -14,9 +14,11 @@
 
 package wallettemplate;
 
+import com.subgraph.orchid.encoders.Base64Encoder;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.params.*;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.wallet.*;
@@ -27,6 +29,7 @@ import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.spongycastle.util.encoders.Base64;
 import wallettemplate.controls.NotificationBarPane;
 import wallettemplate.utils.GuiUtils;
 
@@ -34,6 +37,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import static wallettemplate.utils.GuiUtils.*;
 
@@ -189,7 +193,7 @@ public class Main extends Application {
     public static void main(String[] args) {
         SlpAppKit slpWallet = null;
         try {
-            slpWallet = new SlpAppKit().initialize(MainNetParams.get(), new File("test.wallet"), null);
+            slpWallet = new SlpAppKit().initialize(MainNetParams.get(), new File("test.wallet"), new DeterministicSeed("", null, "", 1576605103));
 
             slpWallet.startWallet();
         } catch (UnreadableWalletException | InterruptedException | BlockStoreException | IOException e) {

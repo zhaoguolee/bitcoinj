@@ -5,12 +5,16 @@ import com.subgraph.orchid.encoders.Hex;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.net.SlpDbProcessor;
+import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.wallet.*;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -25,6 +29,7 @@ public class SlpAppKit {
     private BlockChain blockChain;
     private PeerGroup peerGroup;
     private File walletFile;
+    private File tokensFile;
 
     private long MIN_DUST = 546L;
     private long OP_RETURN_NUM_BYTES_BASE = 55;
@@ -34,6 +39,7 @@ public class SlpAppKit {
     private ArrayList<TransactionOutput> bchUtxos = new ArrayList<TransactionOutput>();
     private ArrayList<SlpToken> slpTokens = new ArrayList<SlpToken>();
 
+    private SlpDbProcessor slpDbProcessor;
     public SlpAppKit() {
 
     }
@@ -50,7 +56,7 @@ public class SlpAppKit {
         this.wallet = wallet;
         this.walletFile = file;
         this.wallet.allowSpendingUnconfirmedTransactions();
-        this.addEventListeners();
+        this.completeSetupOfWallet();
     }
 
     private SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
@@ -64,7 +70,7 @@ public class SlpAppKit {
                 return BIP44_ACCOUNT_SLP_PATH;
             }
         });
-        this.addEventListeners();
+        this.completeSetupOfWallet();
     }
 
     public SlpAppKit initialize(NetworkParameters params, File file, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
@@ -75,6 +81,64 @@ public class SlpAppKit {
                 return new SlpAppKit(params, seed, file);
             } else {
                 return new SlpAppKit(params, file);
+            }
+        }
+    }
+
+    private void saveTokens(ArrayList<SlpToken> slpTokens) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tokensFile.getName()), StandardCharsets.UTF_8))) {
+            JSONArray json = new JSONArray();
+            for(SlpToken slpToken : slpTokens) {
+                JSONObject tokenObj = new JSONObject();
+                tokenObj.put("tokenId", slpToken.getTokenId());
+                tokenObj.put("ticker", slpToken.getTicker());
+                tokenObj.put("decimals", slpToken.getDecimals());
+                json.put(tokenObj);
+            }
+            writer.write(json.toString());
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadTokens() {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(this.tokensFile.getName()));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        try {
+            StringBuilder sb = new StringBuilder();
+            assert br != null;
+            String line = br.readLine();
+
+            while (line != null) {
+                sb.append(line);
+                sb.append(System.lineSeparator());
+                line = br.readLine();
+            }
+            String jsonString = sb.toString();
+            JSONArray tokensJson = new JSONArray(jsonString);
+            for(int x = 0; x < tokensJson.length(); x++) {
+                JSONObject tokenObj = tokensJson.getJSONObject(x);
+                String tokenId = tokenObj.getString("tokenId");
+                String ticker = tokenObj.getString("ticker");
+                int decimals = tokenObj.getInt("decimals");
+                SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
+                this.slpTokens.add(slpToken);
+            }
+
+            System.out.println(this.slpTokens);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                assert br != null;
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -206,7 +270,14 @@ public class SlpAppKit {
         }
     }
 
-    private void addEventListeners() {
+    private void completeSetupOfWallet() {
+        File tokenDataFile = new File(this.walletFile.getName() + ".tokens");
+        this.tokensFile = tokenDataFile;
+        if(tokenDataFile.exists()) {
+            this.loadTokens();
+        }
+
+        this.slpDbProcessor = new SlpDbProcessor();
         this.wallet.allowSpendingUnconfirmedTransactions();
         this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
             @Override
@@ -224,7 +295,6 @@ public class SlpAppKit {
     }
 
     private void populateUtxoAndTokenMap() {
-        slpUtxos.clear();
         for(Transaction tx : wallet.getRecentTransactions(0, false)) {
             if(tx.getValue(wallet).isPositive()) {
                 if(tx.getValue(wallet).value == MIN_DUST) {
@@ -239,10 +309,26 @@ public class SlpAppKit {
                             double tokenAmount = tokenAmountRaw / 100000000D;
 
                             SlpUTXO slpUTXO = new SlpUTXO(tokenId, (long) tokenAmount, myOutput);
-                            SlpToken slpToken = new SlpToken(tokenId);
-                            if(!this.tokenIsMapped(tokenId)) {
-                                slpTokens.add(slpToken);
+                            if(!this.tokenUtxoIsMapped(slpUTXO)) {
                                 slpUtxos.add(slpUTXO);
+                            }
+
+                            if(!this.tokenIsMapped(tokenId)) {
+                                SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
+                                JSONObject tokenData = null;
+                                try {
+                                    tokenData = slpDbProcessor.getTokenData(tokenQuery.getEncoded());
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                                //TODO cache token details in a json file next to .wallet file
+                                System.out.println(tokenData.toString());
+                                int decimals = tokenData.getJSONObject("tokenDetails").getInt("decimals");
+                                String ticker = tokenData.getJSONObject("tokenDetails").getString("symbol");
+                                SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
+                                slpTokens.add(slpToken);
+                                this.saveTokens(this.slpTokens);
                             }
                         }
                     }
@@ -276,6 +362,20 @@ public class SlpAppKit {
     private boolean tokenIsMapped(String tokenId) {
         for(SlpToken slpToken : this.slpTokens) {
             if(slpToken.getTokenId().equals(tokenId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean tokenUtxoIsMapped(SlpUTXO slpUtxo) {
+        for(SlpUTXO mappedUtxo : this.slpUtxos) {
+            String mappedUtxoHash = mappedUtxo.getTxUtxo().getParentTransactionHash().toString();
+            int mappedUtxoIndex = mappedUtxo.getTxUtxo().getIndex();
+            String slpUtxoHash = slpUtxo.getTxUtxo().getParentTransactionHash().toString();
+            int slpUtxoIndex = slpUtxo.getTxUtxo().getIndex();
+            if(mappedUtxoHash.equals(slpUtxoHash) && mappedUtxoIndex == slpUtxoIndex) {
                 return true;
             }
         }
