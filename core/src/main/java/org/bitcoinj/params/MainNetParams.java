@@ -137,6 +137,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         // Nov, 13 hard fork
         daaUpdateHeight = 504031;
         cashAddrPrefix = "bitcoincash";
+        simpleledgerPrefix = "simpleledger";
     }
 
     private static MainNetParams instance;

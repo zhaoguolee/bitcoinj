@@ -425,4 +425,12 @@ public class SlpAppKit {
     public PeerGroup getPeerGroup() {
         return this.peerGroup;
     }
+
+    public SlpAddress currentSlpReceiveAddress() {
+        return SlpAddress.fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString());
+    }
+
+    public SlpAddress freshSlpReceiveAddress() {
+        return SlpAddress.fromCashAddr(this.wallet.getParams(), this.wallet.freshReceiveAddress().toString());
+    }
 }

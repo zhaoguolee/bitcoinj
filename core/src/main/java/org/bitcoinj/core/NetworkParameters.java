@@ -118,6 +118,7 @@ public abstract class NetworkParameters {
     protected Map<Integer, Sha256Hash> checkpoints = new HashMap<Integer, Sha256Hash>();
     protected transient MessageSerializer defaultSerializer = null;
     protected String cashAddrPrefix;
+    protected String simpleledgerPrefix;
 
     protected NetworkParameters() {
         alertSigningKey = SATOSHI_KEY;
@@ -558,6 +559,10 @@ public abstract class NetworkParameters {
 
     public String getCashAddrPrefix() {
         return cashAddrPrefix;
+    }
+
+    public String getSimpleledgerPrefix() {
+        return simpleledgerPrefix;
     }
 
     public static enum ProtocolVersion {

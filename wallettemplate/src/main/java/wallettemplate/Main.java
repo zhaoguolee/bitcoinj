@@ -16,6 +16,7 @@ package wallettemplate;
 
 import com.subgraph.orchid.encoders.Base64Encoder;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.SlpAddress;
 import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.SlpDbTokenDetails;
