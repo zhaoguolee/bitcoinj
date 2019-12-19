@@ -9,6 +9,8 @@ import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.wallet.*;
+import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
+import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -56,6 +58,18 @@ public class SlpAppKit {
             @Override
             protected ImmutableList<ChildNumber> getAccountPath() {
                 return BIP44_ACCOUNT_SLP_PATH;
+            }
+        });
+        this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
+            @Override
+            public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                populateUtxoAndTokenMap();
+            }
+        });
+        this.wallet.addCoinsSentEventListener(new WalletCoinsSentEventListener() {
+            @Override
+            public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                populateUtxoAndTokenMap();
             }
         });
         this.walletFile = file;
@@ -195,7 +209,6 @@ public class SlpAppKit {
     }
 
     private void populateUtxoAndTokenMap() {
-        slpTokens.clear();
         slpUtxos.clear();
         for(Transaction tx : wallet.getRecentTransactions(0, false)) {
             if(tx.getValue(wallet).isPositive()) {
