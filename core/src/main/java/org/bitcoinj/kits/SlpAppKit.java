@@ -30,6 +30,7 @@ public class SlpAppKit {
 
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<SlpUTXO>();
     private ArrayList<TransactionOutput> bchUtxos = new ArrayList<TransactionOutput>();
+    private ArrayList<SlpToken> slpTokens = new ArrayList<SlpToken>();
 
     public SlpAppKit(NetworkParameters params, File file) {
         this(params, new KeyChainGroup(params), file);
@@ -43,32 +44,12 @@ public class SlpAppKit {
         this.walletFile = file;
         this.wallet = wallet;
         this.wallet.allowSpendingUnconfirmedTransactions();
-        for(Transaction tx : wallet.getRecentTransactions(0, false)) {
-            if(tx.getValue(wallet).isPositive()) {
-                if(tx.getValue(wallet).value == MIN_DUST) {
-                    if(tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
-                        //4de69e374a8ed21cbddd47f2338cc0f479dc58daa2bbe11cd604ca488eca0ddf
-                        String tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
-                        if(tokenId.equals("532fca8907107e199b89fa4b1691350edf595ee7d6fb3d053746e3b07cab568c")) {
-                            TransactionOutput myOutput = getMyOutput(tx);
-                            int chunkPosition = myOutput.getIndex() + 4;
-                            String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
-                            long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
-                            System.out.println("Token amount " + tokenAmountRaw);
-                            double tokenAmount = tokenAmountRaw / 100000000D;
-                            System.out.println("Token amount " + tokenAmount);
-                            System.out.println("Tx hash " + tx.getHashAsString());
-
-                            slpUtxos.add(new SlpUTXO(tokenId, (long)tokenAmount, myOutput));
-                        }
-                    }
-                }
-            }
-        }
+        this.populateUtxoAndTokenMap();
     }
 
     public SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
         wallet = new Wallet(params, keyChainGroup);
+        this.wallet.allowSpendingUnconfirmedTransactions();
         DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
         wallet.removeHDChain(wallet.getActiveKeyChain());
         wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
@@ -78,6 +59,7 @@ public class SlpAppKit {
             }
         });
         this.walletFile = file;
+        this.populateUtxoAndTokenMap();
     }
 
     private TransactionOutput getMyOutput(Transaction tx) {
@@ -149,11 +131,13 @@ public class SlpAppKit {
         }
 
         ArrayList<TransactionOutput> selectedUtxos = new ArrayList<>();
+        ArrayList<SlpUTXO> selectedSlpUtxos = new ArrayList<>();
         long inputTokensRaw = 0L;
         long inputSatoshi = 0L;
         for(SlpUTXO tempSlpUtxo : tempSlpUtxos) {
             if(inputTokensRaw < sendTokensRaw) {
                 selectedUtxos.add(tempSlpUtxo.getTxUtxo());
+                selectedSlpUtxos.add(tempSlpUtxo);
                 inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(8).longValueExact();
                 inputSatoshi += (tempSlpUtxo.getTxUtxo().getValue().value - 148L); // Deduct input fee
             }
@@ -176,7 +160,7 @@ public class SlpAppKit {
             }
         }
 
-        long propagationFixFee = 550L;
+        long propagationFixFee = 550L; //Helps avoid not having enough BCH for tx, and propagating tx
         long numOutputs = 3L; // Assume three outputs in addition to the op return.
         long numQuanitites = 2L; // Assume one token receiver and the token receiver
         long fee = this.outputFee(numOutputs) + this.sizeInBytes(numQuanitites) + propagationFixFee;
@@ -216,6 +200,40 @@ public class SlpAppKit {
 
         Transaction tx = wallet.sendCoinsOffline(req);
         System.out.println(new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));
+
+        for(SlpUTXO slpUTXO : selectedSlpUtxos) {
+            this.slpUtxos.remove(slpUTXO);
+        }
+    }
+
+    private void populateUtxoAndTokenMap() {
+        for(Transaction tx : wallet.getRecentTransactions(0, false)) {
+            if(tx.getValue(wallet).isPositive()) {
+                if(tx.getValue(wallet).value == MIN_DUST) {
+                    if(tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
+                        String protocolId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1).data), StandardCharsets.UTF_8);
+                        if(protocolId.equals("5262419")) {
+                            String tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
+                            TransactionOutput myOutput = getMyOutput(tx);
+                            int chunkPosition = myOutput.getIndex() + 4;
+                            String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
+                            long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
+                            double tokenAmount = tokenAmountRaw / 100000000D;
+
+                            SlpUTXO slpUTXO = new SlpUTXO(tokenId, (long) tokenAmount, myOutput);
+                            if (slpUtxos.indexOf(slpUTXO) == -1) {
+                                slpUtxos.add(slpUTXO);
+                            }
+
+                            SlpToken slpToken = new SlpToken(tokenId);
+                            if(slpTokens.indexOf(slpToken) == -1) {
+                                slpTokens.add(slpToken);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private long outputFee(long numOutputs) {
