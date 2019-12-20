@@ -163,8 +163,6 @@ public class SlpAppKit {
                 this.verifiedSlpTxs.add(txHash);
                 line = br.readLine();
             }
-
-            System.out.println(this.verifiedSlpTxs);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -380,10 +378,6 @@ public class SlpAppKit {
                     this.processUtxo(utxo, tx);
                 }
             }
-        }
-
-        for(SlpTokenBalance tokenBalance : this.slpBalances) {
-            System.out.println(tokenBalance.getTokenId() + " / BAL: " + tokenBalance.getBalance());
         }
     }
 
