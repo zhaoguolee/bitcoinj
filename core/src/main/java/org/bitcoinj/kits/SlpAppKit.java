@@ -140,7 +140,7 @@ public class SlpAppKit {
         }
     }
 
-    private void saveRecordedTxs(ArrayList<String> recordedSlpTxs) {
+    private void saveVerifiedTxs(ArrayList<String> recordedSlpTxs) {
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.walletFile.getName() + ".txs"), StandardCharsets.UTF_8))) {
             StringBuilder text = new StringBuilder();
             for(String txHash : recordedSlpTxs) {
@@ -359,7 +359,7 @@ public class SlpAppKit {
                 boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded(), tx.getHashAsString());
                 if(valid) {
                     this.verifiedSlpTxs.add(tx.getHashAsString());
-                    this.saveRecordedTxs(this.verifiedSlpTxs);
+                    this.saveVerifiedTxs(this.verifiedSlpTxs);
                 }
                 return valid;
             } else {
