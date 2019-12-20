@@ -192,7 +192,24 @@ public class Main extends Application {
         Runtime.getRuntime().exit(0);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("slp.wallet"), null);
+        slpAppKit.startWallet();
 
+        while(true) {
+            System.out.println("SLP tokens:");
+            for(SlpTokenBalance tokenBalance : slpAppKit.getSlpBalances()) {
+                SlpToken slpToken = slpAppKit.getSlpToken(tokenBalance.getTokenId());
+                //The wallet might not have the SLP token saved yet. So we check if it's null or not.
+                if(slpToken != null) {
+                    System.out.println(slpToken.getTicker() + " > " + tokenBalance.getTokenId() + " > " + tokenBalance.getBalance());
+                } else {
+                    System.out.println(tokenBalance.getTokenId() + " > " + tokenBalance.getBalance());
+                }
+            }
+
+            System.out.println(slpAppKit.currentSlpReceiveAddress().toString());
+            Thread.sleep(2500);
+        }
     }
 }

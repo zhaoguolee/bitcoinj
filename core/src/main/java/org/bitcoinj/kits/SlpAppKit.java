@@ -60,7 +60,6 @@ public class SlpAppKit {
     public SlpAppKit(Wallet wallet, File file) {
         this.wallet = wallet;
         this.walletFile = file;
-        this.wallet.allowSpendingUnconfirmedTransactions();
         this.completeSetupOfWallet();
     }
 
@@ -209,17 +208,6 @@ public class SlpAppKit {
             @Override
             public void doneDownload() {
                 System.out.println("blockchain downloaded");
-
-                System.out.println("SLP TOKENS " + slpTokens.toString());
-
-                /*Transaction tx = null;
-                try {
-                    tx = createSlpTransaction("simpleledger:qrayjjc9m6ay84m2w47ncnxas5lg07lqs59l499c0h", "685fc650a01e4d1466fee1c8d89fcafaa5f7b101751c19d2a6d4af6c0267de09", 5);
-                    System.out.println("Tx hex: " + new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));
-                    broadcastSlpTransaction(tx);
-                } catch (InsufficientMoneyException e) {
-                    e.printStackTrace();
-                }*/
             }
         };
 

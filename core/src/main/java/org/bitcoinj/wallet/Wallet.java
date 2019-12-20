@@ -4125,7 +4125,7 @@ public class Wallet extends BaseTaggableObject
      * @param excludeImmatureCoinbases Whether to ignore coinbase outputs that we will be able to spend in future once they mature.
      * @param excludeUnsignable Whether to ignore outputs that we are tracking but don't have the keys to sign for.
      */
-    public List<TransactionOutput> calculateAllSpendCandidates(boolean excludeImmatureCoinbases, boolean excludeUnsignable) {
+    public List<TransactionOutput> calculateAllSpendCandidates(boolean excludeImmatureCoinbases, boolean excludeUnsignable, boolean includeDust) {
         lock.lock();
         try {
             List<TransactionOutput> candidates;
@@ -4137,8 +4137,11 @@ public class Wallet extends BaseTaggableObject
                     if (excludeImmatureCoinbases && !transaction.isMature())
                         continue;
 
-                    if(output.getValue().value != 546L)
+                    if(output.getValue().value != 546L) {
                         candidates.add(output);
+                    } else if(includeDust) {
+                        candidates.add(output);
+                    }
                 }
             } else {
                 candidates = calculateAllSpendCandidatesFromUTXOProvider(excludeImmatureCoinbases);
@@ -4147,6 +4150,10 @@ public class Wallet extends BaseTaggableObject
         } finally {
             lock.unlock();
         }
+    }
+
+    public List<TransactionOutput> calculateAllSpendCandidates(boolean excludeImmatureCoinbases, boolean excludeUnsignable) {
+        return this.calculateAllSpendCandidates(excludeImmatureCoinbases, excludeUnsignable, false);
     }
 
     /**
@@ -4318,7 +4325,7 @@ public class Wallet extends BaseTaggableObject
     }
 
     public List<TransactionOutput> getUtxos() {
-        return this.calculateAllSpendCandidates(true, true);
+        return this.calculateAllSpendCandidates(false, true, true);
     }
 
     //endregion
