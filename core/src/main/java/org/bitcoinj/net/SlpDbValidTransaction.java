@@ -6,27 +6,27 @@ import org.spongycastle.util.encoders.Base64;
 
 import java.nio.charset.StandardCharsets;
 
-public class SlpDbTokenDetails {
+public class SlpDbValidTransaction {
     private String json;
 
-    public SlpDbTokenDetails(String tokenId) {
+    public SlpDbValidTransaction(String txId) {
         JSONObject json = new JSONObject();
         json.put("v", 3);
         JSONObject q = new JSONObject();
-        q.put("db", new JSONArray().put("t"));
+        q.put("db", new JSONArray().put("c").put("u"));
         JSONObject findJson = new JSONObject();
-        JSONObject $queryJson = new JSONObject();
-        $queryJson.put("tokenDetails.tokenIdHex", tokenId);
-        findJson.put("$query", $queryJson);
+        findJson.put("tx.h", txId);
+        findJson.put("slp.valid", true);
         q.put("find", findJson);
         JSONObject project = new JSONObject();
-        project.put("tokenDetails", 1);
+        project.put("tx.h", 1);
+        project.put("slp.valid", 1);
         project.put("_id", 0);
         q.put("project", project);
-        q.put("limit", 1000);
+        q.put("limit", 10);
         json.put("q", q);
         JSONObject r = new JSONObject();
-        r.put("f", "[.[] | {decimals: .tokenDetails.decimals, ticker: .tokenDetails.symbol}]");
+        r.put("f", "[.[] | {valid: .slp.valid}]");
         json.put("r", r);
 
         this.json = json.toString();

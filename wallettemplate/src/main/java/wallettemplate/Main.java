@@ -15,8 +15,8 @@
 package wallettemplate;
 
 import com.subgraph.orchid.encoders.Base64Encoder;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.SlpAddress;
+import com.subgraph.orchid.encoders.Hex;
+import org.bitcoinj.core.*;
 import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.SlpDbTokenDetails;
@@ -195,13 +195,11 @@ public class Main extends Application {
     public static void main(String[] args) {
         SlpAppKit slpWallet = null;
         try {
-            slpWallet = new SlpAppKit().initialize(MainNetParams.get(), new File("test.wallet"), new DeterministicSeed("", null, "", 1576605103));
+            slpWallet = new SlpAppKit().initialize(MainNetParams.get(), new File("bch.wallet"), new DeterministicSeed("", null, "", 1576605103));
 
             slpWallet.startWallet();
-        } catch (UnreadableWalletException | InterruptedException | BlockStoreException | IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("SLP WALLET SEED " + slpWallet.getWallet().getKeyChainSeed().toString());
-        System.out.println("SLP ADDRESS " + slpWallet.getWallet().currentReceiveAddress().toString());
     }
 }
