@@ -194,7 +194,7 @@ public class Main extends Application {
 
     public static void main(String[] args) throws Exception {
         SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("./misc"), "wallet", null);
-        slpAppKit.startWallet();
+        slpAppKit.startAsync();
 
         while(true) {
             System.out.println("SLP tokens:");
