@@ -526,7 +526,7 @@ public class SlpAppKit {
         return null;
     }
 
-    private SlpToken getSlpToken(String tokenId) {
+    public SlpToken getSlpToken(String tokenId) {
         for(SlpToken slpToken : this.slpTokens) {
             if(slpToken.getTokenId().equals(tokenId)) {
                 return slpToken;
@@ -550,6 +550,10 @@ public class SlpAppKit {
 
     public PeerGroup getPeerGroup() {
         return this.peerGroup;
+    }
+
+    public ArrayList<SlpTokenBalance> getSlpBalances() {
+        return this.slpBalances;
     }
 
     public SlpAddress currentSlpReceiveAddress() {
