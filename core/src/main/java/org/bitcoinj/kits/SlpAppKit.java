@@ -86,7 +86,7 @@ public class SlpAppKit {
     public SlpAppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
         File tmpWalletFile = new File(baseDir, walletName + ".wallet");
         if(tmpWalletFile.exists()) {
-            return loadFromFile(baseDir, walletName);
+            return loadFromFile(baseDir, walletName + ".wallet");
         } else {
             if(seed != null) {
                 return new SlpAppKit(params, seed, baseDir, walletName);
