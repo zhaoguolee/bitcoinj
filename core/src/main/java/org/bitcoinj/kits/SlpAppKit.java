@@ -30,6 +30,8 @@ public class SlpAppKit {
     private SPVBlockStore spvBlockStore;
     private BlockChain blockChain;
     private PeerGroup peerGroup;
+    private File baseDirectory;
+    private String walletName;
     private File walletFile;
     private File tokensFile;
 
@@ -49,23 +51,27 @@ public class SlpAppKit {
 
     }
 
-    public SlpAppKit(NetworkParameters params, File file) {
-        this(params, new KeyChainGroup(params), file);
+    public SlpAppKit(NetworkParameters params, File file, String walletName) {
+        this(params, new KeyChainGroup(params), file, walletName);
     }
 
-    public SlpAppKit(NetworkParameters params, DeterministicSeed seed, File file) {
-        this(params, new KeyChainGroup(params, seed), file);
+    public SlpAppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
+        this(params, new KeyChainGroup(params, seed), file, walletName);
     }
 
-    public SlpAppKit(Wallet wallet, File file) {
+    public SlpAppKit(Wallet wallet, File file, String walletName) {
         this.wallet = wallet;
-        this.walletFile = file;
+        this.baseDirectory = file;
+        this.walletName = walletName;
+        this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
         this.completeSetupOfWallet();
     }
 
-    private SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file) {
+    private SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
         wallet = new Wallet(params, keyChainGroup);
-        this.walletFile = file;
+        this.baseDirectory = file;
+        this.walletName = walletName;
+        this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
         DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
         wallet.removeHDChain(wallet.getActiveKeyChain());
         wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
@@ -77,14 +83,15 @@ public class SlpAppKit {
         this.completeSetupOfWallet();
     }
 
-    public SlpAppKit initialize(NetworkParameters params, File file, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
-        if(file.exists()) {
-            return loadFromFile(file);
+    public SlpAppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
+        File tmpWalletFile = new File(baseDir, walletName + ".wallet");
+        if(tmpWalletFile.exists()) {
+            return loadFromFile(baseDir, walletName);
         } else {
             if(seed != null) {
-                return new SlpAppKit(params, seed, file);
+                return new SlpAppKit(params, seed, baseDir, walletName);
             } else {
-                return new SlpAppKit(params, file);
+                return new SlpAppKit(params, baseDir, walletName);
             }
         }
     }
@@ -141,7 +148,7 @@ public class SlpAppKit {
     }
 
     private void saveVerifiedTxs(ArrayList<String> recordedSlpTxs) {
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.walletFile.getName() + ".txs"), StandardCharsets.UTF_8))) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.baseDirectory, this.walletName + ".txs")), StandardCharsets.UTF_8))) {
             StringBuilder text = new StringBuilder();
             for(String txHash : recordedSlpTxs) {
                 text.append(txHash).append("\n");
@@ -156,7 +163,7 @@ public class SlpAppKit {
     private void loadRecordedTxs() {
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(this.walletFile.getName() + ".txs"));
+            br = new BufferedReader(new FileReader(new File(this.baseDirectory, this.walletName + ".txs")));
             String line = br.readLine();
             while (line != null) {
                 String txHash = line;
@@ -175,14 +182,14 @@ public class SlpAppKit {
         }
     }
 
-    private static SlpAppKit loadFromFile(File file, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+    private static SlpAppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         DeterministicKeyChain.setAccountPath(DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         try {
             FileInputStream stream = null;
             try {
-                stream = new FileInputStream(file);
+                stream = new FileInputStream(new File(baseDir, walletName));
                 Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-                return new SlpAppKit(wallet, file);
+                return new SlpAppKit(wallet, baseDir, walletName);
             } finally {
                 if (stream != null) stream.close();
             }
@@ -192,7 +199,7 @@ public class SlpAppKit {
     }
 
     public void startWallet(DownloadProgressTracker progressTracker) throws BlockStoreException, IOException {
-        File chainFile = new File(this.walletFile.getName() + ".spvchain");
+        File chainFile = new File(this.baseDirectory, this.walletName + ".spvchain");
         spvBlockStore = new SPVBlockStore(this.wallet.getParams(), chainFile);
         blockChain = new BlockChain(this.wallet.getParams(), spvBlockStore);
         peerGroup = new PeerGroup(this.wallet.getParams(), blockChain);
@@ -320,11 +327,11 @@ public class SlpAppKit {
     }
 
     private void completeSetupOfWallet() {
-        File txsDataFile = new File(this.walletFile.getName() + ".txs");
+        File txsDataFile = new File(this.baseDirectory, this.walletName + ".txs");
         if(txsDataFile.exists()) {
             this.loadRecordedTxs();
         }
-        File tokenDataFile = new File(this.walletFile.getName() + ".tokens");
+        File tokenDataFile = new File(this.baseDirectory, this.walletName + ".tokens");
         this.tokensFile = tokenDataFile;
         if(tokenDataFile.exists()) {
             this.loadTokens();

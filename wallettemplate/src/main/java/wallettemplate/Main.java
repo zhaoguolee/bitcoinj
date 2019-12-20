@@ -193,7 +193,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) throws Exception {
-        SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("slp.wallet"), null);
+        SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("./misc"), "wallet", null);
         slpAppKit.startWallet();
 
         while(true) {
