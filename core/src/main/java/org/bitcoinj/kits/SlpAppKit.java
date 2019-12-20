@@ -9,6 +9,7 @@ import org.bitcoinj.net.SlpDbProcessor;
 import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.net.discovery.DnsDiscovery;
+import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.wallet.*;
@@ -353,15 +354,20 @@ public class SlpAppKit {
 
     private boolean isValidSlpTx(Transaction tx) {
         if (tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
-            String protocolId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1).data), StandardCharsets.UTF_8);
-            if (protocolId.equals("534c5000")) {
-                SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getHashAsString());
-                boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded(), tx.getHashAsString());
-                if(valid) {
-                    this.verifiedSlpTxs.add(tx.getHashAsString());
-                    this.saveVerifiedTxs(this.verifiedSlpTxs);
+            ScriptChunk protocolChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1);
+            if(protocolChunk != null && protocolChunk.data != null) {
+                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
+                if (protocolId.equals("534c5000")) {
+                    SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getHashAsString());
+                    boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded(), tx.getHashAsString());
+                    if (valid) {
+                        this.verifiedSlpTxs.add(tx.getHashAsString());
+                        this.saveVerifiedTxs(this.verifiedSlpTxs);
+                    }
+                    return valid;
+                } else {
+                    return false;
                 }
-                return valid;
             } else {
                 return false;
             }
