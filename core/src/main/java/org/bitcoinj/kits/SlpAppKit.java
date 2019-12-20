@@ -121,7 +121,7 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private void saveTokens(ArrayList<SlpToken> slpTokens) {
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tokensFile.getName()), StandardCharsets.UTF_8))) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.baseDirectory, tokensFile.getName())), StandardCharsets.UTF_8))) {
             JSONArray json = new JSONArray();
             for(SlpToken slpToken : slpTokens) {
                 JSONObject tokenObj = new JSONObject();
@@ -140,7 +140,7 @@ public class SlpAppKit extends AbstractIdleService {
     private void loadTokens() {
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(this.tokensFile.getName()));
+            br = new BufferedReader(new FileReader(new File(this.baseDirectory, this.tokensFile.getName())));
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
 
@@ -365,20 +365,13 @@ public class SlpAppKit extends AbstractIdleService {
         this.wallet.setAcceptRiskyTransactions(true);
         this.slpDbProcessor = new SlpDbProcessor();
         this.wallet.allowSpendingUnconfirmedTransactions();
-        this.wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
-            @Override
-            public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                recalculateSlpUtxos();
-            }
-        });
-        this.wallet.addCoinsSentEventListener(new WalletCoinsSentEventListener() {
-            @Override
-            public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                recalculateSlpUtxos();
-            }
-        });
 
-        this.recalculateSlpUtxos();
+        new Thread() {
+            @Override
+            public void run() {
+                recalculateSlpUtxos();
+            }
+        }.start();
     }
 
     private boolean isValidSlpTx(Transaction tx) {
