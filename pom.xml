@@ -4,7 +4,7 @@
 
   <groupId>cash.bitcoinj</groupId>
   <artifactId>bitcoinj-parent</artifactId>
-  <version>0.15.5</version>
+  <version>0.16</version>
   <packaging>pom</packaging>
 
     <modules>
