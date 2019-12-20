@@ -191,7 +191,7 @@ public class SlpAppKit {
         }
     }
 
-    public void startWallet() throws BlockStoreException, InterruptedException, IOException {
+    public void startWallet(DownloadProgressTracker progressTracker) throws BlockStoreException, IOException {
         File chainFile = new File(this.walletFile.getName() + ".spvchain");
         spvBlockStore = new SPVBlockStore(this.wallet.getParams(), chainFile);
         blockChain = new BlockChain(this.wallet.getParams(), spvBlockStore);
@@ -202,15 +202,26 @@ public class SlpAppKit {
         peerGroup.addWallet(wallet);
         wallet.autosaveToFile(this.walletFile, 5, TimeUnit.SECONDS, null);
         wallet.saveToFile(this.walletFile);
-        DownloadProgressTracker bListener = new DownloadProgressTracker() {
-            @Override
-            public void doneDownload() {
-                System.out.println("blockchain downloaded");
-            }
-        };
 
         peerGroup.start();
-        peerGroup.startBlockChainDownload(bListener);
+
+        if(progressTracker == null) {
+            DownloadProgressTracker bListener = new DownloadProgressTracker() {
+                @Override
+                public void doneDownload() {
+                    super.doneDownload();
+                    System.out.println("blockchain downloaded");
+                }
+            };
+
+            peerGroup.startBlockChainDownload(bListener);
+        } else {
+            peerGroup.startBlockChainDownload(progressTracker);
+        }
+    }
+
+    public void startWallet() throws IOException, BlockStoreException {
+        this.startWallet(null);
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
