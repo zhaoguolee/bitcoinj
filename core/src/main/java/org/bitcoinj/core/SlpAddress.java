@@ -24,6 +24,10 @@ public class SlpAddress {
         return new SlpAddress(params, slpAddress);
     }
 
+    public String toString() {
+        return this.address;
+    }
+
     public static class Util {
 
         /**

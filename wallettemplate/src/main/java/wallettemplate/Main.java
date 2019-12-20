@@ -193,13 +193,6 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        SlpAppKit slpWallet = null;
-        try {
-            slpWallet = new SlpAppKit().initialize(MainNetParams.get(), new File("bch.wallet"), new DeterministicSeed("", null, "", 1576605103));
 
-            slpWallet.startWallet();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }
