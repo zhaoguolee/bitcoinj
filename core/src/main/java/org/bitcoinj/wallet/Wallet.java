@@ -30,6 +30,7 @@ import org.bitcoinj.core.Message;
 import org.bitcoinj.core.listeners.*;
 import org.bitcoinj.core.TransactionConfidence.*;
 import org.bitcoinj.crypto.*;
+import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.script.*;
 import org.bitcoinj.signers.*;
 import org.bitcoinj.utils.*;
@@ -4135,7 +4136,9 @@ public class Wallet extends BaseTaggableObject
                     Transaction transaction = checkNotNull(output.getParentTransaction());
                     if (excludeImmatureCoinbases && !transaction.isMature())
                         continue;
-                    candidates.add(output);
+
+                    if(output.getValue().value != 546L)
+                        candidates.add(output);
                 }
             } else {
                 candidates = calculateAllSpendCandidatesFromUTXOProvider(excludeImmatureCoinbases);
@@ -4199,7 +4202,9 @@ public class Wallet extends BaseTaggableObject
                 int depth = chainHeight - output.getHeight() + 1; // the current depth of the output (1 = same as head).
                 // Do not try and spend coinbases that were mined too recently, the protocol forbids it.
                 if (!excludeImmatureCoinbases || !coinbase || depth >= params.getSpendableCoinbaseDepth()) {
-                    candidates.add(new FreeStandingTransactionOutput(params, output, chainHeight));
+                    if(output.getValue().value != 546L) {
+                        candidates.add(new FreeStandingTransactionOutput(params, output, chainHeight));
+                    }
                 }
             }
         } catch (UTXOProviderException e) {
@@ -4217,7 +4222,9 @@ public class Wallet extends BaseTaggableObject
             if (!excludeImmatureCoinbases || tx.isMature()) {
                 for (TransactionOutput output : tx.getOutputs()) {
                     if (output.isAvailableForSpending() && output.isMine(this)) {
-                        candidates.add(output);
+                        if(output.getValue().value != 546L) {
+                            candidates.add(output);
+                        }
                     }
                 }
             }
