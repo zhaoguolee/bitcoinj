@@ -362,7 +362,7 @@ public class SlpAppKit {
         }
     }
 
-    private void recalculateSlpUtxos() {
+    public void recalculateSlpUtxos() {
         this.slpUtxos.clear();
         this.slpBalances.clear();
         for(TransactionOutput utxo : this.wallet.getUtxos()) {
