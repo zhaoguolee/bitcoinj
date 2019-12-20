@@ -121,7 +121,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     public static final ImmutableList<ChildNumber> BIP44_ACCOUNT_SLP_PATH =
             ImmutableList.of(new ChildNumber(44, true), new ChildNumber(245, true), ChildNumber.ZERO_HARDENED);
 
-    public static ImmutableList<ChildNumber> accountPath = BIP44_ACCOUNT_ZERO_PATH;
+    private ImmutableList<ChildNumber> accountPath = BIP44_ACCOUNT_ZERO_PATH;
 
     // We try to ensure we have at least this many keys ready and waiting to be handed out via getKey().
     // See docs for getLookaheadSize() for more info on what this is for. The -1 value means it hasn't been calculated
@@ -423,11 +423,11 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
 
     /** Override in subclasses to use a different account derivation path */
     protected ImmutableList<ChildNumber> getAccountPath() {
-        return accountPath;
+        return this.accountPath;
     }
 
-    public static void setAccountPath(ImmutableList<ChildNumber> path) {
-        accountPath = path;
+    public void setAccountPath(ImmutableList<ChildNumber> path) {
+        this.accountPath = path;
     }
 
     private DeterministicKey encryptNonLeaf(KeyParameter aesKey, DeterministicKeyChain chain,
@@ -781,6 +781,10 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
      * key rotation it can happen that there are multiple chains found.
      */
     public static List<DeterministicKeyChain> fromProtobuf(List<Protos.Key> keys, @Nullable KeyCrypter crypter, KeyChainFactory factory) throws UnreadableWalletException {
+        return fromProtobuf(keys, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, crypter, factory);
+    }
+
+    public static List<DeterministicKeyChain> fromProtobuf(List<Protos.Key> keys, ImmutableList<ChildNumber> accountPath, @Nullable KeyCrypter crypter, KeyChainFactory factory) throws UnreadableWalletException {
         List<DeterministicKeyChain> chains = newLinkedList();
         DeterministicSeed seed = null;
         DeterministicKeyChain chain = null;
@@ -798,6 +802,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
                     chain.setLookaheadSize(lookaheadSize);
                     chain.setSigsRequiredToSpend(sigsRequiredToSpend);
                     chain.maybeLookAhead();
+                    chain.setAccountPath(accountPath);
                     chains.add(chain);
                     chain = null;
                 }
@@ -850,6 +855,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
                         chain.setLookaheadSize(lookaheadSize);
                         chain.setSigsRequiredToSpend(sigsRequiredToSpend);
                         chain.maybeLookAhead();
+                        chain.setAccountPath(accountPath);
                         chains.add(chain);
                         chain = null;
                         seed = null;
@@ -933,6 +939,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
             chain.setLookaheadSize(lookaheadSize);
             chain.setSigsRequiredToSpend(sigsRequiredToSpend);
             chain.maybeLookAhead();
+            chain.setAccountPath(accountPath);
             chains.add(chain);
         }
         return chains;

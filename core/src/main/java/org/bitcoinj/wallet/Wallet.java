@@ -276,10 +276,18 @@ public class Wallet extends BaseTaggableObject
     }
 
     public Wallet(NetworkParameters params, KeyChainGroup keyChainGroup) {
-        this(Context.getOrCreate(params), keyChainGroup);
+        this(Context.getOrCreate(params), keyChainGroup, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+    }
+
+    public Wallet(NetworkParameters params, KeyChainGroup keyChainGroup, ImmutableList<ChildNumber> accountPath) {
+        this(Context.getOrCreate(params), keyChainGroup, accountPath);
     }
 
     private Wallet(Context context, KeyChainGroup keyChainGroup) {
+        this(context, keyChainGroup, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+    }
+
+    private Wallet(Context context, KeyChainGroup keyChainGroup, ImmutableList<ChildNumber> accountPath) {
         this.context = context;
         this.params = context.getParams();
         this.keyChainGroup = checkNotNull(keyChainGroup);
@@ -289,7 +297,7 @@ public class Wallet extends BaseTaggableObject
         // without having to call current/freshReceiveKey. If there are already keys in the chain of any kind then
         // we're probably being deserialized so leave things alone: the API user can upgrade later.
         if (this.keyChainGroup.numKeys() == 0)
-            this.keyChainGroup.createAndActivateNewHDChain();
+            this.keyChainGroup.createAndActivateNewHDChain(accountPath);
         watchedScripts = Sets.newHashSet();
         unspent = new HashMap<Sha256Hash, Transaction>();
         spent = new HashMap<Sha256Hash, Transaction>();
@@ -730,10 +738,10 @@ public class Wallet extends BaseTaggableObject
         }
     }
 
-    public void removeHDChain(DeterministicKeyChain chain) {
+    public void removeHDChainByIndex(int index) {
         keyChainGroupLock.lock();
         try {
-            keyChainGroup.removeHDChain(chain);
+            keyChainGroup.removeHDChainByIndex(index);
         } finally {
             keyChainGroupLock.unlock();
         }
@@ -1587,7 +1595,11 @@ public class Wallet extends BaseTaggableObject
 
     /** Returns a wallet deserialized from the given input stream and wallet extensions. */
     public static Wallet loadFromFileStream(InputStream stream, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        Wallet wallet = new WalletProtobufSerializer().readWallet(stream, walletExtensions);
+        return loadFromFileStream(stream, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, walletExtensions);
+    }
+
+    public static Wallet loadFromFileStream(InputStream stream, ImmutableList<ChildNumber> accountPath, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+        Wallet wallet = new WalletProtobufSerializer().readWallet(stream, accountPath, walletExtensions);
         if (!wallet.isConsistent()) {
             log.error("Loaded an inconsistent wallet");
         }

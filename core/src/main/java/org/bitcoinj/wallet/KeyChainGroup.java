@@ -122,8 +122,17 @@ public class KeyChainGroup implements KeyBag {
 
     /** Adds a new HD chain to the chains list, and make it the default chain (from which keys are issued). */
     public void createAndActivateNewHDChain() {
+        this.createAndActivateNewHDChain(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+    }
+
+    public void createAndActivateNewHDChain(final ImmutableList<ChildNumber> accountPath) {
         // We can't do auto upgrade here because we don't know the rotation time, if any.
-        final DeterministicKeyChain chain = new DeterministicKeyChain(new SecureRandom());
+        final DeterministicKeyChain chain = new DeterministicKeyChain(new SecureRandom()) {
+            @Override
+            public ImmutableList<ChildNumber> getAccountPath() {
+                return accountPath;
+            }
+        };
         addAndActivateHDChain(chain);
     }
 
@@ -142,9 +151,9 @@ public class KeyChainGroup implements KeyBag {
         chains.add(chain);
     }
 
-    public void removeHDChain(DeterministicKeyChain chain) {
-        log.info("Removing HD chain: {}", chain);
-        chains.remove(chain);
+    public void removeHDChainByIndex(int index) {
+        log.info("Removing HD chain: {}", index);
+        chains.remove(index);
     }
 
     /**
@@ -648,8 +657,12 @@ public class KeyChainGroup implements KeyBag {
     }
 
     public static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, List<Protos.Key> keys, KeyChainFactory factory) throws UnreadableWalletException {
+        return fromProtobufUnencrypted(params, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, keys, factory);
+    }
+
+    public static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, ImmutableList<ChildNumber> accountPath, List<Protos.Key> keys, KeyChainFactory factory) throws UnreadableWalletException {
         BasicKeyChain basicKeyChain = BasicKeyChain.fromProtobufUnencrypted(keys);
-        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, null, factory);
+        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, accountPath, null, factory);
         EnumMap<KeyChain.KeyPurpose, DeterministicKey> currentKeys = null;
         if (!chains.isEmpty())
             currentKeys = createCurrentKeysMap(chains);
@@ -662,6 +675,10 @@ public class KeyChainGroup implements KeyBag {
     }
 
     public static KeyChainGroup fromProtobufEncrypted(NetworkParameters params, List<Protos.Key> keys, KeyCrypter crypter, KeyChainFactory factory) throws UnreadableWalletException {
+        return fromProtobufEncrypted(params, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, keys, crypter, factory);
+    }
+
+    public static KeyChainGroup fromProtobufEncrypted(NetworkParameters params, ImmutableList<ChildNumber> accountPath, List<Protos.Key> keys, KeyCrypter crypter, KeyChainFactory factory) throws UnreadableWalletException {
         checkNotNull(crypter);
         BasicKeyChain basicKeyChain = BasicKeyChain.fromProtobufEncrypted(keys, crypter);
         List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, crypter, factory);

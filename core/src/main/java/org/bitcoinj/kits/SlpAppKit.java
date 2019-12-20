@@ -91,13 +91,17 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        wallet = new Wallet(params, keyChainGroup);
+        this.setupWallet(params, keyChainGroup, file, walletName);
+    }
+
+    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
+        wallet = new Wallet(params, keyChainGroup, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         this.context = new Context(params);
         this.baseDirectory = file;
         this.walletName = walletName;
         this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
         DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
-        wallet.removeHDChain(wallet.getActiveKeyChain());
+        wallet.removeHDChainByIndex(0);
         wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
             @Override
             protected ImmutableList<ChildNumber> getAccountPath() {
@@ -207,12 +211,11 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private static SlpAppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        DeterministicKeyChain.setAccountPath(DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         try {
             FileInputStream stream = null;
             try {
                 stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
-                Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
+                Wallet wallet = Wallet.loadFromFileStream(stream, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH, walletExtensions);
                 return new SlpAppKit(wallet, baseDir, walletName);
             } finally {
                 if (stream != null) stream.close();

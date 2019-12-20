@@ -17,8 +17,10 @@
 
 package org.bitcoinj.wallet;
 
+import com.google.common.collect.ImmutableList;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
+import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.KeyCrypter;
 import org.bitcoinj.crypto.KeyCrypterScrypt;
 import org.bitcoinj.script.Script;
@@ -388,7 +390,11 @@ public class WalletProtobufSerializer {
      * @throws UnreadableWalletException thrown in various error conditions (see description).
      */
     public Wallet readWallet(InputStream input, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        return readWallet(input, false, walletExtensions);
+        return readWallet(input, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, walletExtensions);
+    }
+
+    public Wallet readWallet(InputStream input, ImmutableList<ChildNumber> accountPath, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+        return readWallet(input, accountPath,false, walletExtensions);
     }
 
     /**
@@ -407,14 +413,14 @@ public class WalletProtobufSerializer {
      *
      * @throws UnreadableWalletException thrown in various error conditions (see description).
      */
-    public Wallet readWallet(InputStream input, boolean forceReset, @Nullable WalletExtension[] extensions) throws UnreadableWalletException {
+    public Wallet readWallet(InputStream input, ImmutableList<ChildNumber> accountPath, boolean forceReset, @Nullable WalletExtension[] extensions) throws UnreadableWalletException {
         try {
             Protos.Wallet walletProto = parseToProto(input);
             final String paramsID = walletProto.getNetworkIdentifier();
             NetworkParameters params = NetworkParameters.fromID(paramsID);
             if (params == null)
                 throw new UnreadableWalletException("Unknown network parameters ID " + paramsID);
-            return readWallet(params, extensions, walletProto, forceReset);
+            return readWallet(params, accountPath, extensions, walletProto, forceReset);
         } catch (IOException e) {
             throw new UnreadableWalletException("Could not parse input stream to protobuf", e);
         } catch (IllegalStateException e) {
@@ -458,6 +464,10 @@ public class WalletProtobufSerializer {
      */
     public Wallet readWallet(NetworkParameters params, @Nullable WalletExtension[] extensions,
                              Protos.Wallet walletProto, boolean forceReset) throws UnreadableWalletException {
+        return readWallet(params, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, extensions, walletProto, forceReset);
+    }
+    public Wallet readWallet(NetworkParameters params, ImmutableList<ChildNumber> accountPath, @Nullable WalletExtension[] extensions,
+                             Protos.Wallet walletProto, boolean forceReset) throws UnreadableWalletException {
         if (walletProto.getVersion() > CURRENT_WALLET_VERSION)
             throw new UnreadableWalletException.FutureVersion();
         if (!walletProto.getNetworkIdentifier().equals(params.getId()))
@@ -468,9 +478,9 @@ public class WalletProtobufSerializer {
         if (walletProto.hasEncryptionParameters()) {
             Protos.ScryptParameters encryptionParameters = walletProto.getEncryptionParameters();
             final KeyCrypterScrypt keyCrypter = new KeyCrypterScrypt(encryptionParameters);
-            keyChainGroup = KeyChainGroup.fromProtobufEncrypted(params, walletProto.getKeyList(), keyCrypter, keyChainFactory);
+            keyChainGroup = KeyChainGroup.fromProtobufEncrypted(params, accountPath, walletProto.getKeyList(), keyCrypter, keyChainFactory);
         } else {
-            keyChainGroup = KeyChainGroup.fromProtobufUnencrypted(params, walletProto.getKeyList(), keyChainFactory);
+            keyChainGroup = KeyChainGroup.fromProtobufUnencrypted(params, accountPath, walletProto.getKeyList(), keyChainFactory);
         }
         Wallet wallet = factory.create(params, keyChainGroup);
 
