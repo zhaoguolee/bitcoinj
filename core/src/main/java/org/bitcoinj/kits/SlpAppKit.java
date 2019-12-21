@@ -26,6 +26,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -162,16 +163,21 @@ public class SlpAppKit extends AbstractIdleService {
                 line = br.readLine();
             }
             String jsonString = sb.toString();
-            JSONArray tokensJson = new JSONArray(jsonString);
-            for(int x = 0; x < tokensJson.length(); x++) {
-                JSONObject tokenObj = tokensJson.getJSONObject(x);
-                String tokenId = tokenObj.getString("tokenId");
-                String ticker = tokenObj.getString("ticker");
-                int decimals = tokenObj.getInt("decimals");
-                SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                this.slpTokens.add(slpToken);
+
+            try {
+                JSONArray tokensJson = new JSONArray(jsonString);
+                for (int x = 0; x < tokensJson.length(); x++) {
+                    JSONObject tokenObj = tokensJson.getJSONObject(x);
+                    String tokenId = tokenObj.getString("tokenId");
+                    String ticker = tokenObj.getString("ticker");
+                    int decimals = tokenObj.getInt("decimals");
+                    SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
+                    this.slpTokens.add(slpToken);
+                }
+            } catch (Exception e) {
+                this.slpTokens = new ArrayList<>();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -296,6 +302,13 @@ public class SlpAppKit extends AbstractIdleService {
 
             }
         });
+
+        new Thread() {
+            @Override
+            public void run() {
+                recalculateSlpUtxos();
+            }
+        }.start();
     }
 
     public void setCheckpoints(InputStream checkpoints) {
@@ -386,8 +399,8 @@ public class SlpAppKit extends AbstractIdleService {
 
         Transaction tx = wallet.sendCoinsOffline(req);
 
-        for(SlpUTXO slpUTXO : selectedSlpUtxos) {
-            this.slpUtxos.remove(slpUTXO);
+        for (Iterator<SlpUTXO> iterator = selectedSlpUtxos.iterator(); iterator.hasNext();) {
+            iterator.remove();
         }
 
         return tx;
@@ -413,17 +426,6 @@ public class SlpAppKit extends AbstractIdleService {
         this.wallet.setAcceptRiskyTransactions(true);
         this.slpDbProcessor = new SlpDbProcessor();
         this.wallet.allowSpendingUnconfirmedTransactions();
-
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    recalculateSlpUtxos();
-                } catch(Exception e) {
-                    // fail silently
-                }
-            }
-        }.start();
     }
 
     private boolean isValidSlpTx(Transaction tx) {
@@ -453,7 +455,8 @@ public class SlpAppKit extends AbstractIdleService {
     public void recalculateSlpUtxos() {
         this.slpUtxos.clear();
         this.slpBalances.clear();
-        for(TransactionOutput utxo : this.wallet.getUtxos()) {
+        for (Iterator<TransactionOutput> iterator = this.wallet.getUtxos().iterator(); iterator.hasNext();) {
+            TransactionOutput utxo = iterator.next();
             Transaction tx = utxo.getParentTransaction();
 
             //If tx is already a verified SLP tx, we can save time by avoiding contacting SLPDB
@@ -476,6 +479,11 @@ public class SlpAppKit extends AbstractIdleService {
             String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
             long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
 
+            ArrayList<SlpUTXO> slpUtxosToAdd = new ArrayList<>();
+            ArrayList<SlpToken> slpTokensToAdd = new ArrayList<>();
+            ArrayList<SlpTokenBalance> slpBalancesToAdd = new ArrayList<>();
+            ArrayList<SlpTokenBalance> cachedTokenBalances = this.slpBalances;
+
             if (!this.tokenIsMapped(tokenId)) {
                 SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
                 JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
@@ -486,17 +494,16 @@ public class SlpAppKit extends AbstractIdleService {
                     double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
                     SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
                     if (!this.tokenUtxoIsMapped(slpUTXO)) {
-                        this.slpUtxos.add(slpUTXO);
+                        slpUtxosToAdd.add(slpUTXO);
                     }
 
                     SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                    this.slpTokens.add(slpToken);
-                    this.saveTokens(slpTokens);
+                    slpTokensToAdd.add(slpToken);
 
                     if (this.isBalanceRecorded(tokenId)) {
-                        this.getTokenBalance(tokenId).addToBalance(tokenAmount);
+                        this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
                     } else {
-                        this.slpBalances.add(new SlpTokenBalance(tokenId, tokenAmount));
+                        slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
                     }
                 }
             } else {
@@ -506,15 +513,20 @@ public class SlpAppKit extends AbstractIdleService {
                 double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
                 SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
                 if (!this.tokenUtxoIsMapped(slpUTXO)) {
-                    this.slpUtxos.add(slpUTXO);
+                    slpUtxosToAdd.add(slpUTXO);
                 }
 
                 if (this.isBalanceRecorded(tokenId)) {
-                    this.getTokenBalance(tokenId).addToBalance(tokenAmount);
+                    this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
                 } else {
-                    this.slpBalances.add(new SlpTokenBalance(tokenId, tokenAmount));
+                    slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
                 }
             }
+            this.slpUtxos.addAll(slpUtxosToAdd);
+            this.slpBalances = cachedTokenBalances;
+            this.slpBalances.addAll(slpBalancesToAdd);
+            this.slpTokens.addAll(slpTokensToAdd);
+            this.saveTokens(slpTokens);
         }
     }
 
@@ -527,7 +539,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private boolean isBalanceRecorded(String tokenId) {
-        for(SlpTokenBalance tokenBalance : this.slpBalances) {
+        for (Iterator<SlpTokenBalance> iterator = this.slpBalances.iterator(); iterator.hasNext();) {
+            SlpTokenBalance tokenBalance = iterator.next();
             if(tokenBalance.getTokenId().equals(tokenId)) {
                 return true;
             }
@@ -536,8 +549,9 @@ public class SlpAppKit extends AbstractIdleService {
         return false;
     }
 
-    private SlpTokenBalance getTokenBalance(String tokenId) {
-        for(SlpTokenBalance tokenBalance : this.slpBalances) {
+    private SlpTokenBalance getTokenBalance(ArrayList<SlpTokenBalance> tokenBalances, String tokenId) {
+        for (Iterator<SlpTokenBalance> iterator = tokenBalances.iterator(); iterator.hasNext();) {
+            SlpTokenBalance tokenBalance = iterator.next();
             if(tokenBalance.getTokenId().equals(tokenId)) {
                 return tokenBalance;
             }
@@ -547,7 +561,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private boolean tokenIsMapped(String tokenId) {
-        for(SlpToken slpToken : this.slpTokens) {
+        for (Iterator<SlpToken> iterator = this.slpTokens.iterator(); iterator.hasNext();) {
+            SlpToken slpToken = iterator.next();
             if(slpToken.getTokenId().equals(tokenId)) {
                 return true;
             }
@@ -557,7 +572,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private boolean tokenUtxoIsMapped(SlpUTXO slpUtxo) {
-        for(SlpUTXO mappedUtxo : this.slpUtxos) {
+        for (Iterator<SlpUTXO> iterator = this.slpUtxos.iterator(); iterator.hasNext();) {
+            SlpUTXO mappedUtxo = iterator.next();
             String mappedUtxoHash = mappedUtxo.getTxUtxo().getParentTransactionHash().toString();
             int mappedUtxoIndex = mappedUtxo.getTxUtxo().getIndex();
             String slpUtxoHash = slpUtxo.getTxUtxo().getParentTransactionHash().toString();
@@ -571,7 +587,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private boolean tokenUtxoIsMapped(TransactionOutput utxo) {
-        for(SlpUTXO mappedUtxo : this.slpUtxos) {
+        for (Iterator<SlpUTXO> iterator = this.slpUtxos.iterator(); iterator.hasNext();) {
+            SlpUTXO mappedUtxo = iterator.next();
             String mappedUtxoHash = mappedUtxo.getTxUtxo().getParentTransactionHash().toString();
             int mappedUtxoIndex = mappedUtxo.getTxUtxo().getIndex();
             String slpUtxoHash = utxo.getParentTransactionHash().toString();
@@ -585,7 +602,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private SlpUTXO getSlpUtxo(String txHash, int index) {
-        for(SlpUTXO slpUtxo : this.slpUtxos) {
+        for (Iterator<SlpUTXO> iterator = this.slpUtxos.iterator(); iterator.hasNext();) {
+            SlpUTXO slpUtxo = iterator.next();
             String utxoHash = slpUtxo.getTxUtxo().getParentTransactionHash().toString();
             int utxoIndex = slpUtxo.getTxUtxo().getIndex();
             if(utxoHash.equals(txHash) && utxoIndex == index) {
@@ -597,7 +615,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public SlpToken getSlpToken(String tokenId) {
-        for(SlpToken slpToken : this.slpTokens) {
+        for (Iterator<SlpToken> iterator = this.slpTokens.iterator(); iterator.hasNext();) {
+            SlpToken slpToken = iterator.next();
             if(slpToken.getTokenId().equals(tokenId)) {
                 return slpToken;
             }

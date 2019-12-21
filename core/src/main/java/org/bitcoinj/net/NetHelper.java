@@ -32,13 +32,11 @@ public class NetHelper {
 
     private String[] blockExplorers = new String[]{
             "btc.com",
-            "blockdozer.com",
             "coin.space"
     };
 
     private String[] blockExplorerAPIURL = new String[]{
             "https://bch-chain.api.btc.com/v3/tx/",
-            "https://blockdozer.com/api/tx/",
             "https://bch.coin.space/api/tx/"
     };
 
@@ -139,7 +137,7 @@ public class NetHelper {
             if(blockExplorer.equals("btc.com")) {
                 block = json.getJSONObject("data").getString("block_hash");
             }
-            else if(blockExplorer.equals("blockdozer.com") || blockExplorer.equals("coin.space"))
+            else if(blockExplorer.equals("coin.space"))
             {
                 block = json.getString("blockhash");
             }
@@ -183,7 +181,7 @@ public class NetHelper {
             if(blockExplorer.equals("btc.com")) {
                 block = json.getJSONObject("data").getString("block_hash");
             }
-            else if(blockExplorer.equals("blockdozer.com") || blockExplorer.equals("coin.space"))
+            else if(blockExplorer.equals("coin.space"))
             {
                 block = json.getString("blockhash");
             }
@@ -441,7 +439,7 @@ public class NetHelper {
             if(blockExplorer.equals("btc.com")) {
                 height = json.getJSONObject("data").getInt("block_height");
             }
-            else if(blockExplorer.equals("blockdozer.com") || blockExplorer.equals("coin.space"))
+            else if(blockExplorer.equals("coin.space"))
             {
                 height = json.getInt("blockheight");
             }
@@ -482,7 +480,7 @@ public class NetHelper {
             if(blockExplorer.equals("btc.com")) {
                 height = json.getJSONObject("data").getInt("block_height");
             }
-            else if(blockExplorer.equals("blockdozer.com") || blockExplorer.equals("coin.space"))
+            else if(blockExplorer.equals("coin.space"))
             {
                 height = json.getInt("blockheight");
             }
