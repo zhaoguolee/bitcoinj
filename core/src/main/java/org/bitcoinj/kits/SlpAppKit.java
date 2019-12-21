@@ -28,6 +28,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class SlpAppKit extends AbstractIdleService {
     private Wallet wallet;
     private SPVBlockStore spvBlockStore;
@@ -47,6 +49,9 @@ public class SlpAppKit extends AbstractIdleService {
     private ArrayList<SlpTokenBalance> slpBalances = new ArrayList<SlpTokenBalance>();
     private ArrayList<String> verifiedSlpTxs = new ArrayList<String>();
     private SlpDbProcessor slpDbProcessor;
+    private InputStream checkpoints;
+    private NetworkParameters params;
+    @Nullable protected DeterministicSeed restoreFromSeed;
 
     protected volatile Context context;
 
@@ -83,6 +88,7 @@ public class SlpAppKit extends AbstractIdleService {
 
     public SlpAppKit(Wallet wallet, File file, String walletName) {
         this.wallet = wallet;
+        this.params = this.wallet.getParams();
         this.context = new Context(this.wallet.getParams());
         this.baseDirectory = file;
         this.walletName = walletName;
@@ -97,6 +103,7 @@ public class SlpAppKit extends AbstractIdleService {
     private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
         wallet = new Wallet(params, keyChainGroup, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         this.context = new Context(params);
+        this.params = params;
         this.baseDirectory = file;
         this.walletName = walletName;
         this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
@@ -117,6 +124,7 @@ public class SlpAppKit extends AbstractIdleService {
             return loadFromFile(baseDir, walletName);
         } else {
             if(seed != null) {
+                this.restoreFromSeed = seed;
                 return new SlpAppKit(params, seed, baseDir, walletName);
             } else {
                 return new SlpAppKit(params, baseDir, walletName);
@@ -227,15 +235,46 @@ public class SlpAppKit extends AbstractIdleService {
 
     public void startWallet() throws BlockStoreException, IOException {
         File chainFile = new File(this.baseDirectory, this.walletName + ".spvchain");
-        spvBlockStore = new SPVBlockStore(this.wallet.getParams(), chainFile);
-        blockChain = new BlockChain(this.wallet.getParams(), spvBlockStore);
-        peerGroup = new PeerGroup(this.wallet.getParams(), blockChain);
-        peerGroup.addPeerDiscovery(new DnsDiscovery(this.wallet.getParams()));
+        boolean chainFileExists = chainFile.exists();
+        this.spvBlockStore = new SPVBlockStore(this.wallet.getParams(), chainFile);
+        if (!chainFileExists || this.restoreFromSeed != null) {
+            if (this.checkpoints == null && !Utils.isAndroidRuntime()) {
+                this.checkpoints = CheckpointManager.openStream(params);
+            }
 
-        blockChain.addWallet(wallet);
-        peerGroup.addWallet(wallet);
-        wallet.autosaveToFile(new File(this.baseDirectory, this.walletName + ".wallet"), 5, TimeUnit.SECONDS, null);
-        wallet.saveToFile(new File(this.baseDirectory, this.walletName + ".wallet"));
+            if (this.checkpoints != null) {
+                // Initialize the chain file with a checkpoint to speed up first-run sync.
+                long time;
+                if (this.restoreFromSeed != null) {
+                    time = this.restoreFromSeed.getCreationTimeSeconds();
+                    if (chainFileExists) {
+                        this.spvBlockStore.close();
+                        if (!chainFile.delete())
+                            throw new IOException("Failed to delete chain file in preparation for restore.");
+                        this.spvBlockStore = new SPVBlockStore(params, chainFile);
+                    }
+                } else {
+                    time = this.wallet.getEarliestKeyCreationTime();
+                }
+                if (time > 0) {
+                    CheckpointManager.checkpoint(params, checkpoints, this.spvBlockStore, time);
+                }
+            } else if (chainFileExists) {
+                this.spvBlockStore.close();
+                if (!chainFile.delete())
+                    throw new IOException("Failed to delete chain file in preparation for restore.");
+                this.spvBlockStore = new SPVBlockStore(params, chainFile);
+            }
+        }
+
+        this.blockChain = new BlockChain(this.wallet.getParams(), this.spvBlockStore);
+        this.peerGroup = new PeerGroup(this.wallet.getParams(), this.blockChain);
+        this.peerGroup.addPeerDiscovery(new DnsDiscovery(this.wallet.getParams()));
+
+        this.blockChain.addWallet(this.wallet);
+        this.peerGroup.addWallet(this.wallet);
+        this.wallet.autosaveToFile(new File(this.baseDirectory, this.walletName + ".wallet"), 5, TimeUnit.SECONDS, null);
+        this.wallet.saveToFile(new File(this.baseDirectory, this.walletName + ".wallet"));
 
         Futures.addCallback(peerGroup.startAsync(), new FutureCallback() {
             @Override
@@ -257,6 +296,12 @@ public class SlpAppKit extends AbstractIdleService {
 
             }
         });
+    }
+
+    public void setCheckpoints(InputStream checkpoints) {
+        if (this.checkpoints != null)
+            Utils.closeUnchecked(this.checkpoints);
+        this.checkpoints = checkNotNull(checkpoints);
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
