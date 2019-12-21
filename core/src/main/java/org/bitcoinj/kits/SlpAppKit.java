@@ -417,7 +417,11 @@ public class SlpAppKit extends AbstractIdleService {
         new Thread() {
             @Override
             public void run() {
-                recalculateSlpUtxos();
+                try {
+                    recalculateSlpUtxos();
+                } catch(Exception e) {
+                    // fail silently
+                }
             }
         }.start();
     }
