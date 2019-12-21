@@ -45,7 +45,6 @@ public class SlpAppKit extends AbstractIdleService {
     private long OP_RETURN_NUM_BYTES_BASE = 55;
     private long QUANTITY_NUM_BYTES = 9;
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<SlpUTXO>();
-    private ArrayList<TransactionOutput> bchUtxos = new ArrayList<TransactionOutput>();
     private ArrayList<SlpToken> slpTokens = new ArrayList<SlpToken>();
     private ArrayList<SlpTokenBalance> slpBalances = new ArrayList<SlpTokenBalance>();
     private ArrayList<String> verifiedSlpTxs = new ArrayList<String>();
@@ -318,6 +317,7 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
+        ArrayList<TransactionOutput> bchUtxos = new ArrayList<>();
         SlpAddress slpAddress = new SlpAddress(this.wallet.getParams(), slpDestinationAddress);
         String destinationAddr = slpAddress.toCashAddress();
         int tokenDecimals = this.getSlpToken(tokenId).getDecimals();
@@ -399,8 +399,8 @@ public class SlpAppKit extends AbstractIdleService {
 
         Transaction tx = wallet.sendCoinsOffline(req);
 
-        for (Iterator<SlpUTXO> iterator = selectedSlpUtxos.iterator(); iterator.hasNext();) {
-            iterator.remove();
+        for(SlpUTXO slpUtxo : selectedSlpUtxos) {
+            this.slpUtxos.remove(slpUtxo);
         }
 
         return tx;
