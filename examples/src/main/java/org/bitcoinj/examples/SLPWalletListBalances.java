@@ -13,7 +13,7 @@ public class SLPWalletListBalances {
     public static void main(String[] args) throws Exception {
         //Create wallet and let bitcoinj generate a seed.
         NetworkParameters params = MainNetParams.get();
-        SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("slp.wallet"), null);
+        SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("."), "wallet_test", null);
         slpAppKit.startWallet();
 
         for(SlpTokenBalance tokenBalance : slpAppKit.getSlpBalances()) {

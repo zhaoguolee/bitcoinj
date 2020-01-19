@@ -12,6 +12,7 @@ import org.bitcoinj.net.SlpDbProcessor;
 import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.net.discovery.DnsDiscovery;
+import org.bitcoinj.net.discovery.PeerDiscovery;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
@@ -30,12 +31,14 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class SlpAppKit extends AbstractIdleService {
     private Wallet wallet;
     private SPVBlockStore spvBlockStore;
     private BlockChain blockChain;
     private PeerGroup peerGroup;
+    protected PeerAddress[] peerAddresses;
     private File baseDirectory;
     private String walletName;
     private File walletFile;
@@ -52,6 +55,7 @@ public class SlpAppKit extends AbstractIdleService {
     private InputStream checkpoints;
     private NetworkParameters params;
     @Nullable protected DeterministicSeed restoreFromSeed;
+    @Nullable protected PeerDiscovery discovery;
 
     protected volatile Context context;
 
@@ -274,7 +278,13 @@ public class SlpAppKit extends AbstractIdleService {
 
         this.blockChain = new BlockChain(this.wallet.getParams(), this.spvBlockStore);
         this.peerGroup = new PeerGroup(this.wallet.getParams(), this.blockChain);
-        this.peerGroup.addPeerDiscovery(new DnsDiscovery(this.wallet.getParams()));
+        if (peerAddresses != null) {
+            for (PeerAddress addr : peerAddresses) this.peerGroup.addAddress(addr);
+            this.peerGroup.setMaxConnections(peerAddresses.length);
+            peerAddresses = null;
+        } else if (!params.getId().equals(NetworkParameters.ID_REGTEST)) {
+            this.peerGroup.addPeerDiscovery(new DnsDiscovery(this.wallet.getParams()));
+        }
 
         this.blockChain.addWallet(this.wallet);
         this.peerGroup.addWallet(this.wallet);
@@ -654,5 +664,14 @@ public class SlpAppKit extends AbstractIdleService {
 
     public SlpAddress freshSlpReceiveAddress() {
         return SlpAddress.fromCashAddr(this.wallet.getParams(), this.wallet.freshReceiveAddress().toString());
+    }
+
+    public void setDiscovery(@Nullable PeerDiscovery discovery) {
+        this.discovery = discovery;
+    }
+
+    public void setPeerNodes(PeerAddress... addresses) {
+        checkState(state() == State.NEW, "Cannot call after startup");
+        this.peerAddresses = addresses;
     }
 }
