@@ -72,6 +72,7 @@ public class SlpAppKit extends AbstractIdleService {
     @Override
     protected void shutDown() throws Exception {
         Context.propagate(context);
+        this.saveTokens(this.slpTokens);
         this.peerGroup.stop();
         this.wallet.saveToFile(this.walletFile);
         this.spvBlockStore.close();
