@@ -157,7 +157,8 @@ public class SlpAppKit extends AbstractIdleService {
     private void loadTokens() {
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(new File(this.baseDirectory, this.tokensFile.getName())));
+            FileInputStream is = new FileInputStream(new File(this.baseDirectory, this.tokensFile.getName()));
+            br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
 
@@ -176,7 +177,9 @@ public class SlpAppKit extends AbstractIdleService {
                     String ticker = tokenObj.getString("ticker");
                     int decimals = tokenObj.getInt("decimals");
                     SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                    this.slpTokens.add(slpToken);
+                    if(!this.tokenIsMapped(tokenId)) {
+                        this.slpTokens.add(slpToken);
+                    }
                 }
             } catch (Exception e) {
                 this.slpTokens = new ArrayList<>();
