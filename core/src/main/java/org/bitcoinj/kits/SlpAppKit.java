@@ -21,6 +21,7 @@ import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.spongycastle.crypto.params.KeyParameter;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -330,7 +331,7 @@ public class SlpAppKit extends AbstractIdleService {
         this.checkpoints = checkNotNull(checkpoints);
     }
 
-    public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens) throws InsufficientMoneyException {
+    public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
         ArrayList<TransactionOutput> bchUtxos = new ArrayList<>();
         SlpAddress slpAddress = new SlpAddress(this.wallet.getParams(), slpDestinationAddress);
         String destinationAddr = slpAddress.toCashAddress();
@@ -396,6 +397,7 @@ public class SlpAppKit extends AbstractIdleService {
         long changeTokens = inputTokensRaw - sendTokensRaw;
 
         SendRequest req = SendRequest.createSlpTransaction(this.wallet.getParams());
+        req.aesKey = aesKey;
         req.shuffleOutputs = false;
         req.feePerKb = Coin.valueOf(1000L);
         req.utxos = selectedUtxos;
