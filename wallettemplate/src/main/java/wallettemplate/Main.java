@@ -195,10 +195,5 @@ public class Main extends Application {
     public static void main(String[] args) throws Exception {
         SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("."), "wallet", null);
         slpAppKit.startAsync();
-
-        /*Transaction tx = slpAppKit.createSlpGenesisTransaction("BITCOINCASHJ", "bitcoincashj token", "https://github.com/pokkst/bitcoincashj", 0, 1, null);
-        byte[] txHexBytes = Hex.encode(tx.bitcoinSerialize());
-        String txHex = new String(txHexBytes, StandardCharsets.UTF_8);
-        System.out.println("Genesis tx... " + txHex);*/
     }
 }

@@ -17,6 +17,12 @@ public class SlpOpReturnOutputGenesis {
     private byte[] type = new byte[] {1};
     private int PUSHDATA_BYTES = 8;
     public SlpOpReturnOutputGenesis(String ticker, String name, String url, int decimals, long tokenAmount) {
+        if(decimals > 9) {
+            throw new IllegalArgumentException("Decimal count cannot be greater than 9.");
+        } else if(decimals < 0) {
+            throw new IllegalArgumentException("Decimal count must be greater than or equal to 0.");
+        }
+
         String start = "1";
         StringBuilder builder = new StringBuilder(start);
         for (int i = 0; i < decimals; i++) {
