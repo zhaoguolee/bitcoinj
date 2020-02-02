@@ -17,8 +17,6 @@ import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.wallet.*;
-import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
-import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.spongycastle.crypto.params.KeyParameter;
@@ -401,7 +399,7 @@ public class SlpAppKit extends AbstractIdleService {
         req.shuffleOutputs = false;
         req.feePerKb = Coin.valueOf(1000L);
         req.utxos = selectedUtxos;
-        SlpOpReturnOutput slpOpReturn = new SlpOpReturnOutput(tokenId, sendTokensRaw, changeTokens);
+        SlpOpReturnOutputSend slpOpReturn = new SlpOpReturnOutputSend(tokenId, sendTokensRaw, changeTokens);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
         req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), Address.fromCashAddr(this.wallet.getParams(), destinationAddr));
 
@@ -420,6 +418,17 @@ public class SlpAppKit extends AbstractIdleService {
         }
 
         return tx;
+    }
+
+    public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
+        SendRequest req = SendRequest.createSlpTransaction(this.wallet.getParams());
+        req.aesKey = aesKey;
+        req.shuffleOutputs = false;
+        req.feePerKb = Coin.valueOf(1000L);
+        SlpOpReturnOutputGenesis slpOpReturn = new SlpOpReturnOutputGenesis(ticker, name, url, decimals, tokenQuantity);
+        req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
+        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), Address.fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString()));
+        return wallet.sendCoinsOffline(req);
     }
 
     public void broadcastSlpTransaction(Transaction tx) {

@@ -8,12 +8,12 @@ import org.bitcoinj.script.ScriptOpCodes;
 
 import java.nio.ByteBuffer;
 
-public class SlpOpReturnOutput {
+public class SlpOpReturnOutputSend {
     private Script script;
     private byte[] lokad = new byte[] {83, 76, 80, 0};
     private byte[] type = new byte[] {1};
     private int PUSHDATA_BYTES = 8;
-    public SlpOpReturnOutput(String tokenId, long tokenAmount, long changeAmount) {
+    public SlpOpReturnOutputSend(String tokenId, long tokenAmount, long changeAmount) {
         ScriptBuilder scriptBuilder = new ScriptBuilder()
                 .op(ScriptOpCodes.OP_RETURN)
                 .data(lokad)

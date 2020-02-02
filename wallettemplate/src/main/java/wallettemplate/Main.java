@@ -196,20 +196,9 @@ public class Main extends Application {
         SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("."), "wallet", null);
         slpAppKit.startAsync();
 
-        while(true) {
-            System.out.println("SLP tokens:");
-            for(SlpTokenBalance tokenBalance : slpAppKit.getSlpBalances()) {
-                SlpToken slpToken = slpAppKit.getSlpToken(tokenBalance.getTokenId());
-                //The wallet might not have the SLP token saved yet. So we check if it's null or not.
-                if(slpToken != null) {
-                    System.out.println(slpToken.getTicker() + " > " + tokenBalance.getTokenId() + " > " + tokenBalance.getBalance());
-                } else {
-                    System.out.println(tokenBalance.getTokenId() + " > " + tokenBalance.getBalance());
-                }
-            }
-
-            System.out.println(slpAppKit.currentSlpReceiveAddress().toString());
-            Thread.sleep(2500);
-        }
+        /*Transaction tx = slpAppKit.createSlpGenesisTransaction("BITCOINCASHJ", "bitcoincashj token", "https://github.com/pokkst/bitcoincashj", 0, 1, null);
+        byte[] txHexBytes = Hex.encode(tx.bitcoinSerialize());
+        String txHex = new String(txHexBytes, StandardCharsets.UTF_8);
+        System.out.println("Genesis tx... " + txHex);*/
     }
 }
