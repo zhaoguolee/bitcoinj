@@ -497,7 +497,43 @@ public class SlpAppKit extends AbstractIdleService {
         return null;
     }
 
-    public boolean utxoIsMintBaton(Transaction tx, TransactionOutput utxo, String slpTxType) {
+    public void recalculateSlpUtxos() {
+        this.slpUtxos.clear();
+        this.slpBalances.clear();
+        for (Iterator<TransactionOutput> iterator = this.wallet.getUtxos().iterator(); iterator.hasNext();) {
+            TransactionOutput utxo = iterator.next();
+            Transaction tx = utxo.getParentTransaction();
+
+            //If tx is already a verified SLP tx, we can save time by avoiding contacting SLPDB
+            if(this.verifiedSlpTxs.contains(tx.getHashAsString())) {
+                this.determineUtxoThenMaybeProcess(tx, utxo);
+            } else {
+                //Not verified tx, doing now.
+                boolean validSlp = this.isValidSlpTx(tx);
+                if (validSlp) {
+                    this.determineUtxoThenMaybeProcess(tx, utxo);
+                }
+            }
+        }
+    }
+
+    private void determineUtxoThenMaybeProcess(Transaction tx, TransactionOutput utxo) {
+        String slpTxType = this.getSlpTxType(tx);
+
+        switch (slpTxType) {
+            case "47454e45534953":  // GENESIS
+            case "4d494e54":  // MINT
+                if (!this.utxoIsMintBaton(tx, utxo, slpTxType)) {
+                    this.processUtxo(utxo, tx);
+                }
+                break;
+            case "53454e44":  // SEND
+                this.processUtxo(utxo, tx);
+                break;
+        }
+    }
+
+    private boolean utxoIsMintBaton(Transaction tx, TransactionOutput utxo, String slpTxType) {
         int mintingBatonVout = 0;
         int utxoVout = utxo.getIndex();
         int chunkIndex = 0;
@@ -515,50 +551,6 @@ public class SlpAppKit extends AbstractIdleService {
         }
 
         return mintingBatonVout == utxoVout;
-    }
-
-    public void recalculateSlpUtxos() {
-        this.slpUtxos.clear();
-        this.slpBalances.clear();
-        for (Iterator<TransactionOutput> iterator = this.wallet.getUtxos().iterator(); iterator.hasNext();) {
-            TransactionOutput utxo = iterator.next();
-            Transaction tx = utxo.getParentTransaction();
-
-            //If tx is already a verified SLP tx, we can save time by avoiding contacting SLPDB
-            if(this.verifiedSlpTxs.contains(tx.getHashAsString())) {
-                String slpTxType = this.getSlpTxType(tx);
-
-                switch (slpTxType) {
-                    case "47454e45534953":  // GENESIS
-                    case "4d494e54":  // MINT
-                        if (!this.utxoIsMintBaton(tx, utxo, slpTxType)) {
-                            this.processUtxo(utxo, tx);
-                        }
-                        break;
-                    case "53454e44":  // SEND
-                        this.processUtxo(utxo, tx);
-                        break;
-                }
-            } else {
-                //Not verified tx, doing now.
-                boolean validSlp = this.isValidSlpTx(tx);
-                if (validSlp) {
-                    String slpTxType = this.getSlpTxType(tx);
-
-                    switch (slpTxType) {
-                        case "47454e45534953":  // GENESIS
-                        case "4d494e54":  // MINT
-                            if (!this.utxoIsMintBaton(tx, utxo, slpTxType)) {
-                                this.processUtxo(utxo, tx);
-                            }
-                            break;
-                        case "53454e44":  // SEND
-                            this.processUtxo(utxo, tx);
-                            break;
-                    }
-                }
-            }
-        }
     }
 
     private void processUtxo(TransactionOutput utxo, Transaction tx) {
