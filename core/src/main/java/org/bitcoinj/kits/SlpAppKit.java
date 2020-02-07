@@ -459,13 +459,23 @@ public class SlpAppKit extends AbstractIdleService {
             if(protocolChunk != null && protocolChunk.data != null) {
                 String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
                 if (protocolId.equals("534c5000")) {
-                    SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getHashAsString());
-                    boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded(), tx.getHashAsString());
-                    if (valid) {
-                        this.verifiedSlpTxs.add(tx.getHashAsString());
-                        this.saveVerifiedTxs(this.verifiedSlpTxs);
+                    ScriptChunk tokenTypeChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(2);
+                    if(tokenTypeChunk != null) {
+                        String tokenType = new String(Hex.encode(tokenTypeChunk.data), StandardCharsets.UTF_8);
+                        if(tokenType.equals("01")) {
+                            SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getHashAsString());
+                            boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded(), tx.getHashAsString());
+                            if (valid) {
+                                this.verifiedSlpTxs.add(tx.getHashAsString());
+                                this.saveVerifiedTxs(this.verifiedSlpTxs);
+                            }
+                            return valid;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
                     }
-                    return valid;
                 } else {
                     return false;
                 }
