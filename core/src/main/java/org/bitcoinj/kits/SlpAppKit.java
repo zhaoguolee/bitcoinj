@@ -456,13 +456,13 @@ public class SlpAppKit extends AbstractIdleService {
     private boolean isValidSlpTx(Transaction tx) {
         if (tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
             ScriptChunk protocolChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1);
-            if(protocolChunk != null && protocolChunk.data != null) {
+            if (protocolChunk != null && protocolChunk.data != null) {
                 String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
                 if (protocolId.equals("534c5000")) {
                     ScriptChunk tokenTypeChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(2);
-                    if(tokenTypeChunk != null) {
+                    if (tokenTypeChunk != null) {
                         String tokenType = new String(Hex.encode(tokenTypeChunk.data), StandardCharsets.UTF_8);
-                        if(tokenType.equals("01")) {
+                        if (tokenType.equals("01")) {
                             SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getHashAsString());
                             boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded(), tx.getHashAsString());
                             if (valid) {
@@ -470,21 +470,51 @@ public class SlpAppKit extends AbstractIdleService {
                                 this.saveVerifiedTxs(this.verifiedSlpTxs);
                             }
                             return valid;
-                        } else {
-                            return false;
                         }
-                    } else {
-                        return false;
                     }
-                } else {
-                    return false;
                 }
-            } else {
-                return false;
             }
-        } else {
-            return false;
         }
+
+        return false;
+    }
+
+    public String getSlpTxType(Transaction tx) {
+        if (tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
+            ScriptChunk protocolChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1);
+            if (protocolChunk != null && protocolChunk.data != null) {
+                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
+                if (protocolId.equals("534c5000")) {
+                    ScriptChunk slpTxTypeChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(3);
+                    if (slpTxTypeChunk != null) {
+                        String txType = new String(Hex.encode(slpTxTypeChunk.data), StandardCharsets.UTF_8);
+                        return txType;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public boolean utxoIsMintBaton(Transaction tx, TransactionOutput utxo, String slpTxType) {
+        int mintingBatonVout = 0;
+        int utxoVout = utxo.getIndex();
+        int chunkIndex = 0;
+
+        if(slpTxType.equals("47454e45534953")) { // GENESIS
+            chunkIndex = 9;
+        } else if(slpTxType.equals("4d494e54")) { // MINT
+            chunkIndex = 5;
+        }
+
+        ScriptChunk mintBatonVoutChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkIndex);
+        if (mintBatonVoutChunk != null) {
+            String voutHex = new String(Hex.encode(mintBatonVoutChunk.data), StandardCharsets.UTF_8);
+            mintingBatonVout = Integer.parseInt(voutHex, 16);
+        }
+
+        return mintingBatonVout == utxoVout;
     }
 
     public void recalculateSlpUtxos() {
@@ -496,12 +526,36 @@ public class SlpAppKit extends AbstractIdleService {
 
             //If tx is already a verified SLP tx, we can save time by avoiding contacting SLPDB
             if(this.verifiedSlpTxs.contains(tx.getHashAsString())) {
-                this.processUtxo(utxo, tx);
+                String slpTxType = this.getSlpTxType(tx);
+
+                switch (slpTxType) {
+                    case "47454e45534953":  // GENESIS
+                    case "4d494e54":  // MINT
+                        if (!this.utxoIsMintBaton(tx, utxo, slpTxType)) {
+                            this.processUtxo(utxo, tx);
+                        }
+                        break;
+                    case "53454e44":  // SEND
+                        this.processUtxo(utxo, tx);
+                        break;
+                }
             } else {
                 //Not verified tx, doing now.
                 boolean validSlp = this.isValidSlpTx(tx);
                 if (validSlp) {
-                    this.processUtxo(utxo, tx);
+                    String slpTxType = this.getSlpTxType(tx);
+
+                    switch (slpTxType) {
+                        case "47454e45534953":  // GENESIS
+                        case "4d494e54":  // MINT
+                            if (!this.utxoIsMintBaton(tx, utxo, slpTxType)) {
+                                this.processUtxo(utxo, tx);
+                            }
+                            break;
+                        case "53454e44":  // SEND
+                            this.processUtxo(utxo, tx);
+                            break;
+                    }
                 }
             }
         }
