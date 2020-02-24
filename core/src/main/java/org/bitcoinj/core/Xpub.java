@@ -3,7 +3,7 @@ package org.bitcoinj.core;
 import java.nio.ByteBuffer;
 
 public class Xpub {
-    public boolean isValid(String xpub) {
+    public static boolean isValid(String xpub) {
         try {
             byte[] xpubBytes = Base58.decodeChecked(xpub);
             ByteBuffer byteBuffer = ByteBuffer.wrap(xpubBytes);
