@@ -35,13 +35,13 @@ public class AESUtil {
         return range;
     }
 
-    public static String decrypt(String ciphertext, char[] password, int iterations) {
+    public static String decrypt(String ciphertext, CharSequenceX password, int iterations) {
         boolean AESBlockSize = true;
         byte[] cipherdata = Base64.getDecoder().decode(ciphertext.getBytes());
         byte[] iv = copyOfRange(cipherdata, 0, 16);
         byte[] input = copyOfRange(cipherdata, 16, cipherdata.length);
         PBEParametersGenerator generator = new PKCS5S2ParametersGenerator();
-        generator.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password), iv, iterations);
+        generator.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password.toString().toCharArray()), iv, iterations);
         KeyParameter keyParam = (KeyParameter)generator.generateDerivedParameters(256);
         CipherParameters params = new ParametersWithIV(keyParam, iv);
         BlockCipherPadding padding = new ISO10126d2Padding();
@@ -65,7 +65,7 @@ public class AESUtil {
         return ret;
     }
 
-    public static String encrypt(String cleartext, char[] password, int iterations) {
+    public static String encrypt(String cleartext, CharSequenceX password, int iterations) {
         boolean AESBlockSize = true;
         if (password == null) {
             return null;
@@ -79,7 +79,7 @@ public class AESUtil {
             clearbytes = cleartext.getBytes(StandardCharsets.UTF_8);
 
             PBEParametersGenerator generator = new PKCS5S2ParametersGenerator();
-            generator.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password), iv, iterations);
+            generator.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password.toString().toCharArray()), iv, iterations);
             KeyParameter keyParam = (KeyParameter)generator.generateDerivedParameters(256);
             CipherParameters params = new ParametersWithIV(keyParam, iv);
             BlockCipherPadding padding = new ISO10126d2Padding();
