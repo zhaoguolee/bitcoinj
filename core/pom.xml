@@ -22,7 +22,7 @@
     <parent>
         <groupId>cash.bitcoinj</groupId>
         <artifactId>bitcoinj-parent</artifactId>
-        <version>0.17</version>
+        <version>0.17.5</version>
     </parent>
 
     <artifactId>bitcoinj-core</artifactId>

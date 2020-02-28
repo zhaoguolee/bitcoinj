@@ -547,7 +547,12 @@ public class SlpAppKit extends AbstractIdleService {
         ScriptChunk mintBatonVoutChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkIndex);
         if (mintBatonVoutChunk != null) {
             String voutHex = new String(Hex.encode(mintBatonVoutChunk.data), StandardCharsets.UTF_8);
-            mintingBatonVout = Integer.parseInt(voutHex, 16);
+
+            if(!voutHex.equals("")) {
+                mintingBatonVout = Integer.parseInt(voutHex, 16);
+            } else {
+                return false;
+            }
         }
 
         return mintingBatonVout == utxoVout;
