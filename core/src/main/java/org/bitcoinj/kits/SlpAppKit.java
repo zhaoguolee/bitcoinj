@@ -53,6 +53,9 @@ public class SlpAppKit extends AbstractIdleService {
     private SlpDbProcessor slpDbProcessor;
     private InputStream checkpoints;
     private NetworkParameters params;
+    private final String genesisTxType = "47454e45534953";
+    private final String mintTxType = "4d494e54";
+    private final String sendTxType = "53454e44";
     @Nullable protected DeterministicSeed restoreFromSeed;
     @Nullable protected PeerDiscovery discovery;
 
@@ -521,13 +524,13 @@ public class SlpAppKit extends AbstractIdleService {
         String slpTxType = this.getSlpTxType(tx);
 
         switch (slpTxType) {
-            case "47454e45534953":  // GENESIS
-            case "4d494e54":  // MINT
+            case genesisTxType:  // GENESIS
+            case mintTxType:  // MINT
                 if (!this.utxoIsMintBaton(tx, utxo, slpTxType)) {
-                    this.processUtxo(utxo, tx);
+                    this.processGenesisOrMintUtxo(utxo, tx, slpTxType);
                 }
                 break;
-            case "53454e44":  // SEND
+            case sendTxType:  // SEND
                 this.processUtxo(utxo, tx);
                 break;
         }
@@ -538,9 +541,9 @@ public class SlpAppKit extends AbstractIdleService {
         int utxoVout = utxo.getIndex();
         int chunkIndex = 0;
 
-        if(slpTxType.equals("47454e45534953")) { // GENESIS
+        if(slpTxType.equals(genesisTxType)) { // GENESIS
             chunkIndex = 9;
-        } else if(slpTxType.equals("4d494e54")) { // MINT
+        } else if(slpTxType.equals(mintTxType)) { // MINT
             chunkIndex = 5;
         }
 
@@ -562,6 +565,73 @@ public class SlpAppKit extends AbstractIdleService {
         if(utxo.getValue().value == this.MIN_DUST) {
             String tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
             int chunkPosition = utxo.getIndex() + 4;
+            String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
+            long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
+
+            ArrayList<SlpUTXO> slpUtxosToAdd = new ArrayList<>();
+            ArrayList<SlpToken> slpTokensToAdd = new ArrayList<>();
+            ArrayList<SlpTokenBalance> slpBalancesToAdd = new ArrayList<>();
+            ArrayList<SlpTokenBalance> cachedTokenBalances = this.slpBalances;
+
+            if (!this.tokenIsMapped(tokenId)) {
+                SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
+                JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
+                if (tokenData != null) {
+                    int decimals = tokenData.getInt("decimals");
+                    String ticker = tokenData.getString("ticker");
+
+                    double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
+                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
+                    if (!this.tokenUtxoIsMapped(slpUTXO)) {
+                        slpUtxosToAdd.add(slpUTXO);
+                    }
+
+                    SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
+                    slpTokensToAdd.add(slpToken);
+
+                    if (this.isBalanceRecorded(tokenId)) {
+                        this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
+                    } else {
+                        slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
+                    }
+                }
+            } else {
+                SlpToken slpToken = this.getSlpToken(tokenId);
+                int decimals = slpToken.getDecimals();
+
+                double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
+                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
+                if (!this.tokenUtxoIsMapped(slpUTXO)) {
+                    slpUtxosToAdd.add(slpUTXO);
+                }
+
+                if (this.isBalanceRecorded(tokenId)) {
+                    this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
+                } else {
+                    slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
+                }
+            }
+            this.slpUtxos.addAll(slpUtxosToAdd);
+            this.slpBalances = cachedTokenBalances;
+            this.slpBalances.addAll(slpBalancesToAdd);
+            this.slpTokens.addAll(slpTokensToAdd);
+            this.saveTokens(slpTokens);
+        }
+    }
+
+    private void processGenesisOrMintUtxo(TransactionOutput utxo, Transaction tx, String slpTxType) {
+        if(utxo.getValue().value == this.MIN_DUST) {
+            String tokenId = "";
+            int chunkPosition = 0;
+
+            if(slpTxType.equals(genesisTxType)) {
+                tokenId = tx.getHashAsString();
+                chunkPosition = 10;
+            } else if(slpTxType.equals(mintTxType)) {
+                tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
+                chunkPosition = 6;
+            }
+
             String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
             long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
 
