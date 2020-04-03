@@ -116,12 +116,17 @@ class SlpTxBuilder {
         }
 
         fun toRawAmount(amount: BigDecimal, slpToken: SlpToken): ULong {
-            if (amount > maxRawAmount) {
+            var amt = amount
+            if (amt > maxRawAmount) {
                 throw IllegalArgumentException("amount larger than 8 unsigned bytes")
-            } else if (amount.scale() > slpToken.decimals) {
-                throw IllegalArgumentException("${slpToken.ticker} supports maximum ${slpToken.decimals} decimals but amount is $amount")
+            } else if (amt.scale() > slpToken.decimals) {
+                if(slpToken.decimals == 0) {
+                    amt = amount.toInt().toBigDecimal()
+                } else {
+                    throw IllegalArgumentException("${slpToken.ticker} supports maximum ${slpToken.decimals} decimals but amount is $amount")
+                }
             }
-            return amount.scaleByPowerOfTen(slpToken.decimals).toLong().toULong()
+            return amt.scaleByPowerOfTen(slpToken.decimals).toLong().toULong()
         }
 
         fun outputFee(numOutputs: Int): Long {
