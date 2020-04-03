@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.subgraph.orchid.encoders.Hex;
+import io.reactivex.Single;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.ChildNumber;
@@ -44,8 +45,6 @@ public class SlpAppKit extends AbstractIdleService {
     private File tokensFile;
     private DownloadProgressTracker progressTracker;
     private long MIN_DUST = 546L;
-    private long OP_RETURN_NUM_BYTES_BASE = 55;
-    private long QUANTITY_NUM_BYTES = 9;
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<SlpUTXO>();
     private ArrayList<SlpToken> slpTokens = new ArrayList<SlpToken>();
     private ArrayList<SlpTokenBalance> slpBalances = new ArrayList<SlpTokenBalance>();
@@ -333,94 +332,7 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
-        ArrayList<TransactionOutput> bchUtxos = new ArrayList<>();
-        SlpAddress slpAddress = new SlpAddress(this.wallet.getParams(), slpDestinationAddress);
-        String destinationAddr = slpAddress.toCashAddress();
-        int tokenDecimals = this.getSlpToken(tokenId).getDecimals();
-        long sendTokensRaw = BigDecimal.valueOf(numTokens).scaleByPowerOfTen(tokenDecimals).longValueExact();
-        long sendSatoshi = this.MIN_DUST;
-
-        ArrayList<SlpUTXO> tempSlpUtxos = new ArrayList<>();
-        for(SlpUTXO slpUtxo : slpUtxos) {
-            if(slpUtxo.getTokenId().equals(tokenId)) {
-                tempSlpUtxos.add(slpUtxo);
-            }
-        }
-
-        ArrayList<TransactionOutput> selectedUtxos = new ArrayList<>();
-        ArrayList<SlpUTXO> selectedSlpUtxos = new ArrayList<>();
-        long inputTokensRaw = 0L;
-        long inputSatoshi = 0L;
-        for(SlpUTXO tempSlpUtxo : tempSlpUtxos) {
-            if(inputTokensRaw < sendTokensRaw) {
-                selectedUtxos.add(tempSlpUtxo.getTxUtxo());
-                selectedSlpUtxos.add(tempSlpUtxo);
-                inputTokensRaw += BigDecimal.valueOf(tempSlpUtxo.getTokenAmount()).scaleByPowerOfTen(tokenDecimals).doubleValue();
-                inputSatoshi += (tempSlpUtxo.getTxUtxo().getValue().value - 148L); // Deduct input fee
-            }
-        }
-
-        if (inputTokensRaw < sendTokensRaw) {
-            throw new RuntimeException("insufficient token balance=" + inputTokensRaw);
-        } else if (inputTokensRaw > sendTokensRaw) {
-            // If there's token change we need at least another dust limit worth of BCH
-            sendSatoshi += MIN_DUST;
-        }
-
-        for(TransactionOutput txOutput : wallet.getUtxos()) {
-            /*
-            When grabbing all BCH outputs that can be used for sending the SLP tx, we ignore utxos that
-            are of 546 satoshis, as it is either an SLP utxo, or a dusting attack.
-             */
-            if(txOutput.getValue().value != MIN_DUST) {
-                bchUtxos.add(txOutput);
-            }
-        }
-
-        long propagationFixFee = 550L; //Helps avoid not having enough BCH for tx, and propagating tx
-        long numOutputs = 3L; // Assume three outputs in addition to the op return.
-        long numQuanitites = 2L; // Assume one token receiver and the token receiver
-        long fee = this.outputFee(numOutputs) + this.sizeInBytes(numQuanitites) + propagationFixFee;
-
-        // If we can not yet afford the fee + dust limit to send, use pure BCH utxo's
-        for(TransactionOutput utxo : bchUtxos) {
-            if(inputSatoshi <= (sendSatoshi + fee)) {
-                selectedUtxos.add(utxo);
-                inputSatoshi += utxo.getValue().value - 148L;
-            }
-        }
-
-        long changeSatoshi = inputSatoshi - sendSatoshi - fee;
-        if (changeSatoshi < 0) {
-            throw new IllegalArgumentException("Insufficient BCH balance=" + inputSatoshi + " required " + sendSatoshi + " + fees");
-        }
-
-        long changeTokens = inputTokensRaw - sendTokensRaw;
-
-        SendRequest req = SendRequest.createSlpTransaction(this.wallet.getParams());
-        req.aesKey = aesKey;
-        req.shuffleOutputs = false;
-        req.feePerKb = Coin.valueOf(1000L);
-        req.utxos = selectedUtxos;
-        SlpOpReturnOutputSend slpOpReturn = new SlpOpReturnOutputSend(tokenId, sendTokensRaw, changeTokens);
-        req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
-        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), Address.fromCashAddr(this.wallet.getParams(), destinationAddr));
-
-        if(inputTokensRaw > sendTokensRaw) {
-            req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), wallet.freshAddress(KeyChain.KeyPurpose.CHANGE));
-        }
-
-        if (changeSatoshi >= MIN_DUST) {
-            req.tx.addOutput(Coin.valueOf(changeSatoshi), wallet.freshAddress(KeyChain.KeyPurpose.CHANGE));
-        }
-
-        Transaction tx = wallet.sendCoinsOffline(req);
-
-        for(SlpUTXO slpUtxo : selectedSlpUtxos) {
-            this.slpUtxos.remove(slpUtxo);
-        }
-
-        return tx;
+        return SlpTxBuilder.buildTx(tokenId, numTokens, slpDestinationAddress, this, aesKey).blockingGet();
     }
 
     public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
@@ -686,14 +598,6 @@ public class SlpAppKit extends AbstractIdleService {
         }
     }
 
-    private long outputFee(long numOutputs) {
-        return numOutputs * 34;
-    }
-
-    private long sizeInBytes(long numQuantities) {
-        return OP_RETURN_NUM_BYTES_BASE + numQuantities * QUANTITY_NUM_BYTES;
-    }
-
     private boolean isBalanceRecorded(String tokenId) {
         for (Iterator<SlpTokenBalance> iterator = this.slpBalances.iterator(); iterator.hasNext();) {
             SlpTokenBalance tokenBalance = iterator.next();
@@ -802,6 +706,12 @@ public class SlpAppKit extends AbstractIdleService {
     }
     public ArrayList<SlpTokenBalance> getSlpBalances() {
         return this.slpBalances;
+    }
+    public ArrayList<SlpToken> getSlpTokens() {
+        return this.slpTokens;
+    }
+    public ArrayList<SlpUTXO> getSlpUtxos() {
+        return this.slpUtxos;
     }
 
     public SlpAddress currentSlpReceiveAddress() {

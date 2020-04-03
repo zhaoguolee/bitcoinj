@@ -4337,7 +4337,7 @@ public class Wallet extends BaseTaggableObject
     }
 
     public List<TransactionOutput> getUtxos() {
-        return this.calculateAllSpendCandidates(false, true, true);
+        return this.calculateAllSpendCandidates(false, true, false);
     }
 
     //endregion

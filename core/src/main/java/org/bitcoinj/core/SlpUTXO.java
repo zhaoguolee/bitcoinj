@@ -1,5 +1,7 @@
 package org.bitcoinj.core;
 
+import org.bitcoinj.kits.SlpAppKit;
+
 public class SlpUTXO {
     private String tokenId;
     private double tokenAmount;
@@ -16,6 +18,9 @@ public class SlpUTXO {
     }
 
     public double getTokenAmount() {
+        return this.tokenAmount;
+    }
+    public double getTokenAmountRaw(SlpAppKit slpAppKit) {
         return this.tokenAmount;
     }
 
