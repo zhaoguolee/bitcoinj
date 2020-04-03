@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -415,7 +416,8 @@ public class SlpAppKit extends AbstractIdleService {
     public void recalculateSlpUtxos() {
         this.slpUtxos.clear();
         this.slpBalances.clear();
-        for (Iterator<TransactionOutput> iterator = this.wallet.getUtxos().iterator(); iterator.hasNext();) {
+        List<TransactionOutput> utxos = this.wallet.calculateAllSpendCandidates(false, true, true);
+        for (Iterator<TransactionOutput> iterator = utxos.iterator(); iterator.hasNext();) {
             TransactionOutput utxo = iterator.next();
             Transaction tx = utxo.getParentTransaction();
 
