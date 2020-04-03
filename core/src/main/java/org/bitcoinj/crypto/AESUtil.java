@@ -7,7 +7,6 @@ package org.bitcoinj.crypto;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Base64;
 
 import org.spongycastle.crypto.BufferedBlockCipher;
 import org.spongycastle.crypto.CipherParameters;
@@ -21,6 +20,7 @@ import org.spongycastle.crypto.paddings.ISO10126d2Padding;
 import org.spongycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.spongycastle.crypto.params.KeyParameter;
 import org.spongycastle.crypto.params.ParametersWithIV;
+import org.spongycastle.util.encoders.Base64;
 
 public class AESUtil {
     public static final int PinPbkdf2Iterations = 5000;
@@ -36,8 +36,7 @@ public class AESUtil {
     }
 
     public static String decrypt(String ciphertext, CharSequenceX password, int iterations) {
-        boolean AESBlockSize = true;
-        byte[] cipherdata = Base64.getDecoder().decode(ciphertext.getBytes());
+        byte[] cipherdata = Base64.decode(ciphertext.getBytes());
         byte[] iv = copyOfRange(cipherdata, 0, 16);
         byte[] input = copyOfRange(cipherdata, 16, cipherdata.length);
         PBEParametersGenerator generator = new PKCS5S2ParametersGenerator();
@@ -66,7 +65,6 @@ public class AESUtil {
     }
 
     public static String encrypt(String cleartext, CharSequenceX password, int iterations) {
-        boolean AESBlockSize = true;
         if (password == null) {
             return null;
         } else {
@@ -92,7 +90,7 @@ public class AESUtil {
             byte[] ivAppended = new byte[len1 + len2];
             System.arraycopy(iv, 0, ivAppended, 0, len1);
             System.arraycopy(outBuf, 0, ivAppended, len1, len2);
-            byte[] raw = Base64.getEncoder().encode(ivAppended);
+            byte[] raw = Base64.encode(ivAppended);
             String ret = new String(raw);
             return ret;
         }
