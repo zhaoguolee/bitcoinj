@@ -9,7 +9,7 @@ import java.math.BigDecimal
 class SlpTxBuilder {
     companion object {
         @JvmStatic
-        fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter): Single<Transaction> {
+        fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?): Single<Transaction> {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
                         // Add OP RETURN and receiver output
@@ -30,7 +30,7 @@ class SlpTxBuilder {
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(Coin.valueOf(DUST_LIMIT), Address.fromCashAddr(slpAppKit.wallet.params, slpAppKit.freshSlpReceiveAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, Address.fromCashAddr(slpAppKit.wallet.params, slpAppKit.freshSlpReceiveAddress().toCashAddress()))
                         }
 
                         // Send our BCH change back to our BCH address
@@ -53,7 +53,7 @@ class SlpTxBuilder {
         fun sendTokenUtxoSelection(tokenId: String, numTokens: Double, slpAppKit: SlpAppKit): Single<SendTokenUtxoSelection> {
             return Single.fromCallable { // Wrap for now to protect against blocking non reactive calls
                 val tokenDetails: SlpToken = slpAppKit.getSlpToken(tokenId)
-                val sendTokensRaw =  toRawAmount(numTokens.toBigDecimal(), slpAppKit.getSlpToken(tokenId))
+                val sendTokensRaw =  toRawAmount(numTokens.toBigDecimal(), tokenDetails)
                 var sendSatoshi = DUST_LIMIT // At least one dust limit output to the token receiver
 
                 val utxos = slpAppKit.wallet.utxos
@@ -67,7 +67,7 @@ class SlpTxBuilder {
                         .takeWhile {
                             val amountTooLow = inputTokensRaw < sendTokensRaw
                             if (amountTooLow) {
-                                inputTokensRaw += it.tokenAmount.toLong().toULong()
+                                inputTokensRaw += toRawAmount(it.tokenAmount.toBigDecimal(), tokenDetails)
                                 inputSatoshi += (it.txUtxo.value.value - 148) // Deduct input fee
                             }
                             amountTooLow

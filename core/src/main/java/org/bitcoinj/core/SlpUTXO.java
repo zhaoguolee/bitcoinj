@@ -20,9 +20,6 @@ public class SlpUTXO {
     public double getTokenAmount() {
         return this.tokenAmount;
     }
-    public double getTokenAmountRaw(SlpAppKit slpAppKit) {
-        return this.tokenAmount;
-    }
 
     public TransactionOutput getTxUtxo() {
         return this.txUtxo;
