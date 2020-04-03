@@ -12,6 +12,7 @@ class SlpTxBuilder {
         fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?): Single<Transaction> {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
+                        val cashAddr = SlpAddress(slpAppKit.wallet.params, toAddress).toCashAddress()
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
                         req.aesKey = aesKey
@@ -26,7 +27,7 @@ class SlpTxBuilder {
                         }
 
                         req.tx.addOutput(Coin.ZERO, opReturn.script)
-                        req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, Address.fromCashAddr(slpAppKit.wallet.params, toAddress))
+                        req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, Address.fromCashAddr(slpAppKit.wallet.params, cashAddr))
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
@@ -39,8 +40,9 @@ class SlpTxBuilder {
                         }
 
                         it.selectedUtxos.forEach { req.tx.addInput(it) }
-
-                        val tx = slpAppKit.wallet.sendCoinsOffline(req)
+                        slpAppKit.wallet.signTransaction(req)
+                        slpAppKit.wallet.commitTx(req.tx)
+                        val tx = req.tx
                         tx
                     }
         }
