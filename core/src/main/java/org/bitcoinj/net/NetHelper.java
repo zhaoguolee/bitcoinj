@@ -24,20 +24,16 @@ import java.util.Random;
 public class NetHelper {
     private String[] cashAcctServers = new String[]{
             "https://cashacct.imaginary.cash",
-            "https://electrum.imaginary.cash",
             "https://cashaccounts.bchdata.cash",
-            "https://cashacct.electroncash.dk",
-            "https://rest.bitcoin.com/v2/cashAccounts"
+            "https://cashacct.electroncash.dk"
     };
 
     private String[] blockExplorers = new String[]{
-            "btc.com",
-            "coin.space"
+            "btc.com"
     };
 
     private String[] blockExplorerAPIURL = new String[]{
-            "https://bch-chain.api.btc.com/v3/tx/",
-            "https://bch.coin.space/api/tx/"
+            "https://bch-chain.api.btc.com/v3/tx/"
     };
 
     public String getCashAccountAddress(NetworkParameters params, String cashAccount)
@@ -137,10 +133,6 @@ public class NetHelper {
             if(blockExplorer.equals("btc.com")) {
                 block = json.getJSONObject("data").getString("block_hash");
             }
-            else if(blockExplorer.equals("coin.space"))
-            {
-                block = json.getString("blockhash");
-            }
 
         } catch (JSONException e) {
             block = "???";
@@ -180,10 +172,6 @@ public class NetHelper {
             JSONObject json = new JSONObject(jsonText);
             if(blockExplorer.equals("btc.com")) {
                 block = json.getJSONObject("data").getString("block_hash");
-            }
-            else if(blockExplorer.equals("coin.space"))
-            {
-                block = json.getString("blockhash");
             }
 
         } catch (JSONException e) {
@@ -271,34 +259,6 @@ public class NetHelper {
                 }
             }
         }
-        else
-        {
-            InputStream is = null;
-
-            try {
-                is = (new URL(lookupServer + "/check/" + name + "/" + block)).openStream();
-            } catch (IOException var56) {
-                var56.printStackTrace();
-            }
-
-            try {
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                JSONObject json = new JSONObject(jsonText);
-                txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
-            } catch (JSONException | IOException var53) {
-                var53.printStackTrace();
-            } finally {
-                try {
-                    if (is != null) {
-                        is.close();
-                    }
-                } catch (IOException var47) {
-                    var47.printStackTrace();
-                }
-
-            }
-        }
 
         return txHex;
     }
@@ -370,34 +330,6 @@ public class NetHelper {
                 }
             }
         }
-        else
-        {
-            InputStream is = null;
-
-            try {
-                is = (new URL(lookupServer + "/check/" + name + "/" + block)).openStream();
-            } catch (IOException var56) {
-                var56.printStackTrace();
-            }
-
-            try {
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                JSONObject json = new JSONObject(jsonText);
-                txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
-            } catch (JSONException | IOException var53) {
-                var53.printStackTrace();
-            } finally {
-                try {
-                    if (is != null) {
-                        is.close();
-                    }
-                } catch (IOException var47) {
-                    var47.printStackTrace();
-                }
-
-            }
-        }
 
         return txHex;
     }
@@ -439,10 +371,6 @@ public class NetHelper {
             if(blockExplorer.equals("btc.com")) {
                 height = json.getJSONObject("data").getInt("block_height");
             }
-            else if(blockExplorer.equals("coin.space"))
-            {
-                height = json.getInt("blockheight");
-            }
 
         } catch (JSONException | IOException e) {
             e.printStackTrace();
@@ -479,10 +407,6 @@ public class NetHelper {
             JSONObject json = new JSONObject(jsonText);
             if(blockExplorer.equals("btc.com")) {
                 height = json.getJSONObject("data").getInt("block_height");
-            }
-            else if(blockExplorer.equals("coin.space"))
-            {
-                height = json.getInt("blockheight");
             }
 
         } catch (JSONException | IOException e) {
@@ -566,64 +490,6 @@ public class NetHelper {
                 }
             }
         }
-        else
-        {
-            if (!block.contains(".")) {
-                InputStream is = null;
-
-                try {
-                    is = (new URL(lookupServer + "/lookup/" + name + "/" + block)).openStream();
-                } catch (IOException var56) {
-                    var56.printStackTrace();
-                }
-
-                try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                    JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException | IOException var53) {
-                    var53.printStackTrace();
-                } finally {
-                    try {
-                        if (is != null) {
-                            is.close();
-                        }
-                    } catch (IOException var48) {
-                        var48.printStackTrace();
-                    }
-
-                }
-            } else {
-                String[] splitBlock = block.split("\\.");
-                String mainBlock = splitBlock[0];
-                String collision = splitBlock[1];
-                InputStream is = null;
-
-                try {
-                    is = (new URL(lookupServer + "/lookup/" + name + "/" + mainBlock + "/" + collision)).openStream();
-                } catch (IOException var52) {
-                    var52.printStackTrace();
-                }
-
-                try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                    JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException | IOException var49) {
-                    var49.printStackTrace();
-                } finally {
-                    try {
-                        if (is != null) {
-                            is.close();
-                        }
-                    } catch (IOException var47) {
-                        var47.printStackTrace();
-                    }
-                }
-            }
-        }
 
         return address;
     }
@@ -691,64 +557,6 @@ public class NetHelper {
                         var47.printStackTrace();
                     }
 
-                }
-            }
-        }
-        else
-        {
-            if (!block.contains(".")) {
-                InputStream is = null;
-
-                try {
-                    is = (new URL(lookupServer + "/lookup/" + name + "/" + block)).openStream();
-                } catch (IOException var56) {
-                    var56.printStackTrace();
-                }
-
-                try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                    JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException | IOException var53) {
-                    var53.printStackTrace();
-                } finally {
-                    try {
-                        if (is != null) {
-                            is.close();
-                        }
-                    } catch (IOException var48) {
-                        var48.printStackTrace();
-                    }
-
-                }
-            } else {
-                String[] splitBlock = block.split("\\.");
-                String mainBlock = splitBlock[0];
-                String collision = splitBlock[1];
-                InputStream is = null;
-
-                try {
-                    is = (new URL(lookupServer + "/lookup/" + name + "/" + mainBlock + "/" + collision)).openStream();
-                } catch (IOException var52) {
-                    var52.printStackTrace();
-                }
-
-                try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-                    String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
-                    JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
-                } catch (JSONException | IOException var49) {
-                    var49.printStackTrace();
-                } finally {
-                    try {
-                        if (is != null) {
-                            is.close();
-                        }
-                    } catch (IOException var47) {
-                        var47.printStackTrace();
-                    }
                 }
             }
         }
