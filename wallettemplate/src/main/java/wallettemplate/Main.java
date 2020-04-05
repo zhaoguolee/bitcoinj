@@ -193,7 +193,6 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) throws Exception {
-        SlpAppKit slpAppKit = new SlpAppKit().initialize(params, new File("."), "wallet", null);
-        slpAppKit.startAsync();
+//BIP47 tests here
     }
 }
