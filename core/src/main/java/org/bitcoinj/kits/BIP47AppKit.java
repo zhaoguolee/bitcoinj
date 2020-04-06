@@ -7,6 +7,7 @@ package org.bitcoinj.kits;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
@@ -590,7 +591,10 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public void importKey(ECKey key) {
-        vWallet.importKey(key);
+        if(this.vWallet.isEncrypted())
+            vWallet.importKeysAndEncrypt(Lists.newArrayList(key), this.aesKey);
+        else
+            vWallet.importKey(key);
     }
 
     /** Return true if this is the first time the address is seen used*/
