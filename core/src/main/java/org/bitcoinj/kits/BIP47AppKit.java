@@ -159,6 +159,10 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
+    public void completeSetupOfWalletAfterDecryption() {
+        this.completeSetupOfWallet();
+    }
+
     protected Wallet createWallet() {
         KeyChainGroup kcg;
         if (restoreFromSeed != null)
@@ -945,7 +949,11 @@ public class BIP47AppKit extends AbstractIdleService {
         boolean chainFileExists = chainFile.exists();
         boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null;
         vWallet = createOrLoadWallet(shouldReplayWallet);
-        this.completeSetupOfWallet();
+
+        if(!vWallet.getKeyChainSeed().isEncrypted()) {
+            this.completeSetupOfWallet();
+        }
+
         this.vStore = new SPVBlockStore(this.vWallet.getParams(), chainFile);
         if (!chainFileExists || this.restoreFromSeed != null) {
             if (this.checkpoints == null && !Utils.isAndroidRuntime()) {
