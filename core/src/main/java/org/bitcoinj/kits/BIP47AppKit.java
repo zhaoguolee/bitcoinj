@@ -165,10 +165,20 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     private void completeSetupOfWallet(@Nullable KeyParameter key) {
+        if(this.getvWallet().getKeyChainSeed().isEncrypted()) {
+            if(key != null) {
+                this.processNotifKey(key);
+            }
+        } else {
+            this.processNotifKey(key);
+        }
+    }
+
+    private void processNotifKey(@Nullable KeyParameter key) {
         this.setAccount(key);
         this.loadBip47MetaData();
         Address notificationAddress = this.mAccounts.get(0).getNotificationAddress();
-        System.out.println("BIP47AppKit notification address: "+notificationAddress.toString());
+        System.out.println("BIP47AppKit notification address: " + notificationAddress.toString());
 
         this.vWallet.allowSpendingUnconfirmedTransactions();
         this.vWallet.setAcceptRiskyTransactions(true);
@@ -280,41 +290,30 @@ public class BIP47AppKit extends AbstractIdleService {
      */
     public void setAccount(@Nullable KeyParameter key) {
         DeterministicSeed keyChainSeed = vWallet.getKeyChainSeed();
-        byte[] hd_seed;
-
         if(keyChainSeed.isEncrypted()) {
             if(key != null) {
                 keyChainSeed = keyChainSeed.decrypt(Objects.requireNonNull(vWallet.getKeyCrypter()), "", key);
-
-                hd_seed = this.restoreFromSeed != null ?
-                        this.restoreFromSeed.getSeedBytes() :
-                        keyChainSeed.getSeedBytes();
-
-
-                DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
-                DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
-                DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
-
-                BIP47Account account = new BIP47Account(params, coinKey, 0);
-
-                mAccounts.clear();
-                mAccounts.add(account);
+                this.setAccount(keyChainSeed);
             }
         } else {
-            hd_seed = this.restoreFromSeed != null ?
-                    this.restoreFromSeed.getSeedBytes() :
-                    keyChainSeed.getSeedBytes();
-
-
-            DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
-            DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
-            DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
-
-            BIP47Account account = new BIP47Account(params, coinKey, 0);
-
-            mAccounts.clear();
-            mAccounts.add(account);
+            this.setAccount(keyChainSeed);
         }
+    }
+
+    private void setAccount(DeterministicSeed keyChainSeed) {
+        byte[] hd_seed = this.restoreFromSeed != null ?
+                this.restoreFromSeed.getSeedBytes() :
+                keyChainSeed.getSeedBytes();
+
+
+        DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
+        DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
+        DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
+
+        BIP47Account account = new BIP47Account(params, coinKey, 0);
+
+        mAccounts.clear();
+        mAccounts.add(account);
     }
 
     public List<Peer> getConnectedPeers() {
