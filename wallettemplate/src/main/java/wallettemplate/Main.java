@@ -206,7 +206,7 @@ public class Main extends Application {
         System.out.println("Alice's Payment Code " + aliceBip47Wallet.getPaymentCode());
         aliceBip47Wallet.startAsync();*/
 
-        BIP47AppKit bobBip47Wallet = new BIP47AppKit(params, new File("."), "bobBip47Wallet", new DeterministicSeed("ur mom", null, "", 0)) {
+        BIP47AppKit bobBip47Wallet = new BIP47AppKit(params, new File("."), "bobBip47Wallet") {
             @Override
             public void onSetupCompleted() {
                 System.out.println("Bob's Notification Address " + getAccount(0).getNotificationAddress().toString());
