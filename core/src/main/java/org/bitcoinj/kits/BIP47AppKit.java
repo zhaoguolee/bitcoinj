@@ -20,9 +20,6 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.core.bip47.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.BIP47SecretPoint;
-import org.bitcoinj.net.discovery.PeerDiscovery;
-import org.bitcoinj.protocols.channels.StoredPaymentChannelClientStates;
-import org.bitcoinj.protocols.channels.StoredPaymentChannelServerStates;
 import org.bitcoinj.wallet.*;
 import org.bitcoinj.utils.BIP47Util;
 import org.bitcoinj.wallet.bip47.NotSecp256k1Exception;
@@ -105,7 +102,6 @@ public class BIP47AppKit extends AbstractIdleService {
     // Wether this wallet is restored from a BIP39 seed and will need to replay the complete blockchain
     // Will be null if it's not a restored wallet.
     private DeterministicSeed restoreFromSeed;
-    protected boolean useAutoSave = true;
 
     // Support for BIP47-type accounts. Only one account is currently handled in this wallet.
     private List<BIP47Account> mAccounts = new ArrayList<BIP47Account>(1);
@@ -117,8 +113,6 @@ public class BIP47AppKit extends AbstractIdleService {
     private TransactionEventListener mCoinsReceivedEventListener = null;
     // one listener when the transaction confidence changes
     private TransactionEventListener mTransactionConfidenceListener = null;
-    protected WalletProtobufSerializer.WalletFactory walletFactory;
-    @Nullable protected PeerDiscovery discovery;
 
     private boolean mBlockchainDownloadStarted = false;
 
@@ -134,11 +128,40 @@ public class BIP47AppKit extends AbstractIdleService {
 
     protected volatile Context context;
 
+    public BIP47AppKit() {
+
+    }
+
     public BIP47AppKit(NetworkParameters params, File file, String walletName) {
+        this(params, new KeyChainGroup(params), file, walletName);
+    }
+
+    public BIP47AppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
+        this(params, new KeyChainGroup(params, seed), file, walletName);
+    }
+
+    public BIP47AppKit(Wallet wallet, File file, String walletName) {
+        this.vWallet = wallet;
+        this.params = this.vWallet.getParams();
+        this.context = new Context(this.vWallet.getParams());
+        this.directory = file;
+        this.vWalletFileName = walletName;
+        this.vWalletFile = new File(this.directory, walletName + ".wallet");
+        this.completeSetupOfWallet(null);
+    }
+
+    private BIP47AppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
+        this.setupWallet(params, keyChainGroup, file, walletName);
+    }
+
+    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
+        this.vWallet = new Wallet(params, keyChainGroup);
         this.params = params;
         this.context = new Context(params);
         this.directory = file;
         this.vWalletFileName = walletName;
+        this.vWalletFile = new File(this.directory, walletName + ".wallet");
+        this.completeSetupOfWallet(null);
     }
 
     private void completeSetupOfWallet(@Nullable KeyParameter key) {
@@ -159,45 +182,34 @@ public class BIP47AppKit extends AbstractIdleService {
         this.completeSetupOfWallet(key);
     }
 
-    protected Wallet createWallet() {
-        KeyChainGroup kcg;
-        if (restoreFromSeed != null)
-            kcg = new KeyChainGroup(params, restoreFromSeed);
-        else
-            kcg = new KeyChainGroup(params);
-        if (walletFactory != null) {
-            return walletFactory.create(params, kcg);
+    public BIP47AppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
+        File tmpWalletFile = new File(baseDir, walletName + ".wallet");
+        if(tmpWalletFile.exists()) {
+            return loadFromFile(baseDir, walletName);
         } else {
-            return new Wallet(params, kcg);  // default
+            if(seed != null) {
+                this.restoreFromSeed = seed;
+                return new BIP47AppKit(params, seed, baseDir, walletName);
+            } else {
+                return new BIP47AppKit(params, baseDir, walletName);
+            }
         }
     }
 
-    private Wallet loadWallet(boolean shouldReplayWallet) throws Exception {
-        Wallet wallet;
-        FileInputStream walletStream = new FileInputStream(vWalletFile);
+    private static BIP47AppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         try {
-            List<WalletExtension> extensions = provideWalletExtensions();
-            WalletExtension[] extArray = extensions.toArray(new WalletExtension[extensions.size()]);
-            Protos.Wallet proto = WalletProtobufSerializer.parseToProto(walletStream);
-            final WalletProtobufSerializer serializer;
-            if (walletFactory != null)
-                serializer = new WalletProtobufSerializer(walletFactory);
-            else
-                serializer = new WalletProtobufSerializer();
-            wallet = serializer.readWallet(params, extArray, proto);
-            if (shouldReplayWallet)
-                wallet.reset();
-        } finally {
-            walletStream.close();
+            FileInputStream stream = null;
+            try {
+                stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
+                Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
+                return new BIP47AppKit(wallet, baseDir, walletName);
+            } finally {
+                if (stream != null) stream.close();
+            }
+        } catch (IOException e) {
+            throw new UnreadableWalletException("Could not open file", e);
         }
-        return wallet;
     }
-
-    protected List<WalletExtension> provideWalletExtensions() throws Exception {
-        return ImmutableList.of();
-    }
-
-    protected void onSetupCompleted() { }
 
     // create peergroup for the blockchain
     private void derivePeerGroup(){
@@ -271,22 +283,38 @@ public class BIP47AppKit extends AbstractIdleService {
         byte[] hd_seed;
 
         if(keyChainSeed.isEncrypted()) {
-            keyChainSeed = keyChainSeed.decrypt(Objects.requireNonNull(vWallet.getKeyCrypter()), "", key);
+            if(key != null) {
+                keyChainSeed = keyChainSeed.decrypt(Objects.requireNonNull(vWallet.getKeyCrypter()), "", key);
+
+                hd_seed = this.restoreFromSeed != null ?
+                        this.restoreFromSeed.getSeedBytes() :
+                        keyChainSeed.getSeedBytes();
+
+
+                DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
+                DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
+                DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
+
+                BIP47Account account = new BIP47Account(params, coinKey, 0);
+
+                mAccounts.clear();
+                mAccounts.add(account);
+            }
+        } else {
+            hd_seed = this.restoreFromSeed != null ?
+                    this.restoreFromSeed.getSeedBytes() :
+                    keyChainSeed.getSeedBytes();
+
+
+            DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
+            DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
+            DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
+
+            BIP47Account account = new BIP47Account(params, coinKey, 0);
+
+            mAccounts.clear();
+            mAccounts.add(account);
         }
-
-        hd_seed = this.restoreFromSeed != null ?
-                this.restoreFromSeed.getSeedBytes() :
-                keyChainSeed.getSeedBytes();
-
-
-        DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
-        DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
-        DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
-
-        BIP47Account account = new BIP47Account(params, coinKey, 0);
-
-        mAccounts.clear();
-        mAccounts.add(account);
     }
 
     public List<Peer> getConnectedPeers() {
@@ -512,10 +540,6 @@ public class BIP47AppKit extends AbstractIdleService {
 
     public BIP47Account getAccount(int i) {
         return mAccounts.get(i);
-    }
-
-    public List<BIP47Account> getAccounts() {
-        return mAccounts;
     }
 
     public NetworkParameters getParams() {
@@ -894,71 +918,9 @@ public class BIP47AppKit extends AbstractIdleService {
         this.vChain = null;
     }
 
-    private Wallet createOrLoadWallet(boolean shouldReplayWallet) throws Exception {
-        Wallet wallet;
-
-        maybeMoveOldWalletOutOfTheWay();
-
-        if (vWalletFile.exists()) {
-            wallet = loadWallet(shouldReplayWallet);
-        } else {
-            wallet = createWallet();
-            wallet.freshReceiveKey();
-            for (WalletExtension e : provideWalletExtensions()) {
-                wallet.addExtension(e);
-            }
-
-            // Currently the only way we can be sure that an extension is aware of its containing wallet is by
-            // deserializing the extension (see WalletExtension#deserializeWalletExtension(Wallet, byte[]))
-            // Hence, we first save and then load wallet to ensure any extensions are correctly initialized.
-            wallet.saveToFile(vWalletFile);
-            wallet = loadWallet(false);
-        }
-
-        if (useAutoSave) {
-            this.setupAutoSave(wallet);
-        }
-
-        return wallet;
-    }
-
-    private void maybeMoveOldWalletOutOfTheWay() {
-        if (restoreFromSeed == null) return;
-        if (!vWalletFile.exists()) return;
-        int counter = 1;
-        File newName;
-        do {
-            newName = new File(vWalletFile.getParent(), "Backup " + counter + " for " + vWalletFile.getName());
-            counter++;
-        } while (newName.exists());
-        log.info("Renaming old wallet file {} to {}", vWalletFile, newName);
-        if (!vWalletFile.renameTo(newName)) {
-            // This should not happen unless something is really messed up.
-            throw new RuntimeException("Failed to rename wallet for restore");
-        }
-    }
-
-    protected void setupAutoSave(Wallet wallet) {
-        wallet.autosaveToFile(vWalletFile, 5, TimeUnit.SECONDS, null);
-    }
-
-    public BIP47AppKit setAutoSave(boolean value) {
-        checkState(state() == State.NEW, "Cannot call after startup");
-        useAutoSave = value;
-        return this;
-    }
-
-    public void startWallet() throws Exception {
+    public void startWallet() throws BlockStoreException, IOException {
         File chainFile = new File(this.directory, this.vWalletFileName + ".spvchain");
         boolean chainFileExists = chainFile.exists();
-        this.vWalletFile = new File(this.directory, this.vWalletFileName + ".wallet");
-        boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null;
-        vWallet = createOrLoadWallet(shouldReplayWallet);
-
-        if(!vWallet.getKeyChainSeed().isEncrypted()) {
-            this.completeSetupOfWallet(null);
-        }
-
         this.vStore = new SPVBlockStore(this.vWallet.getParams(), chainFile);
         if (!chainFileExists || this.restoreFromSeed != null) {
             if (this.checkpoints == null && !Utils.isAndroidRuntime()) {
@@ -997,18 +959,25 @@ public class BIP47AppKit extends AbstractIdleService {
             this.vPeerGroup.setMaxConnections(peerAddresses.length);
             peerAddresses = null;
         } else if (!params.getId().equals(NetworkParameters.ID_REGTEST)) {
-            this.vPeerGroup.addPeerDiscovery(discovery != null ? discovery : new DnsDiscovery(params));
+            this.vPeerGroup.addPeerDiscovery(new DnsDiscovery(this.vWallet.getParams()));
         }
 
         this.vChain.addWallet(this.vWallet);
         this.vPeerGroup.addWallet(this.vWallet);
-        onSetupCompleted();
+        this.vWallet.autosaveToFile(new File(this.directory, this.vWalletFileName + ".wallet"), 5, TimeUnit.SECONDS, null);
+        this.vWallet.saveToFile(new File(this.directory, this.vWalletFileName + ".wallet"));
 
         Futures.addCallback(vPeerGroup.startAsync(), new FutureCallback() {
             @Override
             public void onSuccess(@Nullable Object result) {
-                completeExtensionInitiations(vPeerGroup);
-                final DownloadProgressTracker l = progressTracker == null ? new DownloadProgressTracker() : progressTracker;
+                DownloadProgressTracker defaultTracker = new DownloadProgressTracker() {
+                    @Override
+                    public void doneDownload() {
+                        super.doneDownload();
+                        System.out.println("blockchain downloaded");
+                    }
+                };
+                final DownloadProgressTracker l = progressTracker == null ? defaultTracker : progressTracker;
                 vPeerGroup.startBlockChainDownload(l);
             }
 
@@ -1022,19 +991,6 @@ public class BIP47AppKit extends AbstractIdleService {
         this.addTransactionsListener();
     }
 
-    private void completeExtensionInitiations(TransactionBroadcaster transactionBroadcaster) {
-        StoredPaymentChannelClientStates clientStoredChannels = (StoredPaymentChannelClientStates)
-                vWallet.getExtensions().get(StoredPaymentChannelClientStates.class.getName());
-        if(clientStoredChannels != null) {
-            clientStoredChannels.setTransactionBroadcaster(transactionBroadcaster);
-        }
-        StoredPaymentChannelServerStates serverStoredChannels = (StoredPaymentChannelServerStates)
-                vWallet.getExtensions().get(StoredPaymentChannelServerStates.class.getName());
-        if(serverStoredChannels != null) {
-            serverStoredChannels.setTransactionBroadcaster(transactionBroadcaster);
-        }
-    }
-
     public void setCheckpoints(InputStream checkpoints) {
         if (this.checkpoints != null)
             Utils.closeUnchecked(this.checkpoints);
@@ -1046,18 +1002,7 @@ public class BIP47AppKit extends AbstractIdleService {
         this.peerAddresses = addresses;
     }
 
-    public BIP47AppKit setDownloadProgressTracker(DownloadProgressTracker progressTracker) {
+    public void setDownloadProgressTracker(DownloadProgressTracker progressTracker) {
         this.progressTracker = progressTracker;
-        return this;
-    }
-
-    public BIP47AppKit restoreWalletFromSeed(DeterministicSeed seed) {
-        this.restoreFromSeed = seed;
-        return this;
-    }
-
-    public BIP47AppKit setDiscovery(@Nullable PeerDiscovery discovery) {
-        this.discovery = discovery;
-        return this;
     }
 }
