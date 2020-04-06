@@ -133,35 +133,39 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public BIP47AppKit(NetworkParameters params, File file, String walletName) {
-        this(params, new KeyChainGroup(params), file, walletName);
+        this(params, new KeyChainGroup(params), file, walletName, null);
     }
 
     public BIP47AppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
-        this(params, new KeyChainGroup(params, seed), file, walletName);
+        this(params, new KeyChainGroup(params, seed), file, walletName, null);
     }
 
-    public BIP47AppKit(Wallet wallet, File file, String walletName) {
+    public BIP47AppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName, @Nullable KeyParameter key) {
+        this(params, new KeyChainGroup(params, seed), file, walletName, key);
+    }
+
+    private BIP47AppKit(Wallet wallet, File file, String walletName, @Nullable KeyParameter key) {
         this.vWallet = wallet;
         this.params = this.vWallet.getParams();
         this.context = new Context(this.vWallet.getParams());
         this.directory = file;
         this.vWalletFileName = walletName;
         this.vWalletFile = new File(this.directory, walletName + ".wallet");
-        this.completeSetupOfWallet(null);
+        this.completeSetupOfWallet(key);
     }
 
-    private BIP47AppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        this.setupWallet(params, keyChainGroup, file, walletName);
+    private BIP47AppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName, @Nullable KeyParameter key) {
+        this.setupWallet(params, keyChainGroup, file, walletName, key);
     }
 
-    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
+    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName, @Nullable KeyParameter key) {
         this.vWallet = new Wallet(params, keyChainGroup);
         this.params = params;
         this.context = new Context(params);
         this.directory = file;
         this.vWalletFileName = walletName;
         this.vWalletFile = new File(this.directory, walletName + ".wallet");
-        this.completeSetupOfWallet(null);
+        this.completeSetupOfWallet(key);
     }
 
     private void completeSetupOfWallet(@Nullable KeyParameter key) {
@@ -188,14 +192,10 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
-    public void completeSetupOfWalletAfterDecryption(@Nullable KeyParameter key) {
-        this.completeSetupOfWallet(key);
-    }
-
-    public BIP47AppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
+    public BIP47AppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed, @Nullable KeyParameter key) throws UnreadableWalletException {
         File tmpWalletFile = new File(baseDir, walletName + ".wallet");
         if(tmpWalletFile.exists()) {
-            return loadFromFile(baseDir, walletName);
+            return loadFromFile(baseDir, walletName, key);
         } else {
             if(seed != null) {
                 this.restoreFromSeed = seed;
@@ -206,13 +206,28 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
-    private static BIP47AppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+    private static BIP47AppKit loadFromFile(File baseDir, String walletName, @Nullable KeyParameter key, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         try {
             FileInputStream stream = null;
             try {
                 stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
                 Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-                return new BIP47AppKit(wallet, baseDir, walletName);
+                return new BIP47AppKit(wallet, baseDir, walletName, key);
+            } finally {
+                if (stream != null) stream.close();
+            }
+        } catch (IOException e) {
+            throw new UnreadableWalletException("Could not open file", e);
+        }
+    }
+
+    public static boolean isWalletEncrypted(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+        try {
+            FileInputStream stream = null;
+            try {
+                stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
+                Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
+                return wallet.getKeyChainSeed().isEncrypted();
             } finally {
                 if (stream != null) stream.close();
             }
@@ -748,7 +763,7 @@ public class BIP47AppKit extends AbstractIdleService {
         return sendRequest.tx;
     }
 
-    public SendRequest makeNotificationTransaction(String paymentCode) throws InsufficientMoneyException {
+    public SendRequest makeNotificationTransaction(String paymentCode, @Nullable KeyParameter key) throws InsufficientMoneyException {
         BIP47Account toAccount = new BIP47Account(getParams(), paymentCode);
         Coin ntValue =  getParams().getMinNonDustOutput();
         Address ntAddress = toAccount.getNotificationAddress();
@@ -759,8 +774,8 @@ public class BIP47AppKit extends AbstractIdleService {
         System.out.println("Value: "+ntValue.toFriendlyString());
 
         SendRequest sendRequest = SendRequest.to(params, ntAddress.toString(), ntValue);
-
-        sendRequest.feePerKb = getDefaultFee(getParams());
+        sendRequest.aesKey = key;
+        sendRequest.feePerKb = Coin.valueOf(1000L);
         sendRequest.memo = "notification_transaction";
 
         org.bitcoinj.utils.BIP47Util.FeeCalculation feeCalculation = BIP47Util.calculateFee(vWallet, sendRequest, ntValue, vWallet.calculateAllSpendCandidates());
