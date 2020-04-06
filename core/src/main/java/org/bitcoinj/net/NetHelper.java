@@ -31,11 +31,13 @@ public class NetHelper {
     };
 
     private String[] blockExplorers = new String[]{
-            "btc.com"
+            "btc.com",
+            "rest.bitcoin.com"
     };
 
     private String[] blockExplorerAPIURL = new String[]{
-            "https://bch-chain.api.btc.com/v3/tx/"
+            "https://bch-chain.api.btc.com/v3/tx/",
+            "https://rest.bitcoin.com/v2/transaction/details/"
     };
 
     public String getCashAccountAddress(NetworkParameters params, String cashAccount)
@@ -152,6 +154,8 @@ public class NetHelper {
             JSONObject json = new JSONObject(jsonText);
             if(blockExplorer.equals("btc.com")) {
                 block = json.getJSONObject("data").getString("block_hash");
+            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+                block = json.getString("blockhash");
             }
 
         } catch (JSONException e) {
@@ -192,6 +196,8 @@ public class NetHelper {
             JSONObject json = new JSONObject(jsonText);
             if(blockExplorer.equals("btc.com")) {
                 block = json.getJSONObject("data").getString("block_hash");
+            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+                block = json.getString("blockhash");
             }
 
         } catch (JSONException e) {
@@ -400,6 +406,8 @@ public class NetHelper {
             JSONObject json = new JSONObject(jsonText);
             if(blockExplorer.equals("btc.com")) {
                 height = json.getJSONObject("data").getInt("block_height");
+            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+                height = json.getInt("blockheight");
             }
 
         } catch (JSONException | IOException e) {
@@ -437,6 +445,8 @@ public class NetHelper {
             JSONObject json = new JSONObject(jsonText);
             if(blockExplorer.equals("btc.com")) {
                 height = json.getJSONObject("data").getInt("block_height");
+            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+                height = json.getInt("blockheight");
             }
 
         } catch (JSONException | IOException e) {
