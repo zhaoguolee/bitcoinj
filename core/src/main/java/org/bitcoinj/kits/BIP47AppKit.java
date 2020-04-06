@@ -98,6 +98,7 @@ public class BIP47AppKit extends AbstractIdleService {
     // the directory will have the spvchain and the wallet files
     private File directory;
     private volatile File vWalletFile;
+    private KeyParameter aesKey;
     private String vWalletFileName;
     // Wether this wallet is restored from a BIP39 seed and will need to replay the complete blockchain
     // Will be null if it's not a restored wallet.
@@ -174,6 +175,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     private void completeSetupOfWallet(@Nullable KeyParameter key) {
+        this.aesKey = key;
         if(this.getvWallet().getKeyChainSeed().isEncrypted()) {
             if(key != null) {
                 this.processNotifKey(key);
@@ -181,6 +183,10 @@ public class BIP47AppKit extends AbstractIdleService {
         } else {
             this.processNotifKey(key);
         }
+    }
+
+    public void setAesKey(@Nullable KeyParameter key) {
+        this.aesKey = key;
     }
 
     private void processNotifKey(@Nullable KeyParameter key) {
@@ -518,7 +524,7 @@ public class BIP47AppKit extends AbstractIdleService {
 
     /** Given a notification transaction, extracts a valid payment code */
     public BIP47PaymentCode getPaymentCodeInNotificationTransaction(Transaction tx) {
-        byte[] privKeyBytes = mAccounts.get(0).getNotificationKey().getPrivKeyBytes();
+        byte[] privKeyBytes = mAccounts.get(0).getNotificationKey().maybeDecrypt(this.aesKey).getPrivKeyBytes();
 
         return BIP47Util.getPaymentCodeInNotificationTransaction(privKeyBytes, tx);
     }
@@ -809,7 +815,7 @@ public class BIP47AppKit extends AbstractIdleService {
             checkNotNull(redeemData, "StashTransaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
             System.out.println("Keys: "+redeemData.keys.size());
             System.out.println("Private key 0?: "+redeemData.keys.get(0).hasPrivKey());
-            byte[] privKey = redeemData.getFullKey().getPrivKeyBytes();
+            byte[] privKey = redeemData.getFullKey().maybeDecrypt(key).getPrivKeyBytes();
             System.out.println("Private key: "+ Utils.HEX.encode(privKey));
             byte[] pubKey = toAccount.getNotificationKey().getPubKey();
             System.out.println("Public Key: "+Utils.HEX.encode(pubKey));
