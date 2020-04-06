@@ -1,15 +1,12 @@
 package org.bitcoinj.core;
 
-import com.google.common.primitives.Longs;
 import com.subgraph.orchid.encoders.Hex;
-import com.sun.org.apache.xpath.internal.compiler.OpCodes;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.script.ScriptOpCodes;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 
 public class SlpOpReturnOutputGenesis {
     private Script script;

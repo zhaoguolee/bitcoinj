@@ -17,6 +17,8 @@ package wallettemplate;
 import com.subgraph.orchid.encoders.Base64Encoder;
 import com.subgraph.orchid.encoders.Hex;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.bip47.BIP47Channel;
+import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.SlpDbTokenDetails;
@@ -30,6 +32,8 @@ import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.bitcoinj.wallet.bip47.listeners.BlockchainDownloadProgressTracker;
+import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.spongycastle.util.encoders.Base64;
 import wallettemplate.controls.NotificationBarPane;
 import wallettemplate.utils.GuiUtils;
@@ -40,6 +44,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static wallettemplate.utils.GuiUtils.*;
 
@@ -193,6 +199,51 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) throws Exception {
-//BIP47 tests here
+        /*BIP47AppKit aliceBip47Wallet = new BIP47AppKit().initialize(params, new File("."), "aliceBip47Wallet", null);
+        System.out.println("Alice's Notification Address " + aliceBip47Wallet.getAccount(0).getNotificationAddress().toString());
+        System.out.println("Alice's Wallet Address " + aliceBip47Wallet.getvWallet().freshReceiveAddress().toString());
+        System.out.println("Alice's Payment Code " + aliceBip47Wallet.getPaymentCode());
+        aliceBip47Wallet.startAsync();*/
+
+        BIP47AppKit bobBip47Wallet = new BIP47AppKit().initialize(params, new File("."), "bobBip47Wallet", null);
+        System.out.println("Bob's Notification Address " + bobBip47Wallet.getAccount(0).getNotificationAddress().toString());
+        System.out.println("Bob's Wallet Address " + bobBip47Wallet.getvWallet().freshReceiveAddress().toString());
+        System.out.println("Bob's Payment Code " + bobBip47Wallet.getPaymentCode());
+        bobBip47Wallet.startAsync();
+
+        for(int x = 0; x < bobBip47Wallet.getTransactions().size(); x++) {
+            System.out.println(bobBip47Wallet.getTransactions().get(x).getHashAsString());
+        }
+
+        SendRequest emptyTx = SendRequest.emptyWallet(params, "bitcoincash:qqc5f26uscyx6mzklsasfkugc86ywdrceqd8fmx3cu");
+        Transaction tx = bobBip47Wallet.getvWallet().sendCoinsOffline(emptyTx);
+        System.out.println("RAW TX " + new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));
+
+
+        /*BIP47Channel paymentChannel = aliceBip47Wallet.getBip47MetaForPaymentCode("PM8TJi4YMtm8uLX3k7tEq38P4WdQ6qf9SuLP1p3toCgcLBf9ffnZoHaLHiJcKvT1qNueFzCgR3oaSLkLBVJsZLhc94PKwPrRnMcBedYdoQL6cLxKms9N");
+        Runnable callback = () -> System.out.println("Transaction sent");
+        Executor executor = Executors.newSingleThreadExecutor();
+
+        if(paymentChannel == null) {
+            //If payment channel is null, we can assume notification tx has not been sent. It's possible one has been sent, but the payment channel is null because the user deleted the .bip47 file, but that's a non-issue.
+            System.out.println("Constructing notification tx...");
+            SendRequest notification = aliceBip47Wallet.makeNotificationTransaction("PM8TJi4YMtm8uLX3k7tEq38P4WdQ6qf9SuLP1p3toCgcLBf9ffnZoHaLHiJcKvT1qNueFzCgR3oaSLkLBVJsZLhc94PKwPrRnMcBedYdoQL6cLxKms9N");
+            aliceBip47Wallet.broadcastTransaction(notification.tx);
+            aliceBip47Wallet.putPaymenCodeStatusSent("PM8TJi4YMtm8uLX3k7tEq38P4WdQ6qf9SuLP1p3toCgcLBf9ffnZoHaLHiJcKvT1qNueFzCgR3oaSLkLBVJsZLhc94PKwPrRnMcBedYdoQL6cLxKms9N", notification.tx);
+        }
+
+        String depositAddress = null;
+        if (paymentChannel != null && paymentChannel.isNotificationTransactionSent()) {
+            depositAddress = aliceBip47Wallet.getCurrentOutgoingAddress(paymentChannel);
+
+            System.out.println("Received Bob's Deposit Address " + depositAddress);
+            paymentChannel.incrementOutgoingIndex();
+            aliceBip47Wallet.saveBip47MetaData();
+            Coin amount = Coin.valueOf(1234);
+
+            Transaction payment = aliceBip47Wallet.createSend(depositAddress, amount.value);
+
+            aliceBip47Wallet.broadcastTransaction(payment).addListener(callback, executor);
+        }*/
     }
 }
