@@ -363,7 +363,7 @@ public class NetHelper {
 
             if (isOpReturn) {
                 int startingAddressChunk = 3;
-                int chunksLength = output.getScriptPubKey().getChunks().size() - 1;
+                int chunksLength = output.getScriptPubKey().getChunks().size();
                 int addressesAmount = chunksLength - startingAddressChunk;
                 System.out.println("Addresses amount: " + addressesAmount);
 
