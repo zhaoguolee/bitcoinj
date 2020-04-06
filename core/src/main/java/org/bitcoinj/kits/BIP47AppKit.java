@@ -146,12 +146,17 @@ public class BIP47AppKit extends AbstractIdleService {
 
     private BIP47AppKit(Wallet wallet, File file, String walletName, @Nullable KeyParameter key) {
         this.vWallet = wallet;
-        this.params = this.vWallet.getParams();
-        this.context = new Context(this.vWallet.getParams());
-        this.directory = file;
-        this.vWalletFileName = walletName;
-        this.vWalletFile = new File(this.directory, walletName + ".wallet");
-        this.completeSetupOfWallet(key);
+
+        if(wallet.getKeyChainSeed().isEncrypted() && key == null) {
+            throw new IllegalStateException("Wallet is encrypted but no key to decrypt is supplied.");
+        } else {
+            this.params = this.vWallet.getParams();
+            this.context = new Context(this.vWallet.getParams());
+            this.directory = file;
+            this.vWalletFileName = walletName;
+            this.vWalletFile = new File(this.directory, walletName + ".wallet");
+            this.completeSetupOfWallet(key);
+        }
     }
 
     private BIP47AppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName, @Nullable KeyParameter key) {
