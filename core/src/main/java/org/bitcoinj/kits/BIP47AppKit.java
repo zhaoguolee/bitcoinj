@@ -104,6 +104,7 @@ public class BIP47AppKit extends AbstractIdleService {
     // Wether this wallet is restored from a BIP39 seed and will need to replay the complete blockchain
     // Will be null if it's not a restored wallet.
     private DeterministicSeed restoreFromSeed;
+    private Runnable onReceiveRunnable;
 
     // Support for BIP47-type accounts. Only one account is currently handled in this wallet.
     private List<BIP47Account> mAccounts = new ArrayList<BIP47Account>(1);
@@ -282,7 +283,7 @@ public class BIP47AppKit extends AbstractIdleService {
     //
     // When a new *payment* transaction is received:
     //  - a new key is generated and imported to the wallet
-    private void addTransactionsListener(){
+    private void addTransactionsListener(Runnable runnable){
         this.addOnReceiveTransactionListener(new TransactionEventListener() {
             @Override
             public void onTransactionReceived(BIP47AppKit bip47AppKit, Transaction transaction) {
@@ -315,6 +316,8 @@ public class BIP47AppKit extends AbstractIdleService {
                     Coin valueSentToMe = getValueSentToMe(transaction);
                     System.out.println("Received tx for "+valueSentToMe.toFriendlyString() + ":" + transaction);
                 }
+
+                runnable.run();
             }
 
             @Override
@@ -1031,7 +1034,11 @@ public class BIP47AppKit extends AbstractIdleService {
             }
         });
 
-        this.addTransactionsListener();
+        this.addTransactionsListener(onReceiveRunnable);
+    }
+
+    public void setOnReceiveTxRunnable(Runnable runnable) {
+        this.onReceiveRunnable = runnable;
     }
 
     public void setCheckpoints(InputStream checkpoints) {
