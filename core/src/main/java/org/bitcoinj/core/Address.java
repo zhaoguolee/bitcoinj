@@ -22,6 +22,7 @@
 
 package org.bitcoinj.core;
 
+import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script;
 
@@ -144,6 +145,16 @@ public class Address extends VersionedChecksummedBytes {
     {
         try {
             Address.fromCashAddr(params, cashaddr);
+            return true;
+        } catch(AddressFormatException e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidPaymentCode(String paymentCode)
+    {
+        try {
+            new BIP47PaymentCode(paymentCode);
             return true;
         } catch(AddressFormatException e) {
             return false;
