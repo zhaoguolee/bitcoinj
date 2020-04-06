@@ -2,6 +2,7 @@ package org.bitcoinj.net;
 
 import com.subgraph.orchid.encoders.Hex;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.crypto.HashHelper;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.utils.JSONHelper;
@@ -17,6 +18,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -58,15 +60,23 @@ public class NetHelper {
         int blockInt = Integer.parseInt(block);
         int cashAccountGenesis = 563620;
         if(blockInt == (txHeight - cashAccountGenesis)) {
+            String address = "";
             String blockHash = getTransactionsBlockHash(txid);
             String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
-            String expectedAddress = getExpectedCashAccountAddress(username + "#" + block + "." + collision);
-            String opReturn = getOpReturn(decodedTx);
-            String hash160 = opReturn.substring(2);
-            String cashAddress = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+            ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
+            ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
+            for(int x = 0; x < addresses.size(); x++) {
+                String hash160 = addresses.get(x).substring(2);
+                BIP47PaymentCode paymentCode = new BIP47PaymentCode(Hex.decode(hash160));
+                if(paymentCode.isValid()) {
+                    address = paymentCode.toString();
+                } else {
+                    address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+                }
+            }
 
-            if(cashAddress.equals(expectedAddress))
-                return cashAddress;
+            if(expectedAddresses.indexOf(address) != -1)
+                return address;
             else
                 return "Unexpected Cash Account. Server possibly hacked.";
         } else {
@@ -96,15 +106,23 @@ public class NetHelper {
         int blockInt = Integer.parseInt(block);
         int cashAccountGenesis = 563620;
         if(blockInt == (txHeight - cashAccountGenesis)) {
+            String address = "";
             String blockHash = getTransactionsBlockHash(txid, proxy);
             String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
-            String expectedAddress = getExpectedCashAccountAddress(username + "#" + block + "." + collision, proxy);
-            String opReturn = getOpReturn(decodedTx);
-            String hash160 = opReturn.substring(2);
-            String cashAddress = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+            ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision, proxy);
+            ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
+            for(int x = 0; x < addresses.size(); x++) {
+                String hash160 = addresses.get(x).substring(2);
+                BIP47PaymentCode paymentCode = new BIP47PaymentCode(Hex.decode(hash160));
+                if(paymentCode.isValid()) {
+                    address = paymentCode.toString();
+                } else {
+                    address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+                }
+            }
 
-            if(cashAddress.equals(expectedAddress))
-                return cashAddress;
+            if(expectedAddresses.indexOf(address) != -1)
+                return address;
             else
                 return "Unexpected Cash Account. Server possibly hacked.";
         } else {
@@ -334,20 +352,27 @@ public class NetHelper {
         return txHex;
     }
 
-    private String getOpReturn(Transaction tx)
+    private ArrayList<String> getAddressesFromOpReturn(Transaction tx)
     {
+        ArrayList<String> addresses = new ArrayList<String>();
         List<TransactionOutput> outputs = tx.getOutputs();
-        String opReturn = null;
         for (TransactionOutput output : outputs) {
             boolean isOpReturn = output.getScriptPubKey().isOpReturn();
 
             if (isOpReturn) {
-                opReturn = new String(Hex.encode(Objects.requireNonNull(output.getScriptPubKey().getChunks().get(3).data)), StandardCharsets.UTF_8);
+                int startingAddressChunk = 3;
+                int chunksLength = output.getScriptPubKey().getChunks().size();
+                int addressesAmount = chunksLength - startingAddressChunk;
+
+                for(int x = 0; x < addressesAmount; x++) {
+                    String address = new String(Hex.encode(Objects.requireNonNull(output.getScriptPubKey().getChunks().get(x + startingAddressChunk).data)), StandardCharsets.UTF_8);
+                    addresses.add(address);
+                }
                 break;
             }
         }
 
-        return opReturn;
+        return addresses;
     }
 
     private int getTransactionHeight(String transactionHash)
@@ -424,10 +449,10 @@ public class NetHelper {
         return height;
     }
 
-    private String getExpectedCashAccountAddress(String cashAccount) {
+    private ArrayList<String> getExpectedCashAccountAddresses(String cashAccount) {
         int randExplorer = (new Random()).nextInt(cashAcctServers.length);
         String lookupServer = cashAcctServers[randExplorer];
-        String address = "";
+        ArrayList<String> addresses = new ArrayList<String>();
         String[] splitAccount = cashAccount.split("#");
         String name = splitAccount[0];
         String block = splitAccount[1];
@@ -446,7 +471,10 @@ public class NetHelper {
                     BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                    int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
+                    for(int x = 0; x < paymentsLength; x++) {
+                        addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
+                    }
                 } catch (JSONException | IOException var53) {
                     var53.printStackTrace();
                 } finally {
@@ -475,7 +503,10 @@ public class NetHelper {
                     BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                    int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
+                    for(int x = 0; x < paymentsLength; x++) {
+                        addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
+                    }
                 } catch (JSONException | IOException var49) {
                     var49.printStackTrace();
                 } finally {
@@ -491,13 +522,13 @@ public class NetHelper {
             }
         }
 
-        return address;
+        return addresses;
     }
 
-    private String getExpectedCashAccountAddress(String cashAccount, Proxy proxy) {
+    private ArrayList<String> getExpectedCashAccountAddresses(String cashAccount, Proxy proxy) {
         int randExplorer = (new Random()).nextInt(cashAcctServers.length);
         String lookupServer = cashAcctServers[randExplorer];
-        String address = "";
+        ArrayList<String> addresses = new ArrayList<String>();
         String[] splitAccount = cashAccount.split("#");
         String name = splitAccount[0];
         String block = splitAccount[1];
@@ -516,7 +547,10 @@ public class NetHelper {
                     BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                    int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
+                    for(int x = 0; x < paymentsLength; x++) {
+                        addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
+                    }
                 } catch (JSONException | IOException var53) {
                     var53.printStackTrace();
                 } finally {
@@ -545,7 +579,10 @@ public class NetHelper {
                     BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
-                    address = json.getJSONObject("information").getJSONArray("payment").getJSONObject(0).getString("address");
+                    int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
+                    for(int x = 0; x < paymentsLength; x++) {
+                        addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
+                    }
                 } catch (JSONException | IOException var49) {
                     var49.printStackTrace();
                 } finally {
@@ -561,6 +598,6 @@ public class NetHelper {
             }
         }
 
-        return address;
+        return addresses;
     }
 }
