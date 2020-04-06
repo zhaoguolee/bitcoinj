@@ -65,11 +65,12 @@ public class NetHelper {
             String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
             ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
             ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
-            for(int x = 0; x < addresses.size(); x++) {
-                String hash160 = addresses.get(x).substring(2);
+            for (String s : addresses) {
+                String hash160 = s.substring(2);
                 BIP47PaymentCode paymentCode = new BIP47PaymentCode(Hex.decode(hash160));
-                if(paymentCode.isValid()) {
+                if (paymentCode.isValid()) {
                     address = paymentCode.toString();
+                    break;
                 } else {
                     address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
                 }
@@ -111,11 +112,12 @@ public class NetHelper {
             String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
             ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision, proxy);
             ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
-            for(int x = 0; x < addresses.size(); x++) {
-                String hash160 = addresses.get(x).substring(2);
+            for (String s : addresses) {
+                String hash160 = s.substring(2);
                 BIP47PaymentCode paymentCode = new BIP47PaymentCode(Hex.decode(hash160));
-                if(paymentCode.isValid()) {
+                if (paymentCode.isValid()) {
                     address = paymentCode.toString();
+                    break;
                 } else {
                     address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
                 }
@@ -361,13 +363,15 @@ public class NetHelper {
 
             if (isOpReturn) {
                 int startingAddressChunk = 3;
-                int chunksLength = output.getScriptPubKey().getChunks().size();
+                int chunksLength = output.getScriptPubKey().getChunks().size() - 1;
                 int addressesAmount = chunksLength - startingAddressChunk;
                 System.out.println("Addresses amount: " + addressesAmount);
 
                 for(int x = 0; x < addressesAmount; x++) {
                     String address = new String(Hex.encode(Objects.requireNonNull(output.getScriptPubKey().getChunks().get(x + startingAddressChunk).data)), StandardCharsets.UTF_8);
-                    addresses.add(address);
+
+                    if(!address.isEmpty())
+                        addresses.add(address);
                 }
                 break;
             }
