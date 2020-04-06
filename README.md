@@ -47,7 +47,7 @@ If using JDK 11 or above, the WalletTemplate demo you will JavaFX-SDK installed 
 
 If you would like to help contribute to bitcoincashj, feel free to make changes and submit pull requests.
 
-Not a programmer? Not a problem. You can donate Bitcoin Cash to the address below:
+Not a programmer? Not a problem. You can donate Bitcoin Cash to the addresses below:
 
 bitcoincash:qptnypuugy29lttleggl7l0vpls0vg295q9nsavw6g
 
