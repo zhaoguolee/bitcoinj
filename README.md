@@ -50,3 +50,5 @@ If you would like to help contribute to bitcoincashj, feel free to make changes 
 Not a programmer? Not a problem. You can donate Bitcoin Cash to the address below:
 
 bitcoincash:qptnypuugy29lttleggl7l0vpls0vg295q9nsavw6g
+
+PM8TJTTrEkPNdugn4exq72mYugqojF5XKXgTinyK3mhmYKegXUARNDr3imkN8i1wi6fHQ9szAUYrFKzXwP1NP8iUXuRQWwPcirphcnD6sDxYihXG6rYW
