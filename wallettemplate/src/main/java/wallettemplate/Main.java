@@ -21,6 +21,7 @@ import org.bitcoinj.core.bip47.BIP47Channel;
 import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.params.*;
 import org.bitcoinj.store.BlockStoreException;
@@ -205,7 +206,7 @@ public class Main extends Application {
         System.out.println("Alice's Payment Code " + aliceBip47Wallet.getPaymentCode());
         aliceBip47Wallet.startAsync();*/
 
-        BIP47AppKit bobBip47Wallet = new BIP47AppKit().initialize(params, new File("."), "bobBip47Wallet", null);
+        /*BIP47AppKit bobBip47Wallet = new BIP47AppKit().initialize(params, new File("."), "bobBip47Wallet", null);
         System.out.println("Bob's Notification Address " + bobBip47Wallet.getAccount(0).getNotificationAddress().toString());
         System.out.println("Bob's Wallet Address " + bobBip47Wallet.getvWallet().freshReceiveAddress().toString());
         System.out.println("Bob's Payment Code " + bobBip47Wallet.getPaymentCode());
@@ -217,7 +218,7 @@ public class Main extends Application {
 
         SendRequest emptyTx = SendRequest.emptyWallet(params, "bitcoincash:qqc5f26uscyx6mzklsasfkugc86ywdrceqd8fmx3cu");
         Transaction tx = bobBip47Wallet.getvWallet().sendCoinsOffline(emptyTx);
-        System.out.println("RAW TX " + new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));
+        System.out.println("RAW TX " + new String(Hex.encode(tx.bitcoinSerialize()), StandardCharsets.UTF_8));*/
 
 
         /*BIP47Channel paymentChannel = aliceBip47Wallet.getBip47MetaForPaymentCode("PM8TJi4YMtm8uLX3k7tEq38P4WdQ6qf9SuLP1p3toCgcLBf9ffnZoHaLHiJcKvT1qNueFzCgR3oaSLkLBVJsZLhc94PKwPrRnMcBedYdoQL6cLxKms9N");

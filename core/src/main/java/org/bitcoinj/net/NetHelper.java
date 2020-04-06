@@ -10,10 +10,7 @@ import org.bitcoinj.wallet.SendRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -31,12 +28,10 @@ public class NetHelper {
     };
 
     private String[] blockExplorers = new String[]{
-            "btc.com",
             "rest.bitcoin.com"
     };
 
     private String[] blockExplorerAPIURL = new String[]{
-            "https://bch-chain.api.btc.com/v3/tx/",
             "https://rest.bitcoin.com/v2/transaction/details/"
     };
 
@@ -55,35 +50,39 @@ public class NetHelper {
             block = splitAccount[1];
         }
         String txHex = getTxHexFromCashAcct(cashAccount);
-        Transaction decodedTx = new Transaction(params, Hex.decode(txHex));
 
-        String txid = decodedTx.getHashAsString();
-        int txHeight = getTransactionHeight(txid);
-        int blockInt = Integer.parseInt(block);
-        int cashAccountGenesis = 563620;
-        if(blockInt == (txHeight - cashAccountGenesis)) {
-            String address = "";
-            String blockHash = getTransactionsBlockHash(txid);
-            String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
-            ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
-            ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
-            for (String s : addresses) {
-                String hash160 = s.substring(2);
-                BIP47PaymentCode paymentCode = new BIP47PaymentCode(Hex.decode(hash160));
-                if (paymentCode.isValid()) {
-                    address = paymentCode.toString();
-                    break;
-                } else {
-                    address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+        if(txHex != null) {
+            Transaction decodedTx = new Transaction(params, Hex.decode(txHex));
+
+            String txid = decodedTx.getHashAsString();
+            int txHeight = getTransactionHeight(txid);
+            int blockInt = Integer.parseInt(block);
+            int cashAccountGenesis = 563620;
+            if (blockInt == (txHeight - cashAccountGenesis)) {
+                String address = "";
+                String blockHash = getTransactionsBlockHash(txid);
+                String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
+                ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
+                ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
+                for (String s : addresses) {
+                    String hash160 = s.substring(2);
+                    if (Address.isValidPaymentCode(Hex.decode(hash160))) {
+                        address = new BIP47PaymentCode(Hex.decode(hash160)).toString();
+                        break;
+                    } else {
+                        address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+                    }
                 }
-            }
 
-            if(expectedAddresses.indexOf(address) != -1)
-                return address;
-            else
-                return "Unexpected Cash Account. Server possibly hacked.";
+                if (expectedAddresses.indexOf(address) != -1)
+                    return address;
+                else
+                    return null;
+            } else {
+                return null;
+            }
         } else {
-            return "Unexpected Cash Account. Server possibly hacked.";
+            return null;
         }
     }
 
@@ -102,35 +101,38 @@ public class NetHelper {
             block = splitAccount[1];
         }
         String txHex = getTxHexFromCashAcct(cashAccount, proxy);
-        Transaction decodedTx = new Transaction(params, Hex.decode(txHex));
+        if(txHex != null) {
+            Transaction decodedTx = new Transaction(params, Hex.decode(txHex));
 
-        String txid = decodedTx.getHashAsString();
-        int txHeight = getTransactionHeight(txid, proxy);
-        int blockInt = Integer.parseInt(block);
-        int cashAccountGenesis = 563620;
-        if(blockInt == (txHeight - cashAccountGenesis)) {
-            String address = "";
-            String blockHash = getTransactionsBlockHash(txid, proxy);
-            String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
-            ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision, proxy);
-            ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
-            for (String s : addresses) {
-                String hash160 = s.substring(2);
-                BIP47PaymentCode paymentCode = new BIP47PaymentCode(Hex.decode(hash160));
-                if (paymentCode.isValid()) {
-                    address = paymentCode.toString();
-                    break;
-                } else {
-                    address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+            String txid = decodedTx.getHashAsString();
+            int txHeight = getTransactionHeight(txid, proxy);
+            int blockInt = Integer.parseInt(block);
+            int cashAccountGenesis = 563620;
+            if (blockInt == (txHeight - cashAccountGenesis)) {
+                String address = "";
+                String blockHash = getTransactionsBlockHash(txid, proxy);
+                String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
+                ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision, proxy);
+                ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
+                for (String s : addresses) {
+                    String hash160 = s.substring(2);
+                    if (Address.isValidPaymentCode(Hex.decode(hash160))) {
+                        address = new BIP47PaymentCode(Hex.decode(hash160)).toString();
+                        break;
+                    } else {
+                        address = CashAddressFactory.create().getFromBase58(MainNetParams.get(), new Address(params, Hex.decode(hash160)).toString()).toString();
+                    }
                 }
-            }
 
-            if(expectedAddresses.indexOf(address) != -1)
-                return address;
-            else
+                if (expectedAddresses.indexOf(address) != -1)
+                    return address;
+                else
+                    return "Unexpected Cash Account. Server possibly hacked.";
+            } else {
                 return "Unexpected Cash Account. Server possibly hacked.";
+            }
         } else {
-            return "Unexpected Cash Account. Server possibly hacked.";
+            return "Cash Account not found.";
         }
     }
 
@@ -152,9 +154,7 @@ public class NetHelper {
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("btc.com")) {
-                block = json.getJSONObject("data").getString("block_hash");
-            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+            if(blockExplorer.equals("rest.bitcoin.com")) {
                 block = json.getString("blockhash");
             }
 
@@ -194,9 +194,7 @@ public class NetHelper {
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("btc.com")) {
-                block = json.getJSONObject("data").getString("block_hash");
-            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+            if(blockExplorer.equals("rest.bitcoin.com")) {
                 block = json.getString("blockhash");
             }
 
@@ -242,8 +240,9 @@ public class NetHelper {
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
-                } catch (JSONException | IOException var53) {
+                } catch (JSONException | IOException | NullPointerException var53) {
                     var53.printStackTrace();
+                    txHex = null;
                 } finally {
                     try {
                         if (is != null) {
@@ -271,8 +270,9 @@ public class NetHelper {
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
-                } catch (JSONException | IOException var49) {
+                } catch (JSONException | IOException | NullPointerException var49) {
                     var49.printStackTrace();
+                    txHex = null;
                 } finally {
                     try {
                         if (is != null) {
@@ -371,7 +371,6 @@ public class NetHelper {
                 int startingAddressChunk = 3;
                 int chunksLength = output.getScriptPubKey().getChunks().size();
                 int addressesAmount = chunksLength - startingAddressChunk;
-                System.out.println("Addresses amount: " + addressesAmount);
 
                 for(int x = 0; x < addressesAmount; x++) {
                     String address = new String(Hex.encode(Objects.requireNonNull(output.getScriptPubKey().getChunks().get(x + startingAddressChunk).data)), StandardCharsets.UTF_8);
@@ -404,9 +403,7 @@ public class NetHelper {
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("btc.com")) {
-                height = json.getJSONObject("data").getInt("block_height");
-            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+            if(blockExplorer.equals("rest.bitcoin.com")) {
                 height = json.getInt("blockheight");
             }
 
@@ -443,9 +440,7 @@ public class NetHelper {
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("btc.com")) {
-                height = json.getJSONObject("data").getInt("block_height");
-            } else if(blockExplorer.equals("rest.bitcoin.com")) {
+            if(blockExplorer.equals("rest.bitcoin.com")) {
                 height = json.getInt("blockheight");
             }
 

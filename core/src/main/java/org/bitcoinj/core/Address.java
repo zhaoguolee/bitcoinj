@@ -156,7 +156,18 @@ public class Address extends VersionedChecksummedBytes {
         try {
             new BIP47PaymentCode(paymentCode);
             return true;
-        } catch(AddressFormatException e) {
+        } catch(AddressFormatException | NullPointerException e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidPaymentCode(byte[] paymentCodeBytes)
+    {
+        try {
+            BIP47PaymentCode paymentCode = new BIP47PaymentCode(paymentCodeBytes);
+            new BIP47PaymentCode(paymentCode.toString());
+            return true;
+        } catch(AddressFormatException | NullPointerException e) {
             return false;
         }
     }
