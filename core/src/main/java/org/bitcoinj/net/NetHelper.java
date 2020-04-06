@@ -363,6 +363,7 @@ public class NetHelper {
                 int startingAddressChunk = 3;
                 int chunksLength = output.getScriptPubKey().getChunks().size();
                 int addressesAmount = chunksLength - startingAddressChunk;
+                System.out.println("Addresses amount: " + addressesAmount);
 
                 for(int x = 0; x < addressesAmount; x++) {
                     String address = new String(Hex.encode(Objects.requireNonNull(output.getScriptPubKey().getChunks().get(x + startingAddressChunk).data)), StandardCharsets.UTF_8);
