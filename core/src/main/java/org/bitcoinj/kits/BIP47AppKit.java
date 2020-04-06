@@ -241,6 +241,20 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
+    public static Wallet getEncryptedWallet(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+        try {
+            FileInputStream stream = null;
+            try {
+                stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
+                return Wallet.loadFromFileStream(stream, walletExtensions);
+            } finally {
+                if (stream != null) stream.close();
+            }
+        } catch (IOException e) {
+            throw new UnreadableWalletException("Could not open file", e);
+        }
+    }
+
     // create peergroup for the blockchain
     private void derivePeerGroup(){
         Context.propagate(new Context(params));
