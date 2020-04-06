@@ -206,12 +206,17 @@ public class Main extends Application {
         System.out.println("Alice's Payment Code " + aliceBip47Wallet.getPaymentCode());
         aliceBip47Wallet.startAsync();*/
 
-        /*BIP47AppKit bobBip47Wallet = new BIP47AppKit().initialize(params, new File("."), "bobBip47Wallet", null);
-        System.out.println("Bob's Notification Address " + bobBip47Wallet.getAccount(0).getNotificationAddress().toString());
-        System.out.println("Bob's Wallet Address " + bobBip47Wallet.getvWallet().freshReceiveAddress().toString());
-        System.out.println("Bob's Payment Code " + bobBip47Wallet.getPaymentCode());
-        bobBip47Wallet.startAsync();
+        BIP47AppKit bobBip47Wallet = new BIP47AppKit(params, new File("."), "bobBip47Wallet", new DeterministicSeed("ur mom", null, "", 0)) {
+            @Override
+            public void onSetupCompleted() {
+                System.out.println("Bob's Notification Address " + getAccount(0).getNotificationAddress().toString());
+                System.out.println("Bob's Wallet Address " + getvWallet().freshReceiveAddress().toString());
+                System.out.println("Bob's Payment Code " + getPaymentCode());
+            }
+        };
 
+        bobBip47Wallet.startAsync();
+/*
         for(int x = 0; x < bobBip47Wallet.getTransactions().size(); x++) {
             System.out.println(bobBip47Wallet.getTransactions().get(x).getHashAsString());
         }
