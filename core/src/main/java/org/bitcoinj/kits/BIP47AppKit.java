@@ -20,6 +20,9 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.core.bip47.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.BIP47SecretPoint;
+import org.bitcoinj.net.discovery.PeerDiscovery;
+import org.bitcoinj.protocols.channels.StoredPaymentChannelClientStates;
+import org.bitcoinj.protocols.channels.StoredPaymentChannelServerStates;
 import org.bitcoinj.wallet.*;
 import org.bitcoinj.utils.BIP47Util;
 import org.bitcoinj.wallet.bip47.NotSecp256k1Exception;
@@ -115,6 +118,7 @@ public class BIP47AppKit extends AbstractIdleService {
     // one listener when the transaction confidence changes
     private TransactionEventListener mTransactionConfidenceListener = null;
     protected WalletProtobufSerializer.WalletFactory walletFactory;
+    @Nullable protected PeerDiscovery discovery;
 
     private boolean mBlockchainDownloadStarted = false;
 
@@ -131,16 +135,10 @@ public class BIP47AppKit extends AbstractIdleService {
     protected volatile Context context;
 
     public BIP47AppKit(NetworkParameters params, File file, String walletName) {
-        this(params, file, walletName, null);
-    }
-
-    public BIP47AppKit(NetworkParameters params, File file, String walletName, @Nullable DeterministicSeed seed) {
         this.params = params;
         this.context = new Context(params);
         this.directory = file;
         this.vWalletFileName = walletName;
-        this.restoreFromSeed = seed;
-        this.vWalletFile = new File(this.directory, walletName + ".wallet");
     }
 
     private void completeSetupOfWallet(@Nullable KeyParameter key) {
@@ -953,6 +951,7 @@ public class BIP47AppKit extends AbstractIdleService {
     public void startWallet() throws Exception {
         File chainFile = new File(this.directory, this.vWalletFileName + ".spvchain");
         boolean chainFileExists = chainFile.exists();
+        this.vWalletFile = new File(this.directory, this.vWalletFileName + ".wallet");
         boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null;
         vWallet = createOrLoadWallet(shouldReplayWallet);
 
@@ -998,25 +997,18 @@ public class BIP47AppKit extends AbstractIdleService {
             this.vPeerGroup.setMaxConnections(peerAddresses.length);
             peerAddresses = null;
         } else if (!params.getId().equals(NetworkParameters.ID_REGTEST)) {
-            this.vPeerGroup.addPeerDiscovery(new DnsDiscovery(this.vWallet.getParams()));
+            this.vPeerGroup.addPeerDiscovery(discovery != null ? discovery : new DnsDiscovery(params));
         }
 
         this.vChain.addWallet(this.vWallet);
         this.vPeerGroup.addWallet(this.vWallet);
         onSetupCompleted();
-        this.vWallet.saveToFile(new File(this.directory, this.vWalletFileName + ".wallet"));
 
         Futures.addCallback(vPeerGroup.startAsync(), new FutureCallback() {
             @Override
             public void onSuccess(@Nullable Object result) {
-                DownloadProgressTracker defaultTracker = new DownloadProgressTracker() {
-                    @Override
-                    public void doneDownload() {
-                        super.doneDownload();
-                        System.out.println("blockchain downloaded");
-                    }
-                };
-                final DownloadProgressTracker l = progressTracker == null ? defaultTracker : progressTracker;
+                completeExtensionInitiations(vPeerGroup);
+                final DownloadProgressTracker l = progressTracker == null ? new DownloadProgressTracker() : progressTracker;
                 vPeerGroup.startBlockChainDownload(l);
             }
 
@@ -1030,6 +1022,19 @@ public class BIP47AppKit extends AbstractIdleService {
         this.addTransactionsListener();
     }
 
+    private void completeExtensionInitiations(TransactionBroadcaster transactionBroadcaster) {
+        StoredPaymentChannelClientStates clientStoredChannels = (StoredPaymentChannelClientStates)
+                vWallet.getExtensions().get(StoredPaymentChannelClientStates.class.getName());
+        if(clientStoredChannels != null) {
+            clientStoredChannels.setTransactionBroadcaster(transactionBroadcaster);
+        }
+        StoredPaymentChannelServerStates serverStoredChannels = (StoredPaymentChannelServerStates)
+                vWallet.getExtensions().get(StoredPaymentChannelServerStates.class.getName());
+        if(serverStoredChannels != null) {
+            serverStoredChannels.setTransactionBroadcaster(transactionBroadcaster);
+        }
+    }
+
     public void setCheckpoints(InputStream checkpoints) {
         if (this.checkpoints != null)
             Utils.closeUnchecked(this.checkpoints);
@@ -1041,7 +1046,18 @@ public class BIP47AppKit extends AbstractIdleService {
         this.peerAddresses = addresses;
     }
 
-    public void setDownloadProgressTracker(DownloadProgressTracker progressTracker) {
+    public BIP47AppKit setDownloadProgressTracker(DownloadProgressTracker progressTracker) {
         this.progressTracker = progressTracker;
+        return this;
+    }
+
+    public BIP47AppKit restoreWalletFromSeed(DeterministicSeed seed) {
+        this.restoreFromSeed = seed;
+        return this;
+    }
+
+    public BIP47AppKit setDiscovery(@Nullable PeerDiscovery discovery) {
+        this.discovery = discovery;
+        return this;
     }
 }
