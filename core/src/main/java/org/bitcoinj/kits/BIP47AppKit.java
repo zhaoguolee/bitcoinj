@@ -39,6 +39,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.crypto.params.KeyParameter;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -51,10 +52,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -145,8 +143,8 @@ public class BIP47AppKit extends AbstractIdleService {
         this.vWalletFile = new File(this.directory, walletName + ".wallet");
     }
 
-    private void completeSetupOfWallet() {
-        this.setAccount();
+    private void completeSetupOfWallet(@Nullable KeyParameter key) {
+        this.setAccount(key);
         this.loadBip47MetaData();
         Address notificationAddress = this.mAccounts.get(0).getNotificationAddress();
         System.out.println("BIP47AppKit notification address: "+notificationAddress.toString());
@@ -159,8 +157,8 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
-    public void completeSetupOfWalletAfterDecryption() {
-        this.completeSetupOfWallet();
+    public void completeSetupOfWalletAfterDecryption(@Nullable KeyParameter key) {
+        this.completeSetupOfWallet(key);
     }
 
     protected Wallet createWallet() {
@@ -270,10 +268,18 @@ public class BIP47AppKit extends AbstractIdleService {
      *
      * <p>After deriving, this wallet's payment code is available in @{link Bip47Wallet.getPaymentCode()}</p>
      */
-    public void setAccount() {
-        byte[] hd_seed = this.restoreFromSeed != null ?
+    public void setAccount(@Nullable KeyParameter key) {
+        DeterministicSeed keyChainSeed = vWallet.getKeyChainSeed();
+        byte[] hd_seed;
+
+        if(keyChainSeed.isEncrypted()) {
+            keyChainSeed = keyChainSeed.decrypt(Objects.requireNonNull(vWallet.getKeyCrypter()), "", key);
+        }
+
+        hd_seed = this.restoreFromSeed != null ?
                 this.restoreFromSeed.getSeedBytes() :
-                vWallet.getKeyChainSeed().getSeedBytes();
+                keyChainSeed.getSeedBytes();
+
 
         DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
         DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
@@ -951,7 +957,7 @@ public class BIP47AppKit extends AbstractIdleService {
         vWallet = createOrLoadWallet(shouldReplayWallet);
 
         if(!vWallet.getKeyChainSeed().isEncrypted()) {
-            this.completeSetupOfWallet();
+            this.completeSetupOfWallet(null);
         }
 
         this.vStore = new SPVBlockStore(this.vWallet.getParams(), chainFile);
