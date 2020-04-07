@@ -279,7 +279,7 @@ public class BIP47AppKit extends AbstractIdleService {
     // BIP47-specific listener
     // When a new *notification* transaction is received:
     //  - new keys are generated and imported for incoming payments in the bip47 account/contact payment channel
-    //  - the chain is rolled back 10 blocks so that payment transactions are not missed if in the same block as the notification transaction.
+    //  - the chain is rolled back 2 blocks so that payment transactions are not missed if in the same block as the notification transaction.
     //
     // When a new *payment* transaction is received:
     //  - a new key is generated and imported to the wallet
@@ -570,7 +570,7 @@ public class BIP47AppKit extends AbstractIdleService {
         vWallet.getTransactionPool(WalletTransaction.Pool.DEAD).remove(tx.getHash());
         vWallet.getTransactionPool(WalletTransaction.Pool.PENDING).remove(tx.getHash());
         try {
-            int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 10;
+            int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 2;
             this.vChain.rollbackBlockStore(blockHeight);
         } catch (IllegalStateException e) {
             //fail silently, we dont need to rollback as it works when txs are in mempool
