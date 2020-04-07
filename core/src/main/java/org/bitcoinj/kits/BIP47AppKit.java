@@ -200,7 +200,8 @@ public class BIP47AppKit extends AbstractIdleService {
         this.vWallet.setAcceptRiskyTransactions(true);
 
         if (!this.vWallet.isAddressWatched(notificationAddress)) {
-            this.vWallet.addWatchedAddress(notificationAddress);
+            long genesis = 1231006505;
+            this.vWallet.addWatchedAddress(notificationAddress, genesis);
         }
     }
 
@@ -560,18 +561,17 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public void rescanTxBlock(Transaction tx) throws BlockStoreException {
-        try {
-            int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 2;
-            this.vChain.rollbackBlockStore(blockHeight);
-
         /*
         We make sure to remove the notification transaction upon rolling back our local chain.
         This is so when we scan the block again, we properly get the notification transaction and any payment transactions within the same block.
          */
-            vWallet.getTransactionPool(WalletTransaction.Pool.UNSPENT).remove(tx.getHash());
-            vWallet.getTransactionPool(WalletTransaction.Pool.SPENT).remove(tx.getHash());
-            vWallet.getTransactionPool(WalletTransaction.Pool.DEAD).remove(tx.getHash());
-            vWallet.getTransactionPool(WalletTransaction.Pool.PENDING).remove(tx.getHash());
+        vWallet.getTransactionPool(WalletTransaction.Pool.UNSPENT).remove(tx.getHash());
+        vWallet.getTransactionPool(WalletTransaction.Pool.SPENT).remove(tx.getHash());
+        vWallet.getTransactionPool(WalletTransaction.Pool.DEAD).remove(tx.getHash());
+        vWallet.getTransactionPool(WalletTransaction.Pool.PENDING).remove(tx.getHash());
+        try {
+            int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 2;
+            this.vChain.rollbackBlockStore(blockHeight);
         } catch (IllegalStateException e) {
             //fail silently, we dont need to rollback as it works when txs are in mempool
         }
