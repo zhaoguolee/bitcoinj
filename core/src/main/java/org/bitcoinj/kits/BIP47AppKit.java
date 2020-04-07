@@ -6,9 +6,6 @@
 package org.bitcoinj.kits;
 
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -17,18 +14,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import org.bitcoinj.core.*;
-import org.bitcoinj.core.bip47.*;
-import org.bitcoinj.core.listeners.DownloadProgressTracker;
-import org.bitcoinj.crypto.BIP47SecretPoint;
-import org.bitcoinj.wallet.*;
-import org.bitcoinj.utils.BIP47Util;
-import org.bitcoinj.wallet.bip47.NotSecp256k1Exception;
-import org.bitcoinj.wallet.bip47.listeners.BlockchainDownloadProgressTracker;
-import org.bitcoinj.wallet.bip47.listeners.TransactionEventListener;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bitcoinj.core.*;
+import org.bitcoinj.core.bip47.BIP47Account;
+import org.bitcoinj.core.bip47.BIP47Address;
+import org.bitcoinj.core.bip47.BIP47Channel;
+import org.bitcoinj.core.bip47.BIP47PaymentCode;
+import org.bitcoinj.core.listeners.DownloadProgressTracker;
+import org.bitcoinj.crypto.BIP47SecretPoint;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.HDKeyDerivation;
@@ -38,9 +32,12 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
+import org.bitcoinj.utils.BIP47Util;
+import org.bitcoinj.wallet.*;
+import org.bitcoinj.wallet.bip47.listeners.BlockchainDownloadProgressTracker;
+import org.bitcoinj.wallet.bip47.listeners.TransactionEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.crypto.params.KeyParameter;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -49,18 +46,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.bitcoinj.core.Utils.join;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.bitcoinj.utils.BIP47Util.getReceiveAddress;
 import static org.bitcoinj.utils.BIP47Util.getSendAddress;
 
@@ -80,7 +74,6 @@ import static org.bitcoinj.utils.BIP47Util.getSendAddress;
  *
  * <p>By using this kit, your wallet will import keys for bip 47 payment addresses, when a BIP 47
  * notification transaction is received.</p>
- *
  */
 public class BIP47AppKit extends AbstractIdleService {
     private static final String TAG = "BIP47AppKit";
@@ -104,7 +97,6 @@ public class BIP47AppKit extends AbstractIdleService {
     // Will be null if it's not a restored wallet.
     private DeterministicSeed restoreFromSeed;
     private Runnable onReceiveRunnable;
-    private KeyParameter aesKey;
 
     // Support for BIP47-type accounts. Only one account is currently handled in this wallet.
     private List<BIP47Account> mAccounts = new ArrayList<BIP47Account>(1);
@@ -136,62 +128,39 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public BIP47AppKit(NetworkParameters params, File file, String walletName) {
-        this(params, new KeyChainGroup(params), file, walletName, null);
+        this(params, new KeyChainGroup(params), file, walletName);
     }
 
     public BIP47AppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
-        this(params, new KeyChainGroup(params, seed), file, walletName, null);
+        this(params, new KeyChainGroup(params, seed), file, walletName);
     }
 
-    public BIP47AppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName, @Nullable KeyParameter key) {
-        this(params, new KeyChainGroup(params, seed), file, walletName, key);
-    }
-
-    private BIP47AppKit(Wallet wallet, File file, String walletName, @Nullable KeyParameter key) {
+    private BIP47AppKit(Wallet wallet, File file, String walletName) {
         this.vWallet = wallet;
-        if(wallet.getKeyChainSeed().isEncrypted() && key == null) {
-            throw new IllegalStateException("Wallet is encrypted but no key to decrypt is supplied.");
-        } else {
-            this.params = this.vWallet.getParams();
-            this.context = new Context(this.vWallet.getParams());
-            this.directory = file;
-            this.vWalletFileName = walletName;
-            this.vWalletFile = new File(this.directory, walletName + ".wallet");
-            this.completeSetupOfWallet(key);
-        }
+        this.params = this.vWallet.getParams();
+        this.context = new Context(this.vWallet.getParams());
+        this.directory = file;
+        this.vWalletFileName = walletName;
+        this.vWalletFile = new File(this.directory, walletName + ".wallet");
+        this.completeSetupOfWallet();
     }
 
-    private BIP47AppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName, @Nullable KeyParameter key) {
-        this.setupWallet(params, keyChainGroup, file, walletName, key);
+    private BIP47AppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
+        this.setupWallet(params, keyChainGroup, file, walletName);
     }
 
-    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName, @Nullable KeyParameter key) {
+    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
         this.vWallet = new Wallet(params, keyChainGroup);
         this.params = params;
         this.context = new Context(params);
         this.directory = file;
         this.vWalletFileName = walletName;
         this.vWalletFile = new File(this.directory, walletName + ".wallet");
-        this.completeSetupOfWallet(key);
+        this.completeSetupOfWallet();
     }
 
-    private void completeSetupOfWallet(@Nullable KeyParameter key) {
-        this.aesKey = key;
-        if(this.getvWallet().getKeyChainSeed().isEncrypted()) {
-            if(key != null) {
-                this.processNotifKey(key);
-            }
-        } else {
-            this.processNotifKey(key);
-        }
-    }
-
-    public void setAesKey(@Nullable KeyParameter key) {
-        this.aesKey = key;
-    }
-
-    private void processNotifKey(@Nullable KeyParameter key) {
-        this.setAccount(key);
+    private void completeSetupOfWallet() {
+        this.setAccount();
         this.loadBip47MetaData();
         Address notificationAddress = this.mAccounts.get(0).getNotificationAddress();
         System.out.println("BIP47AppKit notification address: " + notificationAddress.toString());
@@ -200,17 +169,16 @@ public class BIP47AppKit extends AbstractIdleService {
         this.vWallet.setAcceptRiskyTransactions(true);
 
         if (!this.vWallet.isAddressWatched(notificationAddress)) {
-            long genesis = 1231006505;
-            this.vWallet.addWatchedAddress(notificationAddress, genesis);
+            this.vWallet.addWatchedAddress(notificationAddress);
         }
     }
 
-    public BIP47AppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed, @Nullable KeyParameter key) throws UnreadableWalletException {
+    public BIP47AppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
         File tmpWalletFile = new File(baseDir, walletName + ".wallet");
-        if(tmpWalletFile.exists()) {
-            return loadFromFile(baseDir, walletName, key);
+        if (tmpWalletFile.exists()) {
+            return loadFromFile(baseDir, walletName);
         } else {
-            if(seed != null) {
+            if (seed != null) {
                 this.restoreFromSeed = seed;
                 return new BIP47AppKit(params, seed, baseDir, walletName);
             } else {
@@ -219,13 +187,13 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
-    private static BIP47AppKit loadFromFile(File baseDir, String walletName, @Nullable KeyParameter key, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
+    private static BIP47AppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         try {
             FileInputStream stream = null;
             try {
                 stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
                 Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-                return new BIP47AppKit(wallet, baseDir, walletName, key);
+                return new BIP47AppKit(wallet, baseDir, walletName);
             } finally {
                 if (stream != null) stream.close();
             }
@@ -264,7 +232,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     // create peergroup for the blockchain
-    private void derivePeerGroup(){
+    private void derivePeerGroup() {
         Context.propagate(new Context(params));
         if (vPeerGroup == null)
             vPeerGroup = new PeerGroup(params, vChain);
@@ -283,7 +251,7 @@ public class BIP47AppKit extends AbstractIdleService {
     //
     // When a new *payment* transaction is received:
     //  - a new key is generated and imported to the wallet
-    private void addTransactionsListener(Runnable runnable){
+    private void addTransactionsListener(Runnable runnable) {
         this.addOnReceiveTransactionListener(new TransactionEventListener() {
             @Override
             public void onTransactionReceived(BIP47AppKit bip47AppKit, Transaction transaction) {
@@ -305,7 +273,7 @@ public class BIP47AppKit extends AbstractIdleService {
                         }
                     }
                 } else if (isToBIP47Address(transaction)) {
-                    System.out.println("New BIP47 payment received to address: "+getAddressOfReceived(transaction));
+                    System.out.println("New BIP47 payment received to address: " + getAddressOfReceived(transaction));
                     boolean needsSaving = generateNewBip47IncomingAddress(getAddressOfReceived(transaction).toString());
                     if (needsSaving) {
                         saveBip47MetaData();
@@ -314,7 +282,7 @@ public class BIP47AppKit extends AbstractIdleService {
                     System.out.println("Received tx for Payment Code: " + paymentCode);
                 } else {
                     Coin valueSentToMe = getValueSentToMe(transaction);
-                    System.out.println("Received tx for "+valueSentToMe.toFriendlyString() + ":" + transaction);
+                    System.out.println("Received tx for " + valueSentToMe.toFriendlyString() + ":" + transaction);
                 }
 
                 runnable.run();
@@ -332,27 +300,18 @@ public class BIP47AppKit extends AbstractIdleService {
      *
      * <p>After deriving, this wallet's payment code is available in @{link Bip47Wallet.getPaymentCode()}</p>
      */
-    public void setAccount(@Nullable KeyParameter key) {
-        DeterministicSeed keyChainSeed = vWallet.getKeyChainSeed();
-        if(keyChainSeed.isEncrypted()) {
-            if(key != null) {
-                keyChainSeed = keyChainSeed.decrypt(Objects.requireNonNull(vWallet.getKeyCrypter()), "", key);
-                this.setAccount(keyChainSeed);
-            }
-        } else {
-            this.setAccount(keyChainSeed);
-        }
-    }
-
-    private void setAccount(DeterministicSeed keyChainSeed) {
+    public void setAccount() {
         byte[] hd_seed = this.restoreFromSeed != null ?
                 this.restoreFromSeed.getSeedBytes() :
-                keyChainSeed.getSeedBytes();
+                this.vWallet.getKeyChainSeed().getSeedBytes();
+
 
         DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
         DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
         DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
+
         BIP47Account account = new BIP47Account(params, coinKey, 0);
+
         mAccounts.clear();
         mAccounts.add(account);
     }
@@ -371,7 +330,7 @@ public class BIP47AppKit extends AbstractIdleService {
             return false;
         }
 
-        System.out.println("loadBip47MetaData: "+jsonString);
+        System.out.println("loadBip47MetaData: " + jsonString);
 
         return importBip47MetaData(jsonString);
     }
@@ -384,7 +343,7 @@ public class BIP47AppKit extends AbstractIdleService {
         String jsonString;
         try {
             jsonString = FileUtils.readFileToString(file, Charset.defaultCharset());
-        } catch (IOException e){
+        } catch (IOException e) {
             System.out.println("Creating BIP47 wallet file at " + file.getAbsolutePath() + "  ...");
             saveBip47MetaData();
             loadBip47MetaData();
@@ -398,10 +357,11 @@ public class BIP47AppKit extends AbstractIdleService {
      * <p>Load channels from json. Return true if any payment code was loaded. </p>
      */
     public boolean importBip47MetaData(String jsonString) {
-        System.out.println("loadBip47MetaData: "+jsonString);
+        System.out.println("loadBip47MetaData: " + jsonString);
 
         Gson gson = new Gson();
-        Type collectionType = new TypeToken<Collection<BIP47Channel>>(){}.getType();
+        Type collectionType = new TypeToken<Collection<BIP47Channel>>() {
+        }.getType();
         try {
             List<BIP47Channel> BIP47ChannelList = gson.fromJson(jsonString, collectionType);
             if (BIP47ChannelList != null) {
@@ -421,14 +381,14 @@ public class BIP47AppKit extends AbstractIdleService {
     public synchronized void saveBip47MetaData() {
         try {
             vWallet.saveToFile(vWalletFile);
-        } catch (IOException io){
-            log.error("Failed to save wallet file",io);
+        } catch (IOException io) {
+            log.error("Failed to save wallet file", io);
         }
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(bip47MetaData.values());
 
-        System.out.println("saveBip47MetaData: "+json);
+        System.out.println("saveBip47MetaData: " + json);
 
         File file = new File(directory, this.vWalletFileName.concat(".bip47"));
 
@@ -440,8 +400,10 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
-    /** <p>A listener is added to be invoked when the wallet sees an incoming transaction. </p> */
-    public void addOnReceiveTransactionListener(TransactionEventListener transactionEventListener){
+    /**
+     * <p>A listener is added to be invoked when the wallet sees an incoming transaction. </p>
+     */
+    public void addOnReceiveTransactionListener(TransactionEventListener transactionEventListener) {
         if (this.mCoinsReceivedEventListener != null)
             vWallet.removeCoinsReceivedEventListener(mCoinsReceivedEventListener);
 
@@ -451,8 +413,10 @@ public class BIP47AppKit extends AbstractIdleService {
         mCoinsReceivedEventListener = transactionEventListener;
     }
 
-    /** <p>A listener is added to be invoked when the wallet receives blocks and builds confidence on a transaction </p> */
-    public void addTransactionConfidenceEventListener(TransactionEventListener transactionEventListener){
+    /**
+     * <p>A listener is added to be invoked when the wallet receives blocks and builds confidence on a transaction </p>
+     */
+    public void addTransactionConfidenceEventListener(TransactionEventListener transactionEventListener) {
         if (this.mTransactionConfidenceListener != null)
             vWallet.removeTransactionConfidenceEventListener(mTransactionConfidenceListener);
 
@@ -462,11 +426,13 @@ public class BIP47AppKit extends AbstractIdleService {
         mTransactionConfidenceListener = transactionEventListener;
     }
 
-    public TransactionEventListener getCoinsReceivedEventListener(){
+    public TransactionEventListener getCoinsReceivedEventListener() {
         return this.mCoinsReceivedEventListener;
     }
 
-    /** <p> Retrieve the relevant address (P2PKH or P2PSH) and compares it with the notification address of this wallet. </p> */
+    /**
+     * <p> Retrieve the relevant address (P2PKH or P2PSH) and compares it with the notification address of this wallet. </p>
+     */
     public boolean isNotificationTransaction(Transaction tx) {
         Address address = getAddressOfReceived(tx);
         Address myNotificationAddress = mAccounts.get(0).getNotificationAddress();
@@ -474,7 +440,9 @@ public class BIP47AppKit extends AbstractIdleService {
         return address != null && address.toString().equals(myNotificationAddress.toString());
     }
 
-    /** <p> Retrieve the relevant address (P2PKH or P2PSH), return true if any key in this wallet translates to it. </p> */
+    /**
+     * <p> Retrieve the relevant address (P2PKH or P2PSH), return true if any key in this wallet translates to it. </p>
+     */
     // TODO: return true if and only if it is a channel address.
     public boolean isToBIP47Address(Transaction transaction) {
         List<ECKey> keys = vWallet.getImportedKeys();
@@ -491,7 +459,9 @@ public class BIP47AppKit extends AbstractIdleService {
         return false;
     }
 
-    /** Find the address that received the transaction (P2PKH or P2PSH output) */
+    /**
+     * Find the address that received the transaction (P2PKH or P2PSH output)
+     */
     public Address getAddressOfReceived(Transaction tx) {
         for (final TransactionOutput output : tx.getOutputs()) {
             try {
@@ -523,9 +493,11 @@ public class BIP47AppKit extends AbstractIdleService {
         return null;
     }
 
-    /** Given a notification transaction, extracts a valid payment code */
+    /**
+     * Given a notification transaction, extracts a valid payment code
+     */
     public BIP47PaymentCode getPaymentCodeInNotificationTransaction(Transaction tx) {
-        byte[] privKeyBytes = mAccounts.get(0).getNotificationKey().maybeDecrypt(this.aesKey).getPrivKeyBytes();
+        byte[] privKeyBytes = mAccounts.get(0).getNotificationKey().getPrivKeyBytes();
 
         return BIP47Util.getPaymentCodeInNotificationTransaction(privKeyBytes, tx);
     }
@@ -561,17 +533,18 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public void rescanTxBlock(Transaction tx) throws BlockStoreException {
+        try {
+            int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 2;
+            this.vChain.rollbackBlockStore(blockHeight);
+
         /*
         We make sure to remove the notification transaction upon rolling back our local chain.
         This is so when we scan the block again, we properly get the notification transaction and any payment transactions within the same block.
          */
-        vWallet.getTransactionPool(WalletTransaction.Pool.UNSPENT).remove(tx.getHash());
-        vWallet.getTransactionPool(WalletTransaction.Pool.SPENT).remove(tx.getHash());
-        vWallet.getTransactionPool(WalletTransaction.Pool.DEAD).remove(tx.getHash());
-        vWallet.getTransactionPool(WalletTransaction.Pool.PENDING).remove(tx.getHash());
-        try {
-            int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 2;
-            this.vChain.rollbackBlockStore(blockHeight);
+            vWallet.getTransactionPool(WalletTransaction.Pool.UNSPENT).remove(tx.getHash());
+            vWallet.getTransactionPool(WalletTransaction.Pool.SPENT).remove(tx.getHash());
+            vWallet.getTransactionPool(WalletTransaction.Pool.DEAD).remove(tx.getHash());
+            vWallet.getTransactionPool(WalletTransaction.Pool.PENDING).remove(tx.getHash());
         } catch (IllegalStateException e) {
             //fail silently, we dont need to rollback as it works when txs are in mempool
         }
@@ -590,13 +563,12 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public void importKey(ECKey key) {
-        if(this.vWallet.isEncrypted())
-            vWallet.importKeysAndEncrypt(Lists.newArrayList(key), this.aesKey);
-        else
-            vWallet.importKey(key);
+        vWallet.importKey(key);
     }
 
-    /** Return true if this is the first time the address is seen used*/
+    /**
+     * Return true if this is the first time the address is seen used
+     */
     public boolean generateNewBip47IncomingAddress(String address) {
         for (BIP47Channel BIP47Channel : bip47MetaData.values()) {
             for (BIP47Address bip47Address : BIP47Channel.getIncomingAddresses()) {
@@ -718,7 +690,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public void resetBlockchainSync() {
-        File chainFile = new File(directory, this.vWalletFileName+".spvchain");
+        File chainFile = new File(directory, this.vWalletFileName + ".spvchain");
         if (chainFile.exists()) {
             System.out.println("deleteSpvFile: exits");
             chainFile.delete();
@@ -739,8 +711,10 @@ public class BIP47AppKit extends AbstractIdleService {
         return Address.fromBase58(getParams(), addr);
     }
 
-    /** <p>Returns true if the given address is a valid payment code or a valid address in the
-     * wallet's blockchain network.</p> */
+    /**
+     * <p>Returns true if the given address is a valid payment code or a valid address in the
+     * wallet's blockchain network.</p>
+     */
     public boolean isValidAddress(String address) {
         if (address == null)
             return false;
@@ -748,7 +722,7 @@ public class BIP47AppKit extends AbstractIdleService {
         try {
             BIP47PaymentCode BIP47PaymentCode = new BIP47PaymentCode(address);
             return true;
-        } catch (AddressFormatException e){
+        } catch (AddressFormatException e) {
         }
 
         try {
@@ -778,7 +752,7 @@ public class BIP47AppKit extends AbstractIdleService {
         return createSend(address, amount);
     }
 
-    private static Coin getDefaultFee(NetworkParameters params){
+    private static Coin getDefaultFee(NetworkParameters params) {
         return Transaction.DEFAULT_TX_FEE;
     }
 
@@ -791,50 +765,48 @@ public class BIP47AppKit extends AbstractIdleService {
         return sendRequest.tx;
     }
 
-    public SendRequest makeNotificationTransaction(String paymentCode, @Nullable KeyParameter key) throws InsufficientMoneyException {
+    public SendRequest makeNotificationTransaction(String paymentCode) throws InsufficientMoneyException {
         BIP47Account toAccount = new BIP47Account(getParams(), paymentCode);
-        Coin ntValue =  getParams().getMinNonDustOutput();
+        Coin ntValue = getParams().getMinNonDustOutput();
         Address ntAddress = toAccount.getNotificationAddress();
 
         System.out.println("Balance: " + vWallet.getBalance());
-        System.out.println("To notification address: "+ntAddress.toString());
-        System.out.println("Value: "+ntValue.toFriendlyString());
+        System.out.println("To notification address: " + ntAddress.toString());
+        System.out.println("Value: " + ntValue.toFriendlyString());
 
         SendRequest sendRequest = SendRequest.to(params, ntAddress.toString(), ntValue);
-        sendRequest.aesKey = key;
         sendRequest.feePerKb = Coin.valueOf(1000L);
         sendRequest.memo = "notification_transaction";
 
         org.bitcoinj.utils.BIP47Util.FeeCalculation feeCalculation = BIP47Util.calculateFee(vWallet, sendRequest, ntValue, vWallet.calculateAllSpendCandidates());
 
-        for (TransactionOutput output :feeCalculation.bestCoinSelection.gathered) {
+        for (TransactionOutput output : feeCalculation.bestCoinSelection.gathered) {
             sendRequest.tx.addInput(output);
         }
 
         if (sendRequest.tx.getInputs().size() > 0) {
             TransactionInput txIn = sendRequest.tx.getInput(0);
-            KeyBag maybeDecryptingKeyBag = new DecryptingKeyBag(vWallet, key);
-            RedeemData redeemData = txIn.getConnectedRedeemData(maybeDecryptingKeyBag);
+            RedeemData redeemData = txIn.getConnectedRedeemData(vWallet);
             checkNotNull(redeemData, "StashTransaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
-            System.out.println("Keys: "+redeemData.keys.size());
-            System.out.println("Private key 0?: "+redeemData.keys.get(0).hasPrivKey());
+            System.out.println("Keys: " + redeemData.keys.size());
+            System.out.println("Private key 0?: " + redeemData.keys.get(0).hasPrivKey());
             byte[] privKey = redeemData.getFullKey().getPrivKeyBytes();
-            System.out.println("Private key: "+ Utils.HEX.encode(privKey));
+            System.out.println("Private key: " + Utils.HEX.encode(privKey));
             byte[] pubKey = toAccount.getNotificationKey().getPubKey();
-            System.out.println("Public Key: "+Utils.HEX.encode(pubKey));
+            System.out.println("Public Key: " + Utils.HEX.encode(pubKey));
             byte[] outpoint = txIn.getOutpoint().bitcoinSerialize();
 
             byte[] mask = null;
             try {
                 BIP47SecretPoint BIP47SecretPoint = new BIP47SecretPoint(privKey, pubKey);
-                System.out.println("Secret Point: "+Utils.HEX.encode(BIP47SecretPoint.ECDHSecretAsBytes()));
-                System.out.println("Outpoint: "+Utils.HEX.encode(outpoint));
+                System.out.println("Secret Point: " + Utils.HEX.encode(BIP47SecretPoint.ECDHSecretAsBytes()));
+                System.out.println("Outpoint: " + Utils.HEX.encode(outpoint));
                 mask = BIP47PaymentCode.getMask(BIP47SecretPoint.ECDHSecretAsBytes(), outpoint);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            System.out.println("My payment code: "+mAccounts.get(0).getPaymentCode().toString());
-            System.out.println("Mask: "+Utils.HEX.encode(mask));
+            System.out.println("My payment code: " + mAccounts.get(0).getPaymentCode().toString());
+            System.out.println("Mask: " + Utils.HEX.encode(mask));
             byte[] op_return = BIP47PaymentCode.blind(mAccounts.get(0).getPaymentCode().getPayload(), mask);
 
             sendRequest.tx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(op_return));
@@ -918,13 +890,15 @@ public class BIP47AppKit extends AbstractIdleService {
         return directory;
     }
 
-    public File getvWalletFile(){
+    public File getvWalletFile() {
         return this.vWalletFile;
     }
 
-    public PeerGroup getPeerGroup() { return this.vPeerGroup; }
+    public PeerGroup getPeerGroup() {
+        return this.vPeerGroup;
+    }
 
-    public org.bitcoinj.wallet.Wallet getvWallet(){
+    public org.bitcoinj.wallet.Wallet getvWallet() {
         return vWallet;
     }
 
