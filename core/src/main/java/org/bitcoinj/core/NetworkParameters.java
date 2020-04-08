@@ -223,12 +223,24 @@ public abstract class NetworkParameters {
         return spendableCoinbaseDepth;
     }
 
-    /**
-     * Throws an exception if the block's difficulty is not correct.
-     *
-     * @throws VerificationException if the block's difficulty is not correct.
-     */
-    public abstract void checkDifficultyTransitions(StoredBlock storedPrev, Block next, final BlockStore blockStore) throws VerificationException, BlockStoreException;
+    public void verifyDifficulty(BigInteger newTarget, Block nextBlock)
+    {
+        if (newTarget.compareTo(this.getMaxTarget()) > 0) {
+            newTarget = this.getMaxTarget();
+        }
+
+        int accuracyBytes = (int) (nextBlock.getDifficultyTarget() >>> 24) - 3;
+        long receivedTargetCompact = nextBlock.getDifficultyTarget();
+
+        // The calculated difficulty is to a higher precision than received, so reduce here.
+        BigInteger mask = BigInteger.valueOf(0xFFFFFFL).shiftLeft(accuracyBytes * 8);
+        newTarget = newTarget.and(mask);
+        long newTargetCompact = Utils.encodeCompactBits(newTarget);
+
+        if (newTargetCompact != receivedTargetCompact)
+            throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
+                    Long.toHexString(newTargetCompact) + " vs " + Long.toHexString(receivedTargetCompact));
+    }
 
     /**
      * Returns true if the block height is either not a checkpoint, or is a checkpoint and the hash matches.
