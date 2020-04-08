@@ -62,9 +62,9 @@ public class TestWithPeerGroup extends TestWithNetworkConnections {
 
         remoteVersionMessage = new VersionMessage(UNITTEST, 1);
         remoteVersionMessage.localServices =
-                VersionMessage.NODE_NETWORK | VersionMessage.NODE_BLOOM | VersionMessage.NODE_WITNESS;
+                VersionMessage.NODE_NETWORK | VersionMessage.NODE_BLOOM;
         remoteVersionMessage.clientVersion =
-                NetworkParameters.ProtocolVersion.WITNESS_VERSION.getBitcoinProtocolVersion();
+                NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111.getBitcoinProtocolVersion();
         blockJobs = false;
         initPeerGroup();
     }

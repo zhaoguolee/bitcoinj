@@ -469,11 +469,11 @@ public class PeerGroupTest extends TestWithPeerGroup {
     public void downloadPeerSelection() throws Exception {
         peerGroup.start();
         VersionMessage v1 = new VersionMessage(UNITTEST, 2);
-        v1.clientVersion = NetworkParameters.ProtocolVersion.WITNESS_VERSION.getBitcoinProtocolVersion();
-        v1.localServices = VersionMessage.NODE_NETWORK | VersionMessage.NODE_BLOOM | VersionMessage.NODE_WITNESS;
+        v1.clientVersion = NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111.getBitcoinProtocolVersion();
+        v1.localServices = VersionMessage.NODE_NETWORK | VersionMessage.NODE_BLOOM;
         VersionMessage v2 = new VersionMessage(UNITTEST, 4);
-        v2.clientVersion = NetworkParameters.ProtocolVersion.WITNESS_VERSION.getBitcoinProtocolVersion();
-        v2.localServices = VersionMessage.NODE_NETWORK | VersionMessage.NODE_BLOOM | VersionMessage.NODE_WITNESS;
+        v2.clientVersion = NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111.getBitcoinProtocolVersion();
+        v2.localServices = VersionMessage.NODE_NETWORK | VersionMessage.NODE_BLOOM;
         assertNull(peerGroup.getDownloadPeer());
 
         Peer p1 = connectPeer(0, v1).peer;

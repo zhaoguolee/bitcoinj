@@ -52,6 +52,8 @@ public class VersionMessage extends Message {
     public static final int NODE_NETWORK = 1 << 0;
     /** A service bit that denotes whether the peer supports the getutxos message or not. */
     public static final int NODE_GETUTXOS = 1 << 1;
+    /** A service bit that denotes whether the peer supports BIP37 bloom filters or not. The service bit is defined in BIP111. */
+    public static final int NODE_BLOOM = 1 << 2;
     /** A service bit that denotes whether the peer has at least the last two days worth of blockchain (BIP159). */
     public static final int NODE_NETWORK_LIMITED = 1 << 10;
     /** A service bit used by Bitcoin-ABC to announce Bitcoin Cash nodes. */
@@ -279,7 +281,10 @@ public class VersionMessage extends Message {
      * Returns true if the peer supports bloom filtering according to BIP37 and BIP111.
      */
     public boolean isBloomFilteringSupported() {
-        if (clientVersion >= params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER))
+        if (clientVersion >= params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER)
+                && clientVersion < params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111))
+            return true;
+        if ((localServices & NODE_BLOOM) == NODE_BLOOM)
             return true;
         return false;
     }
@@ -317,6 +322,10 @@ public class VersionMessage extends Message {
         if ((services & NODE_GETUTXOS) == NODE_GETUTXOS) {
             strings.add("GETUTXOS");
             services &= ~NODE_GETUTXOS;
+        }
+        if ((services & NODE_BLOOM) == NODE_BLOOM) {
+            strings.add("BLOOM");
+            services &= ~NODE_BLOOM;
         }
         if ((services & NODE_NETWORK_LIMITED) == NODE_NETWORK_LIMITED) {
             strings.add("NETWORK_LIMITED");

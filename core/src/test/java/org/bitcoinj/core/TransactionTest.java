@@ -601,7 +601,7 @@ public class TransactionTest {
         public HugeDeclaredSizeTransaction(NetworkParameters params, boolean hackInputsSize, boolean hackOutputsSize, boolean hackWitnessPushCountSize) {
             super(params);
             setSerializer(serializer.withProtocolVersion(
-                    NetworkParameters.ProtocolVersion.WITNESS_VERSION.getBitcoinProtocolVersion()));
+                    NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111.getBitcoinProtocolVersion()));
             Transaction inputTx = new Transaction(params);
             inputTx.addOutput(Coin.FIFTY_COINS, LegacyAddress.fromKey(params, ECKey.fromPrivate(BigInteger.valueOf(123456))));
             this.addInput(inputTx.getOutput(0));
