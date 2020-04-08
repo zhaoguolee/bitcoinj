@@ -22,24 +22,14 @@ import static com.google.common.base.Preconditions.checkState;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.Utils;
+import org.bitcoinj.core.*;
 import org.bitcoinj.utils.MonetaryFormat;
-import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Stopwatch;
-
-import org.bitcoinj.core.BitcoinSerializer;
 
 /**
  * Parameters for Bitcoin-like networks.
@@ -74,6 +64,35 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
      */
     public final boolean isDifficultyTransitionPoint(final int height) {
         return ((height + 1) % this.getInterval()) == 0;
+    }
+
+    /**
+     * determines whether monolith upgrade is activated based on MTP
+     * @param storedPrev The previous stored block
+     * @param store BlockStore containing at least 11 blocks
+     * @param parameters The network parameters
+     * @return
+     */
+    public static boolean isMonolithEnabled(StoredBlock storedPrev, BlockStore store, NetworkParameters parameters) {
+        if (storedPrev.getHeight() < 524626) { //current height at time of writing, well below the activation block height
+            return false;
+        }
+        try {
+            long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, store);
+            return isMonolithEnabled(mtp, parameters);
+        } catch (BlockStoreException e) {
+            throw new RuntimeException("Cannot determine monolith activation without BlockStore");
+        }
+    }
+
+    /**
+     * determines whether monolith upgrade is activated based on the given MTP.  Useful for overriding MTP for testing.
+     * @param medianTimePast
+     * @param parameters The network parameters
+     * @return
+     */
+    public static boolean isMonolithEnabled(long medianTimePast, NetworkParameters parameters) {
+        return medianTimePast >= parameters.getMonolithActivationTime();
     }
 
     @Override

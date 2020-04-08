@@ -90,6 +90,13 @@ public abstract class NetworkParameters {
     protected int majorityRejectBlockOutdated;
     protected int majorityWindow;
 
+    // Aug, 1 2017 hard fork
+    protected int uahfHeight;
+    // Nov, 13 2017 hard fork
+    protected int daaUpdateHeight;
+    // May, 15 2018 hard fork
+    protected long monolithActivationTime = 1526400000L;
+
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
      * by looking at the port number.
@@ -107,6 +114,8 @@ public abstract class NetworkParameters {
     protected HttpDiscovery.Details[] httpSeeds = {};
     protected Map<Integer, Sha256Hash> checkpoints = new HashMap<>();
     protected volatile transient MessageSerializer defaultSerializer = null;
+    protected String cashAddrPrefix;
+    protected String simpleledgerPrefix;
 
     protected NetworkParameters() {
         alertSigningKey = SATOSHI_KEY;
@@ -360,6 +369,16 @@ public abstract class NetworkParameters {
     public int getBip32HeaderP2WPKHpriv() {
         return bip32HeaderP2WPKHpriv;
     }
+
+    public int getDAAUpdateHeight(){
+        return daaUpdateHeight;
+    }
+
+    /** MTP activation time for May 15th, 2018 upgrade **/
+    public long getMonolithActivationTime() {
+        return monolithActivationTime;
+    }
+
     /**
      * Returns the number of coins that will be produced in total, on this
      * network. Where not applicable, a very large number of coins is returned
@@ -490,6 +509,14 @@ public abstract class NetworkParameters {
     }
 
     public abstract int getProtocolVersionNum(final ProtocolVersion version);
+
+    public String getCashAddrPrefix() {
+        return cashAddrPrefix;
+    }
+
+    public String getSimpleledgerPrefix() {
+        return simpleledgerPrefix;
+    }
 
     public static enum ProtocolVersion {
         MINIMUM(70000),
