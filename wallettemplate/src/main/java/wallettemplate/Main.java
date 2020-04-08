@@ -137,7 +137,7 @@ public class Main extends Application {
         // If seed is non-null it means we are restoring from backup.
         File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
-        bitcoin = new WalletAppKit(params, PREFERRED_OUTPUT_SCRIPT_TYPE, null, appDataDirectory, WALLET_FILE_NAME) {
+        bitcoin = new WalletAppKit(params, PREFERRED_OUTPUT_SCRIPT_TYPE, null, new File("."), WALLET_FILE_NAME) {
             @Override
             protected void onSetupCompleted() {
                 Platform.runLater(controller::onBitcoinSetup);
