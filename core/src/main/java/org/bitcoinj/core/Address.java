@@ -23,7 +23,7 @@ import org.bitcoinj.script.Script.ScriptType;
 
 /**
  * <p>
- * Base class for addresses, e.g. native segwit addresses ({@link SegwitAddress}) or legacy addresses ({@link LegacyAddress}).
+ * Base class for addresses, e.g. cash address ({@link SegwitAddress}) or legacy addresses ({@link LegacyAddress}).
  * </p>
  * 
  * <p>
@@ -58,13 +58,15 @@ public abstract class Address extends PrefixedChecksummedBytes {
         } catch (AddressFormatException.WrongNetwork x) {
             throw x;
         } catch (AddressFormatException x) {
-            try {
+            //TODO cashaddr
+            /*try {
                 return SegwitAddress.fromBech32(params, str);
             } catch (AddressFormatException.WrongNetwork x2) {
                 throw x;
             } catch (AddressFormatException x2) {
                 throw new AddressFormatException(str);
-            }
+            }*/
+            throw x;
         }
     }
 
@@ -82,8 +84,6 @@ public abstract class Address extends PrefixedChecksummedBytes {
     public static Address fromKey(final NetworkParameters params, final ECKey key, final ScriptType outputScriptType) {
         if (outputScriptType == Script.ScriptType.P2PKH)
             return LegacyAddress.fromKey(params, key);
-        else if (outputScriptType == Script.ScriptType.P2WPKH)
-            return SegwitAddress.fromKey(params, key);
         else
             throw new IllegalArgumentException(outputScriptType.toString());
     }

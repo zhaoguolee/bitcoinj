@@ -25,7 +25,6 @@ import org.junit.Test;
 
 import static org.bitcoinj.core.Coin.*;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.SegwitAddress;
 
 import static org.junit.Assert.*;
 

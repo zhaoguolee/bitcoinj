@@ -484,8 +484,6 @@ public class DeterministicKey extends ECKey {
         ByteBuffer ser = ByteBuffer.allocate(78);
         if (outputScriptType == Script.ScriptType.P2PKH)
             ser.putInt(pub ? params.getBip32HeaderP2PKHpub() : params.getBip32HeaderP2PKHpriv());
-        else if (outputScriptType == Script.ScriptType.P2WPKH)
-            ser.putInt(pub ? params.getBip32HeaderP2WPKHpub() : params.getBip32HeaderP2WPKHpriv());
         else
             throw new IllegalStateException(outputScriptType.toString());
         ser.put((byte) getDepth());
@@ -545,8 +543,8 @@ public class DeterministicKey extends ECKey {
     public static DeterministicKey deserialize(NetworkParameters params, byte[] serializedKey, @Nullable DeterministicKey parent) {
         ByteBuffer buffer = ByteBuffer.wrap(serializedKey);
         int header = buffer.getInt();
-        final boolean pub = header == params.getBip32HeaderP2PKHpub() || header == params.getBip32HeaderP2WPKHpub();
-        final boolean priv = header == params.getBip32HeaderP2PKHpriv() || header == params.getBip32HeaderP2WPKHpriv();
+        final boolean pub = header == params.getBip32HeaderP2PKHpub();
+        final boolean priv = header == params.getBip32HeaderP2PKHpriv();
         if (!(pub || priv))
             throw new IllegalArgumentException("Unknown header bytes: " + toBase58(serializedKey).substring(0, 4));
         int depth = buffer.get() & 0xFF; // convert signed byte to positive int since depth cannot be negative

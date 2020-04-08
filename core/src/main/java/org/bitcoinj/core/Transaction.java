@@ -990,13 +990,6 @@ public class Transaction extends ChildMessage {
                     anyoneCanPay);
             input.setScriptSig(ScriptBuilder.createInputScript(signature, sigKey));
             input.setWitness(null);
-        } else if (ScriptPattern.isP2WPKH(scriptPubKey)) {
-            Script scriptCode = new ScriptBuilder()
-                    .data(ScriptBuilder.createOutputScript(LegacyAddress.fromKey(params, sigKey)).getProgram()).build();
-            TransactionSignature signature = calculateWitnessSignature(inputIndex, sigKey, scriptCode, input.getValue(),
-                    sigHash, anyoneCanPay);
-            input.setScriptSig(ScriptBuilder.createEmpty());
-            input.setWitness(TransactionWitness.redeemP2WPKH(signature, sigKey));
         } else {
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey);
         }

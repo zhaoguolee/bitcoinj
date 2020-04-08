@@ -57,9 +57,7 @@ public class Script {
     public enum ScriptType {
         P2PKH(1), // pay to pubkey hash (aka pay to address)
         P2PK(2), // pay to pubkey
-        P2SH(3), // pay to script hash
-        P2WPKH(4), // pay to witness pubkey hash
-        P2WSH(5); // pay to witness script hash
+        P2SH(3); // pay to script hash
 
         public final int id;
 
@@ -254,8 +252,6 @@ public class Script {
             return ScriptPattern.extractHashFromP2PKH(this);
         else if (ScriptPattern.isP2SH(this))
             return ScriptPattern.extractHashFromP2SH(this);
-        else if (ScriptPattern.isP2WH(this))
-            return ScriptPattern.extractHashFromP2WH(this);
         else
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Script not in the standard scriptPubKey form");
     }
@@ -281,8 +277,6 @@ public class Script {
             return LegacyAddress.fromScriptHash(params, ScriptPattern.extractHashFromP2SH(this));
         else if (forcePayToPubKey && ScriptPattern.isP2PK(this))
             return LegacyAddress.fromKey(params, ECKey.fromPublicOnly(ScriptPattern.extractKeyFromP2PK(this)));
-        else if (ScriptPattern.isP2WH(this))
-            return SegwitAddress.fromHash(params, ScriptPattern.extractHashFromP2WH(this));
         else
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Cannot cast this script to an address");
     }
@@ -365,8 +359,6 @@ public class Script {
         if (ScriptPattern.isP2PKH(this)) {
             checkArgument(key != null, "Key required to create P2PKH input script");
             return ScriptBuilder.createInputScript(null, key);
-        } else if (ScriptPattern.isP2WPKH(this)) {
-            return ScriptBuilder.createEmpty();
         } else if (ScriptPattern.isP2PK(this)) {
             return ScriptBuilder.createInputScript(null);
         } else if (ScriptPattern.isP2SH(this)) {
@@ -378,10 +370,7 @@ public class Script {
     }
 
     public TransactionWitness createEmptyWitness(ECKey key) {
-        if (ScriptPattern.isP2WPKH(this)) {
-            checkArgument(key != null, "Key required to create P2WPKH witness");
-            return TransactionWitness.EMPTY;
-        } else if (ScriptPattern.isP2PK(this) || ScriptPattern.isP2PKH(this)
+        if (ScriptPattern.isP2PK(this) || ScriptPattern.isP2PKH(this)
                 || ScriptPattern.isP2SH(this)) {
             return null; // no witness
         } else {
@@ -599,12 +588,7 @@ public class Script {
             // scriptSig: <sig> <pubkey>
             int uncompressedPubKeySize = 65; // very conservative
             return SIG_SIZE + (pubKey != null ? pubKey.getPubKey().length : uncompressedPubKeySize);
-        } else if (ScriptPattern.isP2WPKH(this)) {
-            // scriptSig is empty
-            // witness: <sig> <pubKey>
-            int compressedPubKeySize = 33;
-            return SIG_SIZE + (pubKey != null ? pubKey.getPubKey().length : compressedPubKeySize);
-        } else {
+        }else {
             throw new IllegalStateException("Unsupported script type");
         }
     }
@@ -1547,27 +1531,7 @@ public class Script {
      */
     public void correctlySpends(Transaction txContainingThis, int scriptSigIndex, @Nullable TransactionWitness witness, @Nullable Coin value,
             Script scriptPubKey, Set<VerifyFlag> verifyFlags) throws ScriptException {
-        if (ScriptPattern.isP2WPKH(scriptPubKey)) {
-            // For SegWit, full validation isn't implemented. So we simply check the signature. P2SH_P2WPKH is handled
-            // by the P2SH code for now.
-            if (witness.getPushCount() < 2)
-                throw new ScriptException(ScriptError.SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY, witness.toString());
-            TransactionSignature signature;
-            try {
-                signature = TransactionSignature.decodeFromBitcoin(witness.getPush(0), true, true);
-            } catch (SignatureDecodeException x) {
-                throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_DER, "Cannot decode", x);
-            }
-            ECKey pubkey = ECKey.fromPublicOnly(witness.getPush(1));
-            Script scriptCode = ScriptBuilder.createP2PKHOutputScript(pubkey);
-            Sha256Hash sigHash = txContainingThis.hashForWitnessSignature(scriptSigIndex, scriptCode, value,
-                    signature.sigHashMode(), false);
-            boolean validSig = pubkey.verify(sigHash, signature);
-            if (!validSig)
-                throw new ScriptException(ScriptError.SCRIPT_ERR_CHECKSIGVERIFY, "Invalid signature");
-        } else {
-            correctlySpends(txContainingThis, scriptSigIndex, scriptPubKey, verifyFlags);
-        }
+        correctlySpends(txContainingThis, scriptSigIndex, scriptPubKey, verifyFlags);
     }
 
     /**
@@ -1657,10 +1621,6 @@ public class Script {
             return ScriptType.P2PK;
         if (ScriptPattern.isP2SH(this))
             return ScriptType.P2SH;
-        if (ScriptPattern.isP2WPKH(this))
-            return ScriptType.P2WPKH;
-        if (ScriptPattern.isP2WSH(this))
-            return ScriptType.P2WSH;
         return null;
     }
 

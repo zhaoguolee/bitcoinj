@@ -219,8 +219,6 @@ public class TransactionOutput extends ChildMessage {
         final Script script = getScriptPubKey();
         if (ScriptPattern.isP2PKH(script) || ScriptPattern.isP2PK(script) || ScriptPattern.isP2SH(script))
             size += 32 + 4 + 1 + 107 + 4; // 148
-        else if (ScriptPattern.isP2WH(script))
-            size += 32 + 4 + 1 + (107 / 4) + 4; // 68
         else
             return Coin.ZERO;
         return feePerKb.multiply(size).divide(1000);
@@ -314,9 +312,6 @@ public class TransactionOutput extends ChildMessage {
             else if (ScriptPattern.isP2PKH(script))
                 return transactionBag.isPubKeyHashMine(ScriptPattern.extractHashFromP2PKH(script),
                         Script.ScriptType.P2PKH);
-            else if (ScriptPattern.isP2WPKH(script))
-                return transactionBag.isPubKeyHashMine(ScriptPattern.extractHashFromP2WH(script),
-                        Script.ScriptType.P2WPKH);
             else
                 return false;
         } catch (ScriptException e) {
@@ -336,8 +331,7 @@ public class TransactionOutput extends ChildMessage {
             Script script = getScriptPubKey();
             StringBuilder buf = new StringBuilder("TxOut of ");
             buf.append(Coin.valueOf(value).toFriendlyString());
-            if (ScriptPattern.isP2PKH(script) || ScriptPattern.isP2WPKH(script)
-                    || ScriptPattern.isP2SH(script))
+            if (ScriptPattern.isP2PKH(script) || ScriptPattern.isP2SH(script))
                 buf.append(" to ").append(script.getToAddress(params));
             else if (ScriptPattern.isP2PK(script))
                 buf.append(" to pubkey ").append(Utils.HEX.encode(ScriptPattern.extractKeyFromP2PK(script)));

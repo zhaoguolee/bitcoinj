@@ -130,15 +130,6 @@ public class LocalTransactionSigner implements TransactionSigner {
                             sigIndex);
                     txIn.setScriptSig(inputScript);
                     txIn.setWitness(null);
-                } else if (ScriptPattern.isP2WPKH(scriptPubKey)) {
-                    Script scriptCode = new ScriptBuilder().data(
-                            ScriptBuilder.createOutputScript(LegacyAddress.fromKey(tx.getParams(), key)).getProgram())
-                            .build();
-                    Coin value = txIn.getValue();
-                    TransactionSignature signature = tx.calculateWitnessSignature(i, key, scriptCode, value,
-                            Transaction.SigHash.ALL, false);
-                    txIn.setScriptSig(ScriptBuilder.createEmpty());
-                    txIn.setWitness(TransactionWitness.redeemP2WPKH(signature, key));
                 } else {
                     throw new IllegalStateException(script.toString());
                 }

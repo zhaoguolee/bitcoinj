@@ -82,8 +82,6 @@ public abstract class NetworkParameters {
     protected byte[] alertSigningKey;
     protected int bip32HeaderP2PKHpub;
     protected int bip32HeaderP2PKHpriv;
-    protected int bip32HeaderP2WPKHpub;
-    protected int bip32HeaderP2WPKHpriv;
 
     /** Used to check majorities for block version upgrade */
     protected int majorityEnforceBlockUpgrade;
@@ -370,16 +368,6 @@ public abstract class NetworkParameters {
     /** Returns the 4 byte header for BIP32 wallet P2PKH - private key part. */
     public int getBip32HeaderP2PKHpriv() {
         return bip32HeaderP2PKHpriv;
-    }
-
-    /** Returns the 4 byte header for BIP32 wallet P2WPKH - public key part. */
-    public int getBip32HeaderP2WPKHpub() {
-        return bip32HeaderP2WPKHpub;
-    }
-
-    /** Returns the 4 byte header for BIP32 wallet P2WPKH - private key part. */
-    public int getBip32HeaderP2WPKHpriv() {
-        return bip32HeaderP2WPKHpriv;
     }
 
     public int getDAAUpdateHeight(){
