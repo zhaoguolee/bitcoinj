@@ -1,19 +1,23 @@
 package org.bitcoinj.kits;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Closeables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.reactivex.Single;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.core.slp.*;
+import org.bitcoinj.crypto.HDPath;
 import org.bitcoinj.net.SlpDbProcessor;
 import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.net.discovery.PeerDiscovery;
+import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
@@ -87,11 +91,11 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public SlpAppKit(NetworkParameters params, File file, String walletName) {
-        this(params, new KeyChainGroup(params), file, walletName);
+        this(params, KeyChainGroup.builder(params).build(), file, walletName);
     }
 
     public SlpAppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
-        this(params, new KeyChainGroup(params, seed), file, walletName);
+        this(params, KeyChainGroup.builder(params).fromSeed(seed, Script.ScriptType.P2PKH).build(), file, walletName);
     }
 
     public SlpAppKit(Wallet wallet, File file, String walletName) {
@@ -119,7 +123,7 @@ public class SlpAppKit extends AbstractIdleService {
         wallet.removeHDChainByIndex(0);
         wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
             @Override
-            protected ImmutableList<ChildNumber> getAccountPath() {
+            public HDPath getAccountPath() {
                 return BIP44_ACCOUNT_SLP_PATH;
             }
         });
@@ -301,14 +305,7 @@ public class SlpAppKit extends AbstractIdleService {
         Futures.addCallback(peerGroup.startAsync(), new FutureCallback() {
             @Override
             public void onSuccess(@Nullable Object result) {
-                DownloadProgressTracker defaultTracker = new DownloadProgressTracker() {
-                    @Override
-                    public void doneDownload() {
-                        super.doneDownload();
-                        System.out.println("blockchain downloaded");
-                    }
-                };
-                final DownloadProgressTracker l = progressTracker == null ? defaultTracker : progressTracker;
+                final DownloadProgressTracker l = progressTracker == null ? new DownloadProgressTracker() : progressTracker;
                 peerGroup.startBlockChainDownload(l);
             }
 
@@ -317,7 +314,7 @@ public class SlpAppKit extends AbstractIdleService {
                 throw new RuntimeException(t);
 
             }
-        });
+        }, MoreExecutors.directExecutor());
 
         new Thread() {
             @Override
@@ -327,10 +324,11 @@ public class SlpAppKit extends AbstractIdleService {
         }.start();
     }
 
-    public void setCheckpoints(InputStream checkpoints) {
+    public SlpAppKit setCheckpoints(InputStream checkpoints) {
         if (this.checkpoints != null)
-            Utils.closeUnchecked(this.checkpoints);
+            Closeables.closeQuietly(checkpoints);
         this.checkpoints = checkNotNull(checkpoints);
+        return this;
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
@@ -344,7 +342,7 @@ public class SlpAppKit extends AbstractIdleService {
         req.feePerKb = Coin.valueOf(1000L);
         SlpOpReturnOutputGenesis slpOpReturn = new SlpOpReturnOutputGenesis(ticker, name, url, decimals, tokenQuantity);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
-        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), Address.fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString()));
+        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), CashAddress.fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString()));
         return wallet.sendCoinsOffline(req);
     }
 
@@ -367,7 +365,6 @@ public class SlpAppKit extends AbstractIdleService {
 
         this.wallet.setAcceptRiskyTransactions(true);
         this.slpDbProcessor = new SlpDbProcessor();
-        this.wallet.allowSpendingUnconfirmedTransactions();
     }
 
     private boolean isValidSlpTx(Transaction tx) {

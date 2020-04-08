@@ -105,7 +105,6 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     @Nullable private DeterministicKey rootKey;
     @Nullable private DeterministicSeed seed;
     private final Script.ScriptType outputScriptType;
-    private final HDPath accountPath;
 
     // Paths through the key tree. External keys are ones that are communicated to other parties. Internal keys are
     // keys created for change addresses, coinbases, mixing, etc - anything that isn't communicated. The distinction
@@ -117,9 +116,15 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     public static final HDPath ACCOUNT_ZERO_PATH = HDPath.M(ChildNumber.ZERO_HARDENED);
     // m / 1'
     public static final HDPath ACCOUNT_ONE_PATH = HDPath.M(ChildNumber.ONE_HARDENED);
-    // m / 44' / 0' / 0'
+    // m / 44' / 145' / 0'
     public static final HDPath BIP44_ACCOUNT_ZERO_PATH = HDPath.M(new ChildNumber(44, true))
-                        .extend(ChildNumber.ZERO_HARDENED, ChildNumber.ZERO_HARDENED);
+                        .extend(new ChildNumber(145, true), ChildNumber.ZERO_HARDENED);
+    // m / 44' / 245' / 0'
+    public static final HDPath BIP44_ACCOUNT_SLP_PATH = HDPath.M(new ChildNumber(44, true))
+            .extend(new ChildNumber(245, true), ChildNumber.ZERO_HARDENED);
+
+    private HDPath accountPath = BIP44_ACCOUNT_ZERO_PATH;
+
     public static final HDPath EXTERNAL_SUBPATH = HDPath.M(ChildNumber.ZERO);
     public static final HDPath INTERNAL_SUBPATH = HDPath.M(ChildNumber.ONE);
 
@@ -429,6 +434,10 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
 
     public HDPath getAccountPath() {
         return accountPath;
+    }
+
+    public void setAccountPath(HDPath path) {
+        this.accountPath = path;
     }
 
     public Script.ScriptType getOutputScriptType() {
