@@ -52,7 +52,6 @@ import static org.junit.Assert.*;
 
 public class DeterministicKeyChainTest {
     private DeterministicKeyChain chain;
-    private DeterministicKeyChain segwitChain;
     private DeterministicKeyChain bip44chain;
     private final byte[] ENTROPY = Sha256Hash.hash("don't use a string seed like this in real life".getBytes());
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
@@ -69,10 +68,6 @@ public class DeterministicKeyChainTest {
         chain = DeterministicKeyChain.builder().entropy(ENTROPY, secs)
                 .accountPath(DeterministicKeyChain.ACCOUNT_ZERO_PATH).outputScriptType(Script.ScriptType.P2PKH).build();
         chain.setLookaheadSize(10);
-
-        segwitChain = DeterministicKeyChain.builder().entropy(ENTROPY, secs)
-                .accountPath(DeterministicKeyChain.ACCOUNT_ONE_PATH).outputScriptType(Script.ScriptType.P2WPKH).build();
-        segwitChain.setLookaheadSize(10);
 
         bip44chain = DeterministicKeyChain.builder().entropy(ENTROPY, secs).accountPath(BIP44_COIN_1_ACCOUNT_ZERO_PATH)
                 .outputScriptType(Script.ScriptType.P2PKH).build();
@@ -253,43 +248,6 @@ public class DeterministicKeyChainTest {
         key3.sign(Sha256Hash.ZERO_HASH);
         key4.sign(Sha256Hash.ZERO_HASH);
         assertEquals(oldLookaheadSize, chain.getLookaheadSize());
-    }
-
-    @Test
-    public void serializeSegwitUnencrypted() throws UnreadableWalletException {
-        segwitChain.maybeLookAhead();
-        DeterministicKey key1 = segwitChain.getKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
-        DeterministicKey key2 = segwitChain.getKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
-        DeterministicKey key3 = segwitChain.getKey(KeyChain.KeyPurpose.CHANGE);
-        List<Protos.Key> keys = segwitChain.serializeToProtobuf();
-        // 1 mnemonic/seed, 1 master key, 1 account key, 2 internal keys, 3 derived, 20 lookahead and 5 lookahead threshold.
-        int numItems =
-                1  // mnemonic/seed
-              + 1  // master key
-              + 1  // account key
-              + 2  // ext/int parent keys
-              + (segwitChain.getLookaheadSize() + segwitChain.getLookaheadThreshold()) * 2   // lookahead zone on each chain
-        ;
-        assertEquals(numItems, keys.size());
-
-        // Get another key that will be lost during round-tripping, to ensure we can derive it again.
-        DeterministicKey key4 = segwitChain.getKey(KeyChain.KeyPurpose.CHANGE);
-
-        final String EXPECTED_SERIALIZATION = checkSerialization(keys, "deterministic-wallet-segwit-serialization.txt");
-
-        // Round trip the data back and forth to check it is preserved.
-        int oldLookaheadSize = segwitChain.getLookaheadSize();
-        segwitChain = DeterministicKeyChain.fromProtobuf(keys, null).get(0);
-        assertEquals(EXPECTED_SERIALIZATION, protoToString(segwitChain.serializeToProtobuf()));
-        assertEquals(key1, segwitChain.findKeyFromPubHash(key1.getPubKeyHash()));
-        assertEquals(key2, segwitChain.findKeyFromPubHash(key2.getPubKeyHash()));
-        assertEquals(key3, segwitChain.findKeyFromPubHash(key3.getPubKeyHash()));
-        assertEquals(key4, segwitChain.getKey(KeyChain.KeyPurpose.CHANGE));
-        key1.sign(Sha256Hash.ZERO_HASH);
-        key2.sign(Sha256Hash.ZERO_HASH);
-        key3.sign(Sha256Hash.ZERO_HASH);
-        key4.sign(Sha256Hash.ZERO_HASH);
-        assertEquals(oldLookaheadSize, segwitChain.getLookaheadSize());
     }
 
     @Test
@@ -506,46 +464,6 @@ public class DeterministicKeyChainTest {
         chain = DeterministicKeyChain.fromProtobuf(serialization, null).get(0);
         assertEquals(accountOne, chain.getAccountPath());
         final DeterministicKey rekey4 = chain.getKey(KeyChain.KeyPurpose.CHANGE);
-        assertEquals(key4.getPubKeyPoint(), rekey4.getPubKeyPoint());
-    }
-
-    @Test
-    public void watchingSegwitChain() throws UnreadableWalletException {
-        Utils.setMockClock();
-        DeterministicKey key1 = segwitChain.getKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
-        DeterministicKey key2 = segwitChain.getKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
-        DeterministicKey key3 = segwitChain.getKey(KeyChain.KeyPurpose.CHANGE);
-        DeterministicKey key4 = segwitChain.getKey(KeyChain.KeyPurpose.CHANGE);
-
-        DeterministicKey watchingKey = segwitChain.getWatchingKey();
-        final String pub58 = watchingKey.serializePubB58(MAINNET, segwitChain.getOutputScriptType());
-        assertEquals("zpub6nywkzAGfYS2siEfJtm9mo3hwDk8eUtL8EJ31XeWSd7C7x7esnfMMWmWiSs8od5jRt11arTjKLLbxCXuWNSXcxpi9PMSAphMt2ZE2gLnXGE", pub58);
-        watchingKey = DeterministicKey.deserializeB58(null, pub58, MAINNET);
-        watchingKey.setCreationTimeSeconds(100000);
-        segwitChain = DeterministicKeyChain.builder().watch(watchingKey)
-                .outputScriptType(segwitChain.getOutputScriptType()).build();
-        assertEquals(100000, segwitChain.getEarliestKeyCreationTime());
-        segwitChain.setLookaheadSize(10);
-        segwitChain.maybeLookAhead();
-
-        assertEquals(key1.getPubKeyPoint(), segwitChain.getKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).getPubKeyPoint());
-        assertEquals(key2.getPubKeyPoint(), segwitChain.getKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).getPubKeyPoint());
-        final DeterministicKey key = segwitChain.getKey(KeyChain.KeyPurpose.CHANGE);
-        assertEquals(key3.getPubKeyPoint(), key.getPubKeyPoint());
-        try {
-            // Can't sign with a key from a watching chain.
-            key.sign(Sha256Hash.ZERO_HASH);
-            fail();
-        } catch (ECKey.MissingPrivateKeyException e) {
-            // Ignored.
-        }
-        // Test we can serialize and deserialize a watching chain OK.
-        List<Protos.Key> serialization = segwitChain.serializeToProtobuf();
-        checkSerialization(serialization, "watching-wallet-p2wpkh-serialization.txt");
-        final DeterministicKeyChain chain = DeterministicKeyChain.fromProtobuf(serialization, null).get(0);
-        assertEquals(DeterministicKeyChain.ACCOUNT_ONE_PATH, chain.getAccountPath());
-        assertEquals(Script.ScriptType.P2WPKH, chain.getOutputScriptType());
-        final DeterministicKey rekey4 = segwitChain.getKey(KeyChain.KeyPurpose.CHANGE);
         assertEquals(key4.getPubKeyPoint(), rekey4.getPubKeyPoint());
     }
 

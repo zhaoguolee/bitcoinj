@@ -88,12 +88,6 @@ public class BitcoinURITest {
     }
 
     @Test
-    public void testConvertToBitcoinURI_segwit() throws Exception {
-        assertEquals("bitcoin:" + MAINNET_GOOD_SEGWIT_ADDRESS + "?message=segwit%20rules", BitcoinURI.convertToBitcoinURI(
-                SegwitAddress.fromBech32(MAINNET, MAINNET_GOOD_SEGWIT_ADDRESS), null, null, "segwit rules"));
-    }
-
-    @Test
     public void testGood_legacy() throws BitcoinURIParseException {
         testObject = new BitcoinURI(MAINNET, BITCOIN_SCHEME + ":" + MAINNET_GOOD_ADDRESS);
         assertEquals(MAINNET_GOOD_ADDRESS, testObject.getAddress().toString());

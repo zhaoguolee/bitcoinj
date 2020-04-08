@@ -54,20 +54,6 @@ public class ScriptPatternTest {
     }
 
     @Test
-    public void testCreateP2WPKHOutputScript() {
-        assertTrue(ScriptPattern.isP2WPKH(
-                ScriptBuilder.createP2WPKHOutputScript(keys.get(0))
-        ));
-    }
-
-    @Test
-    public void testCreateP2WSHOutputScript() {
-        assertTrue(ScriptPattern.isP2WSH(
-                ScriptBuilder.createP2WSHOutputScript(new ScriptBuilder().build())
-        ));
-    }
-
-    @Test
     public void testCreateMultiSigOutputScript() {
         assertTrue(ScriptPattern.isSentToMultisig(
                 ScriptBuilder.createMultiSigOutputScript(2, keys)
