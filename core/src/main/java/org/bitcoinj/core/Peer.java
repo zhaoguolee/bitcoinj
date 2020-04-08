@@ -529,15 +529,16 @@ public class Peer extends PeerSocketHandler {
             close();
             return;
         }
-        if ((peerVersionMessage.localServices & requiredServices) != requiredServices) {
-            log.info("{}: Peer doesn't support these required services: {}", this,
-                    VersionMessage.toStringServices(requiredServices & ~peerVersionMessage.localServices));
+        if ((vPeerVersionMessage.localServices
+                & VersionMessage.NODE_BITCOIN_CASH) != VersionMessage.NODE_BITCOIN_CASH) {
+            log.info("{}: Peer follows an incompatible block chain.", this);
             // Shut down the channel gracefully.
             close();
             return;
         }
-        if ((peerVersionMessage.localServices & VersionMessage.NODE_BITCOIN_CASH) == VersionMessage.NODE_BITCOIN_CASH) {
-            log.info("{}: Peer follows an incompatible block chain.", this);
+        if ((peerVersionMessage.localServices & requiredServices) != requiredServices) {
+            log.info("{}: Peer doesn't support these required services: {}", this,
+                    VersionMessage.toStringServices(requiredServices & ~peerVersionMessage.localServices));
             // Shut down the channel gracefully.
             close();
             return;

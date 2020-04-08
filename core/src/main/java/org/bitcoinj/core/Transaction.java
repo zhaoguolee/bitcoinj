@@ -42,7 +42,6 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.util.*;
 
-import static org.bitcoinj.core.NetworkParameters.ProtocolVersion.WITNESS_VERSION;
 import static org.bitcoinj.core.Utils.*;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -294,9 +293,7 @@ public class Transaction extends ChildMessage {
      * Returns if tx witnesses are allowed based on the protocol version
      */
     private boolean allowWitness() {
-        int protocolVersion = serializer.getProtocolVersion();
-        return (protocolVersion & SERIALIZE_TRANSACTION_NO_WITNESS) == 0
-                && protocolVersion >= WITNESS_VERSION.getBitcoinProtocolVersion();
+        return false;
     }
 
     /**

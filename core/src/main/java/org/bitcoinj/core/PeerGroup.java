@@ -1520,17 +1520,12 @@ public class PeerGroup implements TransactionBroadcaster {
             // TODO: The peer should calculate the fast catchup time from the added wallets here.
             for (Wallet wallet : wallets)
                 peer.addWallet(wallet);
-            if (downloadPeer == null && newSize > maxConnections / 2) {
-                Peer newDownloadPeer = selectDownloadPeer(peers);
-                if (newDownloadPeer != null) {
-                    setDownloadPeer(newDownloadPeer);
-                    // Kick off chain download if we aren't already doing it.
-                    boolean shouldDownloadChain = downloadListener != null && chain != null;
-                    if (shouldDownloadChain) {
-                        startBlockChainDownloadFromPeer(downloadPeer);
-                    }
-                } else {
-                    log.info("Not yet setting download peer because there is no clear candidate.");
+            if (downloadPeer == null) {
+                // Kick off chain download if we aren't already doing it.
+                setDownloadPeer(selectDownloadPeer(peers));
+                boolean shouldDownloadChain = downloadListener != null && chain != null;
+                if (shouldDownloadChain) {
+                    startBlockChainDownloadFromPeer(downloadPeer);
                 }
             }
             // Make sure the peer knows how to upload transactions that are requested from us.
@@ -2251,43 +2246,31 @@ public class PeerGroup implements TransactionBroadcaster {
         //  - Randomly, to try and spread the load.
         if (peers.isEmpty())
             return null;
-
+        // Make sure we don't select a peer that is behind/synchronizing itself.
         int mostCommonChainHeight = getMostCommonChainHeight(peers);
-        // Make sure we don't select a peer if there is no consensus about block height.
-        if (mostCommonChainHeight == 0)
-            return null;
-
-        // Only select peers that announce the minimum protocol and services and that we think is fully synchronized.
-        List<Peer> candidates = new LinkedList<>();
-        int highestPriority = Integer.MIN_VALUE;
-        final int MINIMUM_VERSION = params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.WITNESS_VERSION);
+        List<Peer> candidates = new ArrayList<Peer>();
         for (Peer peer : peers) {
-            final VersionMessage versionMessage = peer.getPeerVersionMessage();
-            if (versionMessage.clientVersion < MINIMUM_VERSION)
-                continue;
-            if (!versionMessage.hasBlockChain())
-                continue;
-            if (!versionMessage.isWitnessSupported())
-                continue;
-            final long peerHeight = peer.getBestHeight();
-            if (peerHeight < mostCommonChainHeight || peerHeight > mostCommonChainHeight + 1)
-                continue;
-            candidates.add(peer);
-            highestPriority = Math.max(highestPriority, getPriority(peer.peerAddress));
+            if (peer.getBestHeight() == mostCommonChainHeight) candidates.add(peer);
         }
-        if (candidates.isEmpty())
-            return null;
-
-        // If there is a difference in priority, consider only the highest.
-        for (Iterator<Peer> i = candidates.iterator(); i.hasNext(); ) {
-            Peer peer = i.next();
-            if (getPriority(peer.peerAddress) < highestPriority)
-                i.remove();
+        // Of the candidates, find the peers that meet the minimum protocol version we want to target. We could select
+        // the highest version we've seen on the assumption that newer versions are always better but we don't want to
+        // zap peers if they upgrade early. If we can't find any peers that have our preferred protocol version or
+        // better then we'll settle for the highest we found instead.
+        int highestVersion = 0, preferredVersion = 0;
+        // If/when PREFERRED_VERSION is not equal to vMinRequiredProtocolVersion, reenable the last test in PeerGroupTest.downloadPeerSelection
+        final int PREFERRED_VERSION = params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER);
+        for (Peer peer : candidates) {
+            highestVersion = Math.max(peer.getPeerVersionMessage().clientVersion, highestVersion);
+            preferredVersion = Math.min(highestVersion, PREFERRED_VERSION);
         }
-
-        // Random poll.
-        int index = (int) (Math.random() * candidates.size());
-        return candidates.get(index);
+        ArrayList<Peer> candidates2 = new ArrayList<Peer>(candidates.size());
+        for (Peer peer : candidates) {
+            if (peer.getPeerVersionMessage().clientVersion >= preferredVersion) {
+                candidates2.add(peer);
+            }
+        }
+        int index = (int) (Math.random() * candidates2.size());
+        return candidates2.get(index);
     }
 
     /**
