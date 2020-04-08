@@ -18,12 +18,13 @@ package org.bitcoinj.core;
 
 import javax.annotation.Nullable;
 
+import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.ScriptType;
 
 /**
  * <p>
- * Base class for addresses, e.g. cash address ({@link SegwitAddress}) or legacy addresses ({@link LegacyAddress}).
+ * Base class for addresses, e.g. cash address ({@link CashAddress}) or legacy addresses ({@link LegacyAddress}).
  * </p>
  * 
  * <p>
@@ -58,15 +59,73 @@ public abstract class Address extends PrefixedChecksummedBytes {
         } catch (AddressFormatException.WrongNetwork x) {
             throw x;
         } catch (AddressFormatException x) {
-            //TODO cashaddr
-            /*try {
-                return SegwitAddress.fromBech32(params, str);
+            try {
+                return CashAddress.fromCashAddr(params, str);
             } catch (AddressFormatException.WrongNetwork x2) {
                 throw x;
             } catch (AddressFormatException x2) {
                 throw new AddressFormatException(str);
-            }*/
-            throw x;
+            }
+        }
+    }
+
+    /**
+     *
+     * @param params
+     *             The expected NetworkParameters to validate the address against.
+     * @param legacyAddress
+     *             The Bitcoin Cash legacy address. Starts with a "1"
+     * @return
+     *             Whether the address is valid or not.
+     */
+    @Deprecated
+    public static boolean isValidLegacyAddress(NetworkParameters params, String legacyAddress)
+    {
+        try {
+            LegacyAddress.fromBase58(params, legacyAddress);
+            return true;
+        } catch(AddressFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     *
+     * @param params
+     *             The expected NetworkParameters to validate the address against.
+     * @param cashaddr
+     *             The Bitcoin Cash cash address. Starts with a "q", "p", or "bitcoincash:"
+     * @return
+     *             Whether the address is valid or not.
+     */
+    public static boolean isValidCashAddr(NetworkParameters params, String cashaddr)
+    {
+        try {
+            CashAddress.fromCashAddr(params, cashaddr);
+            return true;
+        } catch(AddressFormatException e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidPaymentCode(String paymentCode)
+    {
+        try {
+            new BIP47PaymentCode(paymentCode);
+            return true;
+        } catch(AddressFormatException | NullPointerException e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidPaymentCode(byte[] paymentCodeBytes)
+    {
+        try {
+            BIP47PaymentCode paymentCode = new BIP47PaymentCode(paymentCodeBytes);
+            new BIP47PaymentCode(paymentCode.toString());
+            return true;
+        } catch(AddressFormatException | NullPointerException e) {
+            return false;
         }
     }
 

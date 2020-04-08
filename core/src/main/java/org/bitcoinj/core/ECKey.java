@@ -1338,4 +1338,8 @@ public class ECKey implements EncryptableItem {
             throw new RuntimeException(e);  // Cannot happen.
         }
     }
+
+    public Address toAddress(NetworkParameters params) {
+        return Address.fromKey(params, this, Script.ScriptType.P2PKH);
+    }
 }

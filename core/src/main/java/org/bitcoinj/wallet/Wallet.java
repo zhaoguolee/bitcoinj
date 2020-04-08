@@ -22,38 +22,9 @@ import com.google.common.collect.*;
 import com.google.common.util.concurrent.*;
 import com.google.protobuf.*;
 import net.jcip.annotations.*;
-import org.bitcoinj.core.listeners.*;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Base58;
-import org.bitcoinj.core.AbstractBlockChain;
-import org.bitcoinj.core.BlockChain;
-import org.bitcoinj.core.BloomFilter;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.FilteredBlock;
-import org.bitcoinj.core.InsufficientMoneyException;
-import org.bitcoinj.core.LegacyAddress;
+import org.bitcoinj.core.*;
 import org.bitcoinj.core.Message;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Peer;
-import org.bitcoinj.core.PeerFilterProvider;
-import org.bitcoinj.core.PeerGroup;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionBag;
-import org.bitcoinj.core.TransactionBroadcast;
-import org.bitcoinj.core.TransactionBroadcaster;
-import org.bitcoinj.core.TransactionConfidence;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutPoint;
-import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.UTXO;
-import org.bitcoinj.core.UTXOProvider;
-import org.bitcoinj.core.UTXOProviderException;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.core.listeners.*;
 import org.bitcoinj.core.TransactionConfidence.*;
 import org.bitcoinj.crypto.*;
 import org.bitcoinj.script.*;
@@ -586,10 +557,10 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #currentKey(KeyChain.KeyPurpose)}
      */
-    public Address currentAddress(KeyChain.KeyPurpose purpose) {
+    public CashAddress currentAddress(KeyChain.KeyPurpose purpose) {
         keyChainGroupLock.lock();
         try {
-            return keyChainGroup.currentAddress(purpose);
+            return CashAddress.fromBase58(getParams(), keyChainGroup.currentAddress(purpose).toString());
         } finally {
             keyChainGroupLock.unlock();
         }
@@ -599,7 +570,7 @@ public class Wallet extends BaseTaggableObject
      * An alias for calling {@link #currentAddress(KeyChain.KeyPurpose)} with
      * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public Address currentReceiveAddress() {
+    public CashAddress currentReceiveAddress() {
         return currentAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
@@ -648,7 +619,7 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #freshKey(KeyChain.KeyPurpose)}
      */
-    public Address freshAddress(KeyChain.KeyPurpose purpose) {
+    public CashAddress freshAddress(KeyChain.KeyPurpose purpose) {
         Address address;
         keyChainGroupLock.lock();
         try {
@@ -657,14 +628,14 @@ public class Wallet extends BaseTaggableObject
             keyChainGroupLock.unlock();
         }
         saveNow();
-        return address;
+        return CashAddress.fromBase58(getParams(), address.toString());
     }
 
     /**
      * An alias for calling {@link #freshAddress(KeyChain.KeyPurpose)} with
      * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public Address freshReceiveAddress() {
+    public CashAddress freshReceiveAddress() {
         return freshAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
@@ -674,7 +645,7 @@ public class Wallet extends BaseTaggableObject
      * using {@link #freshAddress(KeyChain.KeyPurpose)} or
      * {@link #currentAddress(KeyChain.KeyPurpose)}.</p>
      */
-    public Address freshReceiveAddress(Script.ScriptType scriptType) {
+    public CashAddress freshReceiveAddress(Script.ScriptType scriptType) {
         Address address;
         keyChainGroupLock.lock();
         try {
@@ -684,7 +655,7 @@ public class Wallet extends BaseTaggableObject
             keyChainGroupLock.unlock();
         }
         saveNow();
-        return address;
+        return CashAddress.fromBase58(getParams(), address.toString());
     }
 
     /**
@@ -4411,18 +4382,23 @@ public class Wallet extends BaseTaggableObject
      * @param excludeImmatureCoinbases Whether to ignore coinbase outputs that we will be able to spend in future once they mature.
      * @param excludeUnsignable Whether to ignore outputs that we are tracking but don't have the keys to sign for.
      */
-    public List<TransactionOutput> calculateAllSpendCandidates(boolean excludeImmatureCoinbases, boolean excludeUnsignable) {
+    public List<TransactionOutput> calculateAllSpendCandidates(boolean excludeImmatureCoinbases, boolean excludeUnsignable, boolean includeDust) {
         lock.lock();
         try {
             List<TransactionOutput> candidates;
             if (vUTXOProvider == null) {
-                candidates = new ArrayList<>(myUnspents.size());
+                candidates = new ArrayList<TransactionOutput>(myUnspents.size());
                 for (TransactionOutput output : myUnspents) {
                     if (excludeUnsignable && !canSignFor(output.getScriptPubKey())) continue;
                     Transaction transaction = checkNotNull(output.getParentTransaction());
                     if (excludeImmatureCoinbases && !transaction.isMature())
                         continue;
-                    candidates.add(output);
+
+                    if(output.getValue().value != 546L) {
+                        candidates.add(output);
+                    } else if(includeDust) {
+                        candidates.add(output);
+                    }
                 }
             } else {
                 candidates = calculateAllSpendCandidatesFromUTXOProvider(excludeImmatureCoinbases);
@@ -4431,6 +4407,10 @@ public class Wallet extends BaseTaggableObject
         } finally {
             lock.unlock();
         }
+    }
+
+    public List<TransactionOutput> calculateAllSpendCandidates(boolean excludeImmatureCoinbases, boolean excludeUnsignable) {
+        return this.calculateAllSpendCandidates(excludeImmatureCoinbases, excludeUnsignable, false);
     }
 
     /**
@@ -4556,6 +4536,9 @@ public class Wallet extends BaseTaggableObject
         }
     }
 
+    public List<TransactionOutput> getUtxos() {
+        return this.calculateAllSpendCandidates(false, true, false);
+    }
     //endregion
 
     // ***************************************************************************************************************

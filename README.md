@@ -1,10 +1,21 @@
-[![Build Status](https://travis-ci.org/bitcoinj/bitcoinj.png?branch=master)](https://travis-ci.org/bitcoinj/bitcoinj)   [![Coverage Status](https://coveralls.io/repos/bitcoinj/bitcoinj/badge.png?branch=master)](https://coveralls.io/r/bitcoinj/bitcoinj?branch=master) 
+### Welcome to bitcoincashj
 
-[![Visit our IRC channel](https://kiwiirc.com/buttons/irc.freenode.net/bitcoinj.png)](https://kiwiirc.com/client/irc.freenode.net/bitcoinj)
+The bitcoincashj library is a Java implementation of the Bitcoin Cash (BCH) protocol. This library is a fork of Mike Hearn's original bitcoinj library aimed at supporting the Bitcoin Cash eco-system.
 
-### Welcome to bitcoinj
+This bitcoincashj is a fork of ProtocolCash's, which is a fork of the original bitcoincashj, which forked from Mike Hearn's original bitcoinj. Confusing, right?
 
-The bitcoinj library is a Java implementation of the Bitcoin protocol, which allows it to maintain a wallet and send/receive transactions without needing a local copy of Bitcoin Core. It comes with full documentation and some example apps showing how to use it.
+This fork of bitcoincashj has many changes and fixes since the original bitcoincashj (bitcoinj.cash) library, like:
+
+- CTOR support
+- 32MB block support
+- Native Cash Account integration (trustless registration and sending)
+- SLP tokens
+- Standard BIP44 derivation (m/44'/145'/0' for BCH, m/44'/245'/0' for SLP)
+- UTXO management when sending coins using SendRequest.utxos
+- BIP47 Reusable Payment Codes support
+- Up-to-date hardfork checkpoints
+
+It allows maintaining a wallet and sending/receiving transactions without needing a full blockchain node. It comes with full documentation and some example apps showing how to use it.
 
 ### Technologies
 
@@ -77,12 +88,14 @@ These are found in the `examples` module.
 
 Now you are ready to [follow the tutorial](https://bitcoinj.github.io/getting-started).
 
-### Testing a SNAPSHOT build
+### Contributing to bitcoincashj
 
-Building apps with official releases of **bitcoinj** is covered in the [tutorial](https://bitcoinj.github.io/getting-started).
+If you would like to help contribute to bitcoincashj, feel free to make changes and submit pull requests.
 
-If you want to develop or test your app with a [Jitpack](https://jitpack.io)-powered build of the latest `master` or `release-0.15` branch of **bitcoinj** follow the dynamically-generated instructions for that branch by following the correct link.
+Not a programmer? Not a problem. You can donate Bitcoin Cash to the addresses below:
 
+bitcoincash:qptnypuugy29lttleggl7l0vpls0vg295q9nsavw6g
 
-* [master](https://jitpack.io/#bitcoinj/bitcoinj/master-SNAPSHOT) branch
-* [release-0.15](https://jitpack.io/#bitcoinj/bitcoinj/release-0.15-SNAPSHOT) branch
+PM8TJaArHqgRL78aUwxCADZneMYjxQT9pv3NhhjRo2HjNYcFysc1rpf3U9rJV78kayJeDU6FcxZBiAxFxfGxapa9fAFCLLXCNj7Qzjw8bpgDof5a4JbC
+
+pokkst#66280
