@@ -953,6 +953,17 @@ public class Transaction extends ChildMessage {
         Sha256Hash hash = hashForSignature(inputIndex, redeemScript, hashType, anyoneCanPay);
         return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay);
     }
+    public TransactionSignature calculateWitnessSignature(
+            int inputIndex,
+            ECKey key,
+            byte[] redeemScript,
+            Coin value,
+            SigHash hashType,
+            boolean anyoneCanPay)
+    {
+        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
+        return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true);
+    }
 
     /**
      * Calculates a signature that is valid for being inserted into the input at the given position. This is simply
@@ -971,18 +982,6 @@ public class Transaction extends ChildMessage {
                                                                  SigHash hashType, boolean anyoneCanPay) {
         Sha256Hash hash = hashForSignature(inputIndex, redeemScript.getProgram(), hashType, anyoneCanPay);
         return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay);
-    }
-
-    public TransactionSignature calculateWitnessSignature(
-            int inputIndex,
-            ECKey key,
-            byte[] redeemScript,
-            Coin value,
-            SigHash hashType,
-            boolean anyoneCanPay)
-    {
-        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
-        return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true);
     }
 
     public TransactionSignature calculateWitnessSignature(
