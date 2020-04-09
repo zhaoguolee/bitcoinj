@@ -846,7 +846,7 @@ public class BIP47AppKit extends AbstractIdleService {
         return sendRequest.tx;
     }
 
-    public SendRequest makeNotificationTransaction(String paymentCode) throws InsufficientMoneyException {
+    public SendRequest makeNotificationTransaction(String paymentCode, boolean allowUnconfirmedSpends) throws InsufficientMoneyException {
         BIP47Account toAccount = new BIP47Account(getParams(), paymentCode);
         Coin ntValue = getParams().getMinNonDustOutput();
         Address ntAddress = toAccount.getNotificationAddress();
@@ -856,6 +856,10 @@ public class BIP47AppKit extends AbstractIdleService {
         System.out.println("Value: " + ntValue.toFriendlyString());
 
         SendRequest sendRequest = SendRequest.to(this.getParams(), ntAddress.toString(), ntValue);
+
+        if(allowUnconfirmedSpends)
+            sendRequest.allowUnconfirmed();
+
         sendRequest.feePerKb = Coin.valueOf(1000L);
         sendRequest.memo = "notification_transaction";
 
