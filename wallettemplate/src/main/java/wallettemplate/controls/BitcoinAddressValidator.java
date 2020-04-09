@@ -54,10 +54,14 @@ public class BitcoinAddressValidator {
     }
 
     private boolean testAddr(String text) {
-        try {
-            Address.fromString(params, text);
-            return true;
-        } catch (AddressFormatException e) {
+        if(!text.isEmpty()) {
+            try {
+                Address.fromString(params, text);
+                return true;
+            } catch (AddressFormatException e) {
+                return false;
+            }
+        } else {
             return false;
         }
     }

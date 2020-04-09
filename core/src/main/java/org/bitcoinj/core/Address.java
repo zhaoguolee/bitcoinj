@@ -54,19 +54,12 @@ public abstract class Address extends PrefixedChecksummedBytes {
      */
     public static Address fromString(@Nullable NetworkParameters params, String str)
             throws AddressFormatException {
-        try {
+        if(isValidLegacyAddress(params, str)) {
             return LegacyAddress.fromBase58(params, str);
-        } catch (AddressFormatException.WrongNetwork x) {
-            throw x;
-        } catch (AddressFormatException x) {
-            throw x;
-            /*try {
-                return CashAddress.fromCashAddr(params, str);
-            } catch (AddressFormatException.WrongNetwork x2) {
-                throw x;
-            } catch (AddressFormatException x2) {
-                throw new AddressFormatException(str);
-            }*/
+        } else if(isValidCashAddr(params, str)) {
+            return CashAddress.fromCashAddress(params, str);
+        } else {
+            return null;
         }
     }
 
@@ -85,29 +78,21 @@ public abstract class Address extends PrefixedChecksummedBytes {
         try {
             LegacyAddress.fromBase58(params, legacyAddress);
             return true;
-        } catch(AddressFormatException e) {
+        } catch(Exception e) {
             return false;
         }
     }
 
-    /**
-     *
-     * @param params
-     *             The expected NetworkParameters to validate the address against.
-     * @param cashaddr
-     *             The Bitcoin Cash cash address. Starts with a "q", "p", or "bitcoincash:"
-     * @return
-     *             Whether the address is valid or not.
-     */
-    /*public static boolean isValidCashAddr(NetworkParameters params, String cashaddr)
+    @Deprecated
+    public static boolean isValidCashAddr(NetworkParameters params, String cashAddress)
     {
         try {
-            CashAddress.fromCashAddr(params, cashaddr);
+            CashAddress.fromCashAddress(params, cashAddress);
             return true;
-        } catch(AddressFormatException e) {
+        } catch(Exception e) {
             return false;
         }
-    }*/
+    }
 
     public static boolean isValidPaymentCode(String paymentCode)
     {

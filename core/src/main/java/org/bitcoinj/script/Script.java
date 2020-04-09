@@ -257,6 +257,25 @@ public class Script {
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Script not in the standard scriptPubKey form");
     }
 
+    public byte[] getPubKey() throws ScriptException {
+        if (chunks.size() != 2) {
+            throw new ScriptException(ScriptError.SCRIPT_ERR_SCRIPT_SIZE, "Script not of right size, expecting 2 but got " + chunks.size());
+        }
+        final ScriptChunk chunk0 = chunks.get(0);
+        final byte[] chunk0data = chunk0.data;
+        final ScriptChunk chunk1 = chunks.get(1);
+        final byte[] chunk1data = chunk1.data;
+        if (chunk0data != null && chunk0data.length > 2 && chunk1data != null && chunk1data.length > 2) {
+            // If we have two large constants assume the input to a pay-to-address output.
+            return chunk1data;
+        } else if (chunk1.equalsOpCode(OP_CHECKSIG) && chunk0data != null && chunk0data.length > 2) {
+            // A large constant followed by an OP_CHECKSIG is the key.
+            return chunk0data;
+        } else {
+            throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Script did not match expected form: " + this);
+        }
+    }
+
     /**
      * Gets the destination address from this script, if it's in the required form.
      */

@@ -54,7 +54,7 @@ public class SendMoneyController {
 
     // Called by FXMLLoader
     public void initialize() {
-        Coin balance = Main.bitcoin.wallet().getBalance(Wallet.BalanceType.ESTIMATED);
+        Coin balance = Main.bitcoin.getvWallet().getBalance(Wallet.BalanceType.ESTIMATED);
         checkState(!balance.isZero());
         new BitcoinAddressValidator(Main.params, address, sendBtn);
         new TextFieldValidator(amountEdit, text ->
@@ -71,17 +71,16 @@ public class SendMoneyController {
         // Address exception cannot happen as we validated it beforehand.
         try {
             Coin amount = Coin.parseCoin(amountEdit.getText());
-            LegacyAddress destination = LegacyAddress.fromBase58(Main.params, address.getText());
             SendRequest req;
-            if (amount.equals(Main.bitcoin.wallet().getBalance()))
-                req = SendRequest.emptyWallet(destination);
+            if (amount.value >= Main.bitcoin.getvWallet().getBalance().value)
+                req = SendRequest.emptyWallet(Main.bitcoin.getParams(), address.getText());
             else
-                req = SendRequest.to(destination, amount);
+                req = SendRequest.to(Main.bitcoin.getParams(), address.getText(), amount);
             req.aesKey = aesKey;
             // Don't make the user wait for confirmations for now, as the intention is they're sending it
             // their own money!
             req.allowUnconfirmed();
-            sendResult = Main.bitcoin.wallet().sendCoins(req);
+            sendResult = Main.bitcoin.getvWallet().sendCoins(req);
             Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<Transaction>() {
                 @Override
                 public void onSuccess(@Nullable Transaction result) {

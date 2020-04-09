@@ -75,12 +75,14 @@ public class BitcoinUIModel {
         @Override
         protected void progress(double pct, int blocksLeft, Date date) {
             super.progress(pct, blocksLeft, date);
+            System.out.println(pct);
             Platform.runLater(() -> syncProgress.set(pct / 100.0));
         }
 
         @Override
         protected void doneDownload() {
             super.doneDownload();
+            System.out.println("blockchain downloaded");
             Platform.runLater(() -> syncProgress.set(1.0));
         }
     }

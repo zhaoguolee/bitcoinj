@@ -333,16 +333,16 @@ public class SlpAppKit extends AbstractIdleService {
         return SlpTxBuilder.buildTx(tokenId, numTokens, slpDestinationAddress, this, aesKey).blockingGet();
     }
 
-    /*public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
+    public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
         SendRequest req = SendRequest.createSlpTransaction(this.wallet.getParams());
         req.aesKey = aesKey;
         req.shuffleOutputs = false;
         req.feePerKb = Coin.valueOf(1000L);
         SlpOpReturnOutputGenesis slpOpReturn = new SlpOpReturnOutputGenesis(ticker, name, url, decimals, tokenQuantity);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
-        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), CashAddress.fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString()));
+        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), CashAddress.fromCashAddress(this.wallet.getParams(), this.wallet.currentChangeAddress().toString()));
         return wallet.sendCoinsOffline(req);
-    }*/
+    }
 
     public void broadcastSlpTransaction(Transaction tx) {
         for(Peer peer : this.peerGroup.getConnectedPeers()) {

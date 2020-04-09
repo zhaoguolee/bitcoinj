@@ -3914,7 +3914,7 @@ public class Wallet extends BaseTaggableObject
      * transaction, commit to the wallet and broadcast it to the network all in one go. This method is lower level
      * and lets you see the proposed transaction before anything is done with it.</p>
      *
-     * <p>This is a helper method that is equivalent to using {@link SendRequest#to(Address, Coin)}
+     * <p>This is a helper method that is equivalent to using {@link SendRequest#to(NetworkParameters, String, Coin)}
      * followed by {@link Wallet#completeTx(SendRequest)} and returning the requests transaction object.
      * Note that this means a fee may be automatically added if required, if you want more control over the process,
      * just do those two steps yourself.</p>
@@ -3951,7 +3951,7 @@ public class Wallet extends BaseTaggableObject
      * transaction, commit to the wallet and broadcast it to the network all in one go. This method is lower level
      * and lets you see the proposed transaction before anything is done with it.</p>
      *
-     * <p>This is a helper method that is equivalent to using {@link SendRequest#to(Address, Coin)}
+     * <p>This is a helper method that is equivalent to using {@link SendRequest#to(NetworkParameters, String, Coin)}
      * followed by {@link Wallet#completeTx(SendRequest)} and returning the requests transaction object.
      * Note that this means a fee may be automatically added if required, if you want more control over the process,
      * just do those two steps yourself.</p>
@@ -3977,7 +3977,7 @@ public class Wallet extends BaseTaggableObject
      */
     public Transaction createSend(Address address, Coin value, boolean allowUnconfirmed)
             throws InsufficientMoneyException, BadWalletEncryptionKeyException {
-        SendRequest req = SendRequest.to(address, value);
+        SendRequest req = SendRequest.to(this.getParams(), address.toString(), value);
         if (params.getId().equals(NetworkParameters.ID_UNITTESTNET))
             req.shuffleOutputs = false;
         if (allowUnconfirmed)
@@ -4042,7 +4042,7 @@ public class Wallet extends BaseTaggableObject
      */
     public SendResult sendCoins(TransactionBroadcaster broadcaster, Address to, Coin value)
             throws InsufficientMoneyException, BadWalletEncryptionKeyException {
-        SendRequest request = SendRequest.to(to, value);
+        SendRequest request = SendRequest.to(this.getParams(), to.toString(), value);
         return sendCoins(broadcaster, request);
     }
 

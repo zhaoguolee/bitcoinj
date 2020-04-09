@@ -58,8 +58,8 @@ public class MainController {
     }
 
     public void onBitcoinSetup() {
-        bitcoin.wallet().setAcceptRiskyTransactions(true);
-        model.setWallet(bitcoin.wallet());
+        bitcoin.getvWallet().setAcceptRiskyTransactions(true);
+        model.setWallet(bitcoin.getvWallet());
         addressControl.addressProperty().bind(model.addressProperty());
         balance.textProperty().bind(createBalanceStringBinding(model.balanceProperty()));
         // Don't let the user click send money when the wallet is empty.

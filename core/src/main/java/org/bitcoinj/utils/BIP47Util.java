@@ -367,7 +367,7 @@ public class BIP47Util {
     /* Extract the payment code from an incoming notification transaction */
     public static BIP47PaymentCode getPaymentCodeInNotificationTransaction(byte[] privKeyBytes, Transaction tx) {
         log.debug( "Getting pub key");
-        byte[] pubKeyBytes = tx.getInput(0).getScriptSig().getPubKeys().get(0).getPubKey();
+        byte[] pubKeyBytes = tx.getInput(0).getScriptSig().getPubKey();
 
         log.debug( "Private Key: "+ HEX.encode(privKeyBytes));
         log.debug( "Public Key: "+HEX.encode(pubKeyBytes));

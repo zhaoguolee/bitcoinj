@@ -292,7 +292,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
             checkState(passphrase == null || seed == null, "Passphrase must not be specified with seed");
 
             if (accountPath == null)
-                accountPath = ACCOUNT_ZERO_PATH;
+                accountPath = BIP44_ACCOUNT_ZERO_PATH;
 
             if (random != null)
                 // Default passphrase to "" if not specified
@@ -823,7 +823,7 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
                     accountPath.add(new ChildNumber(i));
                 }
                 if (accountPath.isEmpty())
-                    accountPath = ACCOUNT_ZERO_PATH;
+                    accountPath = BIP44_ACCOUNT_ZERO_PATH;
                 if (chain != null) {
                     checkState(lookaheadSize >= 0);
                     chain.setLookaheadSize(lookaheadSize);

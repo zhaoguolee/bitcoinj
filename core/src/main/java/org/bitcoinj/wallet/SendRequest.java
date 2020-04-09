@@ -21,14 +21,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.bitcoin.protocols.payments.Protos.PaymentDetails;
 import org.bitcoinj.core.*;
+import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.script.ScriptOpCodes;
 import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.wallet.KeyChain.KeyPurpose;
 import org.bitcoinj.wallet.Wallet.MissingSigsMode;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 import com.google.common.base.MoreObjects;
+import org.bouncycastle.util.encoders.Hex;
 
+import java.net.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -178,11 +185,35 @@ public class SendRequest {
      * {@link TransactionOutput#getMinNonDustValue(Coin)} afterwards or you risk having the transaction
      * rejected by the network.</p>
      */
-    public static SendRequest to(Address destination, Coin value) {
+    public static SendRequest to(NetworkParameters params, String recipient, Coin value) throws NullPointerException, AddressFormatException {
+        return to(params, recipient, value, null);
+    }
+
+    public static SendRequest to(NetworkParameters params, String recipient, Coin value, Proxy proxy) throws NullPointerException, AddressFormatException {
+        NetHelper netHelper = new NetHelper();
+
         SendRequest req = new SendRequest();
-        final NetworkParameters parameters = destination.getParameters();
-        checkNotNull(parameters, "Address is for an unknown network");
-        req.tx = new Transaction(parameters);
+        Address destination = null;
+
+        if(recipient.contains("#"))
+        {
+            String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
+            if(Address.isValidCashAddr(params, cashAcctAddress)) {
+                destination = CashAddress.fromCashAddress(params, cashAcctAddress);
+            } else if(Address.isValidLegacyAddress(params, cashAcctAddress)){
+                destination = LegacyAddress.fromBase58(params, cashAcctAddress);
+            }
+        } else {
+            if(Address.isValidCashAddr(params, recipient)) {
+                destination = CashAddress.fromCashAddress(params, recipient);
+            } else if(Address.isValidLegacyAddress(params, recipient)){
+                destination = LegacyAddress.fromBase58(params, recipient);
+            }
+        }
+
+        checkNotNull(params, "Address is for an unknown network");
+        checkNotNull(destination, "No address set!");
+        req.tx = new Transaction(params);
         req.tx.addOutput(value, destination);
         return req;
     }
@@ -192,7 +223,7 @@ public class SendRequest {
      *
      * <p>Be careful to check the output's value is reasonable using
      * {@link TransactionOutput#getMinNonDustValue(Coin)} afterwards or you risk having the transaction
-     * rejected by the network. Note that using {@link SendRequest#to(Address, Coin)} will result
+     * rejected by the network. Note that using {@link SendRequest#to(NetworkParameters, String, Coin)} will result
      * in a smaller output, and thus the ability to use a smaller output value without rejection.</p>
      */
     public static SendRequest to(NetworkParameters params, ECKey destination, Coin value) {
@@ -209,13 +240,61 @@ public class SendRequest {
         return req;
     }
 
-    public static SendRequest emptyWallet(Address destination) {
+    public static SendRequest emptyWallet(NetworkParameters params, String recipient) throws NullPointerException, AddressFormatException {
+        return emptyWallet(params, recipient, null);
+    }
+
+    public static SendRequest emptyWallet(NetworkParameters params, String recipient, Proxy proxy) throws NullPointerException, AddressFormatException {
+        NetHelper netHelper = new NetHelper();
+
         SendRequest req = new SendRequest();
-        final NetworkParameters parameters = destination.getParameters();
-        checkNotNull(parameters, "Address is for an unknown network");
-        req.tx = new Transaction(parameters);
+        Address destination = null;
+
+        if(recipient.contains("#"))
+        {
+            String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
+            if(Address.isValidCashAddr(params, cashAcctAddress)) {
+                destination = CashAddress.fromCashAddress(params, cashAcctAddress);
+            } else if(Address.isValidLegacyAddress(params, cashAcctAddress)){
+                destination = LegacyAddress.fromBase58(params, cashAcctAddress);
+            }
+        } else {
+            if(Address.isValidCashAddr(params, recipient)) {
+                destination = CashAddress.fromCashAddress(params, recipient);
+            } else if(Address.isValidLegacyAddress(params, recipient)){
+                destination = LegacyAddress.fromBase58(params, recipient);
+            }
+        }
+
+        checkNotNull(params, "Address is for an unknown network");
+        checkNotNull(destination, "No address set!");
+        req.tx = new Transaction(params);
         req.tx.addOutput(Coin.ZERO, destination);
         req.emptyWallet = true;
+        return req;
+    }
+
+    public static SendRequest createCashAccount(NetworkParameters params, String desiredAddressForCashAccount, String cashAccountName) throws NullPointerException, AddressFormatException {
+        SendRequest req = new SendRequest();
+        Address destination = null;
+
+        if(Address.isValidCashAddr(params, desiredAddressForCashAccount)) {
+            destination = CashAddress.fromCashAddress(params, desiredAddressForCashAccount);
+        } else if(Address.isValidLegacyAddress(params, desiredAddressForCashAccount)){
+            destination = LegacyAddress.fromBase58(params, desiredAddressForCashAccount);
+        }
+
+        checkNotNull(params, "Address is for an unknown network");
+        checkNotNull(destination, "No address set!");
+        String hash160 = new String(Hex.encode(destination.getHash()), StandardCharsets.UTF_8);
+        req.tx = new Transaction(params);
+        req.tx.addOutput(Coin.parseCoin("0.00001"), destination);
+        ScriptBuilder scriptBuilder = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN)
+                .data(Hex.decode("01010101"))
+                .data(cashAccountName.getBytes())
+                .data(Hex.decode("01" + hash160));
+        Script script = scriptBuilder.build();
+        req.tx.addOutput(Coin.ZERO, script);
         return req;
     }
 

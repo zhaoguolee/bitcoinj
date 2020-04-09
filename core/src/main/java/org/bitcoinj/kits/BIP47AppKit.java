@@ -6,6 +6,7 @@
 package org.bitcoinj.kits;
 
 
+import com.github.kiulian.converter.AddressConverter;
 import com.google.common.io.Closeables;
 import com.google.common.util.concurrent.*;
 import com.google.gson.Gson;
@@ -35,16 +36,18 @@ import org.bitcoinj.utils.BIP47Util;
 import org.bitcoinj.wallet.*;
 import org.bitcoinj.wallet.bip47.listeners.BlockchainDownloadProgressTracker;
 import org.bitcoinj.wallet.bip47.listeners.TransactionEventListener;
+import org.bouncycastle.util.encoders.Hex;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -126,7 +129,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public BIP47AppKit(NetworkParameters params, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params).build(), file, walletName);
+        this(params, KeyChainGroup.builder(params).fromRandom(Script.ScriptType.P2PKH).build(), file, walletName);
     }
 
     public BIP47AppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
@@ -168,6 +171,89 @@ public class BIP47AppKit extends AbstractIdleService {
         if (!this.vWallet.isAddressWatched(notificationAddress)) {
             this.vWallet.addWatchedAddress(notificationAddress);
         }
+
+        String notifAsCashAddr = AddressConverter.toCashAddress(notificationAddress.toString());
+        this.grabNotificationAddressUtxos(notifAsCashAddr);
+    }
+
+    private void grabNotificationAddressUtxos(final String cashAddr) {
+        new Thread() {
+            @Override
+            public void run() {
+                ArrayList<String> txids = new ArrayList<String>();
+                JSONObject utxosJson = getJSONObject("https://insomnia.fountainhead.cash/v1/address/utxos/" + cashAddr);
+                if(utxosJson != null) {
+                    JSONArray utxos = utxosJson.getJSONArray("utxos");
+                    if (utxos != null) {
+                        for (int x = 0; x < utxos.length(); x++) {
+                            JSONObject utxo = utxos.getJSONObject(x);
+                            String txid = utxo.getString("tx_hash");
+                            txids.add(txid);
+                        }
+                    }
+
+                    for (String txid : txids) {
+                        grabTransactionAndProcessNotificationTransaction(txid);
+                    }
+                }
+            }
+        }.start();
+    }
+
+    private void grabTransactionAndProcessNotificationTransaction(String txid) {
+        JSONObject txJson = getJSONObject("https://insomnia.fountainhead.cash/v1/tx/data/" + txid);
+        if(txJson != null) {
+            String txHex = txJson.getString("tx");
+            Transaction tx = new Transaction(this.params, Hex.decode(txHex));
+            if (isNotificationTransaction(tx)) {
+                System.out.println("Valid notification transaction received");
+                BIP47PaymentCode BIP47PaymentCode = getPaymentCodeInNotificationTransaction(tx);
+                if (BIP47PaymentCode == null) {
+                    System.err.println("Error decoding payment code in tx " + tx);
+                } else {
+                    System.out.println("Payment Code: " + BIP47PaymentCode);
+                    boolean needsSaving = savePaymentCode(BIP47PaymentCode);
+                    if (needsSaving) {
+                        saveBip47MetaData();
+                    }
+                }
+            }
+        }
+    }
+
+    private JSONObject getJSONObject(String url) {
+        InputStream is = null;
+        try {
+            is = new URL(url).openStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            String jsonText = "{}";
+            BufferedReader rd = null;
+            if (is != null) {
+                rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                int cp;
+                while ((cp = rd.read()) != -1) {
+                    sb.append((char) cp);
+                }
+                jsonText = sb.toString();
+            }
+            return new JSONObject(jsonText);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (is != null) {
+                    is.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
     }
 
     public BIP47AppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
@@ -282,7 +368,8 @@ public class BIP47AppKit extends AbstractIdleService {
                     System.out.println("Received tx for " + valueSentToMe.toFriendlyString() + ":" + transaction);
                 }
 
-                runnable.run();
+                if(runnable != null)
+                    runnable.run();
             }
 
             @Override
@@ -531,8 +618,12 @@ public class BIP47AppKit extends AbstractIdleService {
 
     public void rescanTxBlock(Transaction tx) throws BlockStoreException {
         try {
-            int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 2;
-            this.vChain.rollbackBlockStore(blockHeight);
+            if(tx.getConfidence().getAppearedAtChainHeight() - 2 > this.vChain.getBestChainHeight()) {
+                System.out.println("Transaction is from block " + tx.getConfidence().getAppearedAtChainHeight() + " which is above our local chain height " + this.vChain.getBestChainHeight());
+            } else {
+                int blockHeight = tx.getConfidence().getAppearedAtChainHeight() - 2;
+                this.vChain.rollbackBlockStore(blockHeight);
+            }
         } catch (IllegalStateException e) {
             //fail silently, we dont need to rollback as it works when txs are in mempool
         }
@@ -747,7 +838,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public Transaction createSend(Address address, long amount) throws InsufficientMoneyException {
-        SendRequest sendRequest = SendRequest.to(address, Coin.valueOf(amount));
+        SendRequest sendRequest = SendRequest.to(this.getParams(), address.toString(), Coin.valueOf(amount));
 
         sendRequest.feePerKb = getDefaultFee(getParams());
 
@@ -764,7 +855,7 @@ public class BIP47AppKit extends AbstractIdleService {
         System.out.println("To notification address: " + ntAddress.toString());
         System.out.println("Value: " + ntValue.toFriendlyString());
 
-        SendRequest sendRequest = SendRequest.to(ntAddress, ntValue);
+        SendRequest sendRequest = SendRequest.to(this.getParams(), ntAddress.toString(), ntValue);
         sendRequest.feePerKb = Coin.valueOf(1000L);
         sendRequest.memo = "notification_transaction";
 

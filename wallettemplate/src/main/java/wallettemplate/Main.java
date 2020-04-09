@@ -18,6 +18,7 @@ package wallettemplate;
 
 import com.google.common.util.concurrent.*;
 import javafx.scene.input.*;
+import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.utils.AppDataDirectory;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Utils;
@@ -35,6 +36,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.bitcoinj.wallet.UnreadableWalletException;
 import wallettemplate.controls.NotificationBarPane;
 import wallettemplate.utils.GuiUtils;
 import wallettemplate.utils.TextFieldValidator;
@@ -53,7 +55,7 @@ public class Main extends Application {
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static WalletAppKit bitcoin;
+    public static BIP47AppKit bitcoin;
     public static Main instance;
 
     private StackPane uiStack;
@@ -72,7 +74,7 @@ public class Main extends Application {
         }
     }
 
-    private void realStart(Stage mainWindow) throws IOException {
+    private void realStart(Stage mainWindow) throws IOException, UnreadableWalletException {
         this.mainWindow = mainWindow;
         instance = this;
         // Show the crash dialog for any exceptions that we don't handle and that hit the main loop.
@@ -112,12 +114,6 @@ public class Main extends Application {
         // Create the app kit. It won't do any heavyweight initialization until after we start it.
         setupWalletKit(null);
 
-        if (bitcoin.isChainFileLocked()) {
-            informationalAlert("Already running", "This application is already running and cannot be started twice.");
-            Platform.exit();
-            return;
-        }
-
         mainWindow.show();
 
         WalletSetPasswordController.estimateKeyDerivationTimeMsec();
@@ -130,29 +126,18 @@ public class Main extends Application {
         }, Platform::runLater);
         bitcoin.startAsync();
 
-        scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.peerGroup().getDownloadPeer().close());
+        scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.getPeerGroup().getDownloadPeer().close());
     }
 
-    public void setupWalletKit(@Nullable DeterministicSeed seed) {
+    public void setupWalletKit(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
         // If seed is non-null it means we are restoring from backup.
         File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
-        bitcoin = new WalletAppKit(params, PREFERRED_OUTPUT_SCRIPT_TYPE, null, new File("."), WALLET_FILE_NAME) {
-            @Override
-            protected void onSetupCompleted() {
-                Platform.runLater(controller::onBitcoinSetup);
-            }
-        };
+        bitcoin = new BIP47AppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
+        Platform.runLater(controller::onBitcoinSetup);
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        if (params == RegTestParams.get()) {
-            bitcoin.connectToLocalHost();   // You should run a regtest mode bitcoind locally.
-        }
-        bitcoin.setDownloadListener(controller.progressBarUpdater())
-               .setBlockingStartup(false)
-               .setUserAgent(APP_NAME, "1.0");
-        if (seed != null)
-            bitcoin.restoreWalletFromSeed(seed);
+        bitcoin.setDownloadProgressTracker(controller.progressBarUpdater());
     }
 
     private Node stopClickPane = new Pane();

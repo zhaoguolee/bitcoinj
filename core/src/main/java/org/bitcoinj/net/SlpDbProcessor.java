@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 public class SlpDbProcessor {
-    private String[] slpDbInstances = new String[] {"slpdb.fountainhead.cash", "slpdb.bitcoin.com", "slpserve.imaginary.cash"};
+    private String[] slpDbInstances = new String[] {"slpdb.fountainhead.cash", "slpserve.imaginary.cash"};
     private String slpDbEndpoint = "/q/";
 
     public SlpDbProcessor() {
