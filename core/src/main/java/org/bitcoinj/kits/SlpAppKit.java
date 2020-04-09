@@ -235,8 +235,7 @@ public class SlpAppKit extends AbstractIdleService {
             FileInputStream stream = null;
             try {
                 stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
-                //Wallet wallet = Wallet.loadFromFileStream(stream, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH, walletExtensions);
-                Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
+                Wallet wallet = Wallet.loadFromFileStream(stream, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH, walletExtensions);
                 return new SlpAppKit(wallet, baseDir, walletName);
             } finally {
                 if (stream != null) stream.close();

@@ -850,13 +850,13 @@ public class KeyChainGroup implements KeyBag {
         return result;
     }
 
-    static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, List<Protos.Key> keys) throws UnreadableWalletException {
-        return fromProtobufUnencrypted(params, keys, new DefaultKeyChainFactory());
+    public static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, List<Protos.Key> keys, KeyChainFactory factory) throws UnreadableWalletException {
+        return fromProtobufUnencrypted(params, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, keys, factory);
     }
 
-    public static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, List<Protos.Key> keys, KeyChainFactory factory) throws UnreadableWalletException {
+    public static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, HDPath accountPath, List<Protos.Key> keys, KeyChainFactory factory) throws UnreadableWalletException {
         BasicKeyChain basicKeyChain = BasicKeyChain.fromProtobufUnencrypted(keys);
-        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, null, factory);
+        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, accountPath, null, factory);
         int lookaheadSize = -1, lookaheadThreshold = -1;
         EnumMap<KeyChain.KeyPurpose, DeterministicKey> currentKeys = null;
         if (!chains.isEmpty()) {
@@ -869,14 +869,22 @@ public class KeyChainGroup implements KeyBag {
         return new KeyChainGroup(params, basicKeyChain, chains, lookaheadSize, lookaheadThreshold, currentKeys, null);
     }
 
-    static KeyChainGroup fromProtobufEncrypted(NetworkParameters params, List<Protos.Key> keys, KeyCrypter crypter) throws UnreadableWalletException {
-        return fromProtobufEncrypted(params, keys, crypter, new DefaultKeyChainFactory());
+    public static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, List<Protos.Key> keys) throws UnreadableWalletException {
+        return fromProtobufUnencrypted(params, keys, new DefaultKeyChainFactory());
     }
 
     public static KeyChainGroup fromProtobufEncrypted(NetworkParameters params, List<Protos.Key> keys, KeyCrypter crypter, KeyChainFactory factory) throws UnreadableWalletException {
+        return fromProtobufEncrypted(params, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, keys, crypter, factory);
+    }
+
+    public static KeyChainGroup fromProtobufEncrypted(NetworkParameters params, List<Protos.Key> keys, KeyCrypter crypter) throws UnreadableWalletException {
+        return fromProtobufEncrypted(params, DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH, keys, crypter, new DefaultKeyChainFactory());
+    }
+
+    public static KeyChainGroup fromProtobufEncrypted(NetworkParameters params, HDPath accountPath, List<Protos.Key> keys, KeyCrypter crypter, KeyChainFactory factory) throws UnreadableWalletException {
         checkNotNull(crypter);
         BasicKeyChain basicKeyChain = BasicKeyChain.fromProtobufEncrypted(keys, crypter);
-        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, crypter, factory);
+        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, accountPath, crypter, factory);
         int lookaheadSize = -1, lookaheadThreshold = -1;
         EnumMap<KeyChain.KeyPurpose, DeterministicKey> currentKeys = null;
         if (!chains.isEmpty()) {
