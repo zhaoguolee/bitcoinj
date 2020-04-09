@@ -202,7 +202,7 @@ public class Wallet extends BaseTaggableObject
     // that was created after it. Useful when you believe some keys have been compromised.
     private volatile long vKeyRotationTimestamp;
 
-    protected final CoinSelector coinSelector = DefaultCoinSelector.get();
+    protected CoinSelector coinSelector = DefaultCoinSelector.get();
 
     // The wallet version. This is an int that can be used to track breaking changes in the wallet format.
     // You can also use it to detect wallets that come from the future (ie they contain features you
@@ -1841,6 +1841,9 @@ public class Wallet extends BaseTaggableObject
         }
     }
 
+    public void allowSpendingUnconfirmedTransactions() {
+        this.coinSelector = AllowUnconfirmedCoinSelector.get();
+    }
     /**
      * <p>Called when we have found a transaction (via network broadcast or otherwise) that is relevant to this wallet
      * and want to record it. Note that we <b>cannot verify these transactions at all</b>, they may spend fictional
