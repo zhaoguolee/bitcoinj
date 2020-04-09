@@ -34,4 +34,14 @@ public interface KeyChainGroupStructure {
                 throw new IllegalArgumentException(outputScriptType.toString());
         }
     };
+
+    public static final KeyChainGroupStructure SLP = new KeyChainGroupStructure() {
+        @Override
+        public HDPath accountPathFor(Script.ScriptType outputScriptType) {
+            if (outputScriptType == null || outputScriptType == Script.ScriptType.P2PKH)
+                return DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH;
+            else
+                throw new IllegalArgumentException(outputScriptType.toString());
+        }
+    };
 }

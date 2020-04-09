@@ -91,11 +91,11 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public SlpAppKit(NetworkParameters params, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params).fromRandom(Script.ScriptType.P2PKH).build(), file, walletName);
+        this(params, KeyChainGroup.builder(params, KeyChainGroupStructure.SLP).fromRandom(Script.ScriptType.P2PKH).build(), file, walletName);
     }
 
     public SlpAppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params).fromSeed(seed, Script.ScriptType.P2PKH).build(), file, walletName);
+        this(params, KeyChainGroup.builder(params, KeyChainGroupStructure.SLP).fromSeed(seed, Script.ScriptType.P2PKH).build(), file, walletName);
     }
 
     public SlpAppKit(Wallet wallet, File file, String walletName) {
@@ -113,17 +113,12 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        //wallet = new Wallet(params, keyChainGroup, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
         wallet = new Wallet(params, keyChainGroup);
         this.context = new Context(params);
         this.params = params;
         this.baseDirectory = file;
         this.walletName = walletName;
         this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
-        DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
-        wallet.removeHDChainByIndex(0);
-        DeterministicKeyChain keyChain = DeterministicKeyChain.builder().seed(cachedChain.getSeed()).accountPath(DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH_CHILD_NUM).build();
-        wallet.addAndActivateHDChain(keyChain);
         this.completeSetupOfWallet();
     }
 
