@@ -38,6 +38,7 @@ import org.bitcoinj.wallet.bip47.listeners.BlockchainDownloadProgressTracker;
 import org.bitcoinj.wallet.bip47.listeners.TransactionEventListener;
 import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,19 +184,19 @@ public class BIP47AppKit extends AbstractIdleService {
             public void run() {
                 ArrayList<String> txids = new ArrayList<String>();
                 JSONObject utxosJson = getJSONObject("https://insomnia.fountainhead.cash/v1/address/utxos/" + cashAddr);
-                if(utxosJson != null) {
+                try {
                     JSONArray utxos = utxosJson.getJSONArray("utxos");
-                    if (utxos != null) {
-                        for (int x = 0; x < utxos.length(); x++) {
-                            JSONObject utxo = utxos.getJSONObject(x);
-                            String txid = utxo.getString("tx_hash");
-                            txids.add(txid);
-                        }
+                    for (int x = 0; x < utxos.length(); x++) {
+                        JSONObject utxo = utxos.getJSONObject(x);
+                        String txid = utxo.getString("tx_hash");
+                        txids.add(txid);
                     }
 
                     for (String txid : txids) {
                         grabTransactionAndProcessNotificationTransaction(txid);
                     }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
             }
         }.start();
@@ -204,20 +205,24 @@ public class BIP47AppKit extends AbstractIdleService {
     private void grabTransactionAndProcessNotificationTransaction(String txid) {
         JSONObject txJson = getJSONObject("https://insomnia.fountainhead.cash/v1/tx/data/" + txid);
         if(txJson != null) {
-            String txHex = txJson.getString("tx");
-            Transaction tx = new Transaction(this.params, Hex.decode(txHex));
-            if (isNotificationTransaction(tx)) {
-                System.out.println("Valid notification transaction received");
-                BIP47PaymentCode BIP47PaymentCode = getPaymentCodeInNotificationTransaction(tx);
-                if (BIP47PaymentCode == null) {
-                    System.err.println("Error decoding payment code in tx " + tx);
-                } else {
-                    System.out.println("Payment Code: " + BIP47PaymentCode);
-                    boolean needsSaving = savePaymentCode(BIP47PaymentCode);
-                    if (needsSaving) {
-                        saveBip47MetaData();
+            try {
+                String txHex = txJson.getString("tx");
+                Transaction tx = new Transaction(this.params, Hex.decode(txHex));
+                if (isNotificationTransaction(tx)) {
+                    System.out.println("Valid notification transaction received");
+                    BIP47PaymentCode BIP47PaymentCode = getPaymentCodeInNotificationTransaction(tx);
+                    if (BIP47PaymentCode == null) {
+                        System.err.println("Error decoding payment code in tx " + tx);
+                    } else {
+                        System.out.println("Payment Code: " + BIP47PaymentCode);
+                        boolean needsSaving = savePaymentCode(BIP47PaymentCode);
+                        if (needsSaving) {
+                            saveBip47MetaData();
+                        }
                     }
                 }
+            } catch(JSONException e) {
+                e.printStackTrace();
             }
         }
     }
