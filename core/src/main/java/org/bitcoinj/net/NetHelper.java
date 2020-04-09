@@ -38,6 +38,11 @@ public class NetHelper {
 
     public String getCashAccountAddress(NetworkParameters params, String cashAccount)
     {
+        return this.getCashAccountAddress(params, cashAccount, false);
+    }
+
+    public String getCashAccountAddress(NetworkParameters params, String cashAccount, boolean forceCashAddr)
+    {
         String[] splitAccount = cashAccount.split("#");
         String username = splitAccount[0];
         String block;
@@ -66,13 +71,20 @@ public class NetHelper {
                 ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
                 ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
                 for (String s : addresses) {
-                    String hash160 = s.substring(2);
-                    if (Address.isValidPaymentCode(Hex.decode(hash160))) {
-                        address = new BIP47PaymentCode(Hex.decode(hash160)).toString();
-                        break;
+                    byte[] hash160 = Hex.decode(s.substring(2));
+                    if(forceCashAddr) {
+                        if (!Address.isValidPaymentCode(hash160)) {
+                            LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, hash160);
+                            address = AddressConverter.toCashAddress(legacyAddress.toBase58());
+                        }
                     } else {
-                        LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, Hex.decode(hash160));
-                        address = AddressConverter.toCashAddress(legacyAddress.toBase58());
+                        if (Address.isValidPaymentCode(hash160)) {
+                            address = new BIP47PaymentCode(hash160).toString();
+                            break;
+                        } else {
+                            LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, hash160);
+                            address = AddressConverter.toCashAddress(legacyAddress.toBase58());
+                        }
                     }
                 }
 
