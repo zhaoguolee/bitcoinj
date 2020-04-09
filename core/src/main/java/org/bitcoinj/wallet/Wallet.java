@@ -17,6 +17,7 @@
 
 package org.bitcoinj.wallet;
 
+import com.github.kiulian.converter.AddressConverter;
 import com.google.common.annotations.*;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.*;
@@ -557,10 +558,12 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #currentKey(KeyChain.KeyPurpose)}
      */
-    public Address currentAddress(KeyChain.KeyPurpose purpose) {
+    public CashAddress currentAddress(KeyChain.KeyPurpose purpose) {
         keyChainGroupLock.lock();
         try {
-            return keyChainGroup.currentAddress(purpose);
+            String legacy = keyChainGroup.currentAddress(purpose).toString();
+            String cashAddr = AddressConverter.toCashAddress(legacy);
+            return CashAddress.fromCashAddress(this.getParams(), cashAddr);
         } finally {
             keyChainGroupLock.unlock();
         }
@@ -570,7 +573,7 @@ public class Wallet extends BaseTaggableObject
      * An alias for calling {@link #currentAddress(KeyChain.KeyPurpose)} with
      * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public Address currentReceiveAddress() {
+    public CashAddress currentReceiveAddress() {
         return currentAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
@@ -619,11 +622,13 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #freshKey(KeyChain.KeyPurpose)}
      */
-    public Address freshAddress(KeyChain.KeyPurpose purpose) {
-        Address address;
+    public CashAddress freshAddress(KeyChain.KeyPurpose purpose) {
+        CashAddress address;
         keyChainGroupLock.lock();
         try {
-            address = keyChainGroup.freshAddress(purpose);
+            String legacy = keyChainGroup.freshAddress(purpose).toString();
+            String cashAddr = AddressConverter.toCashAddress(legacy);
+            address = CashAddress.fromCashAddress(this.getParams(), cashAddr);
         } finally {
             keyChainGroupLock.unlock();
         }
@@ -635,7 +640,7 @@ public class Wallet extends BaseTaggableObject
      * An alias for calling {@link #freshAddress(KeyChain.KeyPurpose)} with
      * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public Address freshReceiveAddress() {
+    public CashAddress freshReceiveAddress() {
         return freshAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
