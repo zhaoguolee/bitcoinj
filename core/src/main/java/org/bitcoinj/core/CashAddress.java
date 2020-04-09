@@ -30,6 +30,15 @@ public class CashAddress extends Address {
         }
     }
 
+    public static CashAddress fromBase58(NetworkParameters params, String legacy) {
+        if(Address.isValidLegacyAddress(params, legacy)) {
+            String cashAddr = AddressConverter.toCashAddress(legacy);
+            return fromCashAddress(params, cashAddr);
+        } else {
+            throw new AddressFormatException("Invalid address!");
+        }
+    }
+
     public LegacyAddress getLegacyAddress() {
         return this.legacyAddress;
     }
