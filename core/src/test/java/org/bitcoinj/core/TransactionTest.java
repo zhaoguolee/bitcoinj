@@ -168,16 +168,6 @@ public class TransactionTest {
         assertEquals(tx.isMature(), false);
     }
 
-    private boolean correctlySpends(TransactionInput txIn, Script scriptPubKey, int inputIndex) {
-        try {
-            txIn.getScriptSig().correctlySpends(txIn.getParentTransaction(), inputIndex, txIn.getWitness(),
-                    txIn.getValue(), scriptPubKey, Script.ALL_VERIFY_FLAGS);
-            return true;
-        } catch (ScriptException x) {
-            return false;
-        }
-    }
-
     @Test
     public void testToStringWhenLockTimeIsSpecifiedInBlockHeight() {
         Transaction tx = FakeTxBuilder.createFakeTx(UNITTEST);
@@ -396,9 +386,6 @@ public class TransactionTest {
             inputTx.addOutput(Coin.FIFTY_COINS, LegacyAddress.fromKey(params, ECKey.fromPrivate(BigInteger.valueOf(123456))));
             this.addInput(inputTx.getOutput(0));
             this.getInput(0).disconnect();
-            TransactionWitness witness = new TransactionWitness(1);
-            witness.setPush(0, new byte[] {0});
-            this.getInput(0).setWitness(witness);
             Address to = LegacyAddress.fromKey(params, ECKey.fromPrivate(BigInteger.valueOf(1000)));
             this.addOutput(Coin.COIN, to);
 
@@ -408,14 +395,10 @@ public class TransactionTest {
         }
 
         @Override
-        protected void bitcoinSerializeToStream(OutputStream stream, boolean useSegwit) throws IOException {
+        protected void bitcoinSerializeToStream(OutputStream stream) throws IOException {
             // version
             uint32ToByteStreamLE(getVersion(), stream);
-            // marker, flag
-            if (useSegwit) {
-                stream.write(0);
-                stream.write(1);
-            }
+
             // txin_count, txins
             long inputsSize = hackInputsSize ? Integer.MAX_VALUE : getInputs().size();
             stream.write(new VarInt(inputsSize).encode());
@@ -426,34 +409,10 @@ public class TransactionTest {
             stream.write(new VarInt(outputsSize).encode());
             for (TransactionOutput out : getOutputs())
                 out.bitcoinSerialize(stream);
-            // script_witnisses
-            if (useSegwit) {
-                for (TransactionInput in : getInputs()) {
-                    TransactionWitness witness = in.getWitness();
-                    long pushCount = hackWitnessPushCountSize ? Integer.MAX_VALUE : witness.getPushCount();
-                    stream.write(new VarInt(pushCount).encode());
-                    for (int i = 0; i < witness.getPushCount(); i++) {
-                        byte[] push = witness.getPush(i);
-                        stream.write(new VarInt(push.length).encode());
-                        stream.write(push);
-                    }
 
-                    in.getWitness().bitcoinSerializeToStream(stream);
-                }
-            }
             // lock_time
             uint32ToByteStreamLE(getLockTime(), stream);
         }
-    }
-
-    @Test
-    public void getWeightAndVsize() {
-        // example from https://en.bitcoin.it/wiki/Weight_units
-        String txHex = "0100000000010115e180dc28a2327e687facc33f10f2a20da717e5548406f7ae8b4c811072f85603000000171600141d7cd6c75c2e86f4cbf98eaed221b30bd9a0b928ffffffff019caef505000000001976a9141d7cd6c75c2e86f4cbf98eaed221b30bd9a0b92888ac02483045022100f764287d3e99b1474da9bec7f7ed236d6c81e793b20c4b5aa1f3051b9a7daa63022016a198031d5554dbb855bdbe8534776a4be6958bd8d530dc001c32b828f6f0ab0121038262a6c6cec93c2d3ecd6c6072efea86d02ff8e3328bbd0242b20af3425990ac00000000";
-        Transaction tx = new Transaction(UNITTEST, HEX.decode(txHex));
-        assertEquals(218, tx.getMessageSize());
-        assertEquals(542, tx.getWeight());
-        assertEquals(136, tx.getVsize());
     }
 
     @Test

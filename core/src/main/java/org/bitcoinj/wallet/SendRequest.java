@@ -185,6 +185,10 @@ public class SendRequest {
      * {@link TransactionOutput#getMinNonDustValue(Coin)} afterwards or you risk having the transaction
      * rejected by the network.</p>
      */
+    public static SendRequest to(Address recipient, Coin value) throws NullPointerException, AddressFormatException {
+        return to(MainNetParams.get(), recipient.toString(), value, null);
+    }
+
     public static SendRequest to(NetworkParameters params, String recipient, Coin value) throws NullPointerException, AddressFormatException {
         return to(params, recipient, value, null);
     }
@@ -238,6 +242,10 @@ public class SendRequest {
         SendRequest req = new SendRequest();
         req.tx = tx;
         return req;
+    }
+
+    public static SendRequest emptyWallet(Address recipient) throws NullPointerException, AddressFormatException {
+        return emptyWallet(MainNetParams.get(), recipient.toString(), null);
     }
 
     public static SendRequest emptyWallet(NetworkParameters params, String recipient) throws NullPointerException, AddressFormatException {

@@ -17,27 +17,11 @@
 
 package org.bitcoinj.wallet;
 
+import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.TransactionConfidenceEventListener;
-import org.bitcoinj.core.AbstractBlockChain;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.BlockChain;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.InsufficientMoneyException;
-import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.PeerAddress;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionConfidence;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutPoint;
-import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
 import org.bitcoinj.crypto.*;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptChunk;
@@ -96,6 +80,7 @@ public class WalletTest extends TestWithWallet {
     private static final CharSequence WRONG_PASSWORD = "nothing noone nobody nowhere";
 
     private final Address OTHER_ADDRESS = LegacyAddress.fromKey(UNITTEST, new ECKey());
+    private final NetworkParameters PARAMS = MainNetParams.get();
 
     @Before
     @Override
