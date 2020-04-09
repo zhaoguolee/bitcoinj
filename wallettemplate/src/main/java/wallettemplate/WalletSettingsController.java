@@ -62,7 +62,7 @@ public class WalletSettingsController {
 
     // Note: NOT called by FXMLLoader!
     public void initialize(@Nullable KeyParameter aesKey) {
-        DeterministicSeed seed = Main.bitcoin.getvWallet().getKeyChainSeed();
+        DeterministicSeed seed = Main.bitcoin.getWallet().getKeyChainSeed();
         if (aesKey == null) {
             if (seed.isEncrypted()) {
                 log.info("Wallet is encrypted, requesting password first.");
@@ -72,7 +72,7 @@ public class WalletSettingsController {
             }
         } else {
             this.aesKey = aesKey;
-            seed = seed.decrypt(checkNotNull(Main.bitcoin.getvWallet().getKeyCrypter()), "", aesKey);
+            seed = seed.decrypt(checkNotNull(Main.bitcoin.getWallet().getKeyCrypter()), "", aesKey);
             // Now we can display the wallet seed as appropriate.
             passwordButton.setText("Remove password");
         }
@@ -150,7 +150,7 @@ public class WalletSettingsController {
     public void restoreClicked(ActionEvent event) {
         // Don't allow a restore unless this wallet is presently empty. We don't want to end up with two wallets, too
         // much complexity, even though WalletAppKit will keep the current one as a backup file in case of disaster.
-        if (Main.bitcoin.getvWallet().getBalance().value > 0) {
+        if (Main.bitcoin.getWallet().getBalance().value > 0) {
             informationalAlert("Wallet is not empty",
                     "You must empty this wallet out before attempting to restore an older one, as mixing wallets " +
                             "together can lead to invalidated backups.");
@@ -191,7 +191,7 @@ public class WalletSettingsController {
         if (aesKey == null) {
             Main.instance.overlayUI("wallet_set_password.fxml");
         } else {
-            Main.bitcoin.getvWallet().decrypt(aesKey);
+            Main.bitcoin.getWallet().decrypt(aesKey);
             informationalAlert("Wallet decrypted", "A password will no longer be required to send money or edit settings.");
             passwordButton.setText("Set password");
             aesKey = null;

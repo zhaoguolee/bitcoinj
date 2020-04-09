@@ -504,9 +504,56 @@ public abstract class AbstractBlockChain {
     // than the previous one when connecting (eg median timestamp check)
     // It could be exposed, but for now we just set it to shouldVerifyTransactions()
     private void connectBlock(final Block block, StoredBlock storedPrev, boolean expensiveChecks,
-                              @Nullable final List<Sha256Hash> filteredTxHashList,
+                              @Nullable List<Sha256Hash> filteredTxHashList,
                               @Nullable final Map<Sha256Hash, Transaction> filteredTxn) throws BlockStoreException, VerificationException, PrunedException {
         checkState(lock.isHeldByCurrentThread());
+        if ((filteredTxHashList != null ? filteredTxHashList.size() : 0) > 1) {
+            checkNotNull(filteredTxn);
+            // not the prettiest sorter, but it is very fast in most cases ever encountered here
+            List<Sha256Hash> orderedTxHashList = new ArrayList<>(filteredTxHashList);
+            for (int i = 0; i < filteredTxHashList.size(); i++) {
+                Sha256Hash childHash = filteredTxHashList.get(i);
+                Transaction childTx = filteredTxn.get(childHash);
+                if (childTx == null)
+                    continue;
+
+                for (TransactionInput input : childTx.getInputs()) {
+                    Sha256Hash parentHash = input.getOutpoint().getHash();
+                    // does this transaction's input depend on a transaction in our list?
+                    if (filteredTxHashList.contains(parentHash)) {
+                        Transaction parentTx = filteredTxn.get(parentHash);
+                        if(parentTx == null)
+                            continue;
+
+                        for (TransactionInput parentInput : parentTx.getInputs()) {
+                            Sha256Hash parentParentHash = parentInput.getOutpoint().getHash();
+
+                            if (filteredTxHashList.contains(parentParentHash)) {
+                                int parentIndex = orderedTxHashList.indexOf(parentHash);
+                                if (parentIndex < orderedTxHashList.indexOf(parentParentHash)) {
+                                    // yes; so, remove the parent and place it directly above the child
+                                    orderedTxHashList.remove(parentParentHash);
+                                    orderedTxHashList.add(0, parentParentHash);
+                                    // step back one array element for the next loop, checking this parent is checked for a parent
+                                    i = 0;
+                                }
+                            }
+                        }
+                        // yes; so, does the parent need to be moved above the child?
+                        int childIndex = orderedTxHashList.indexOf(childHash);
+                        if (childIndex < orderedTxHashList.indexOf(parentHash)) {
+                            // yes; so, remove the parent and place it directly above the child
+                            orderedTxHashList.remove(parentHash);
+                            orderedTxHashList.add(childIndex, parentHash);
+                            // step back one array element for the next loop, checking this parent is checked for a parent
+                            i = 0;
+                        }
+                    }
+                }
+            }
+            // all transactions now have their parents above them
+            filteredTxHashList = orderedTxHashList;
+        }
         boolean filtered = filteredTxHashList != null && filteredTxn != null;
         // Check that we aren't connecting a block that fails a checkpoint check
         if (!params.passesCheckpoint(storedPrev.getHeight() + 1, block.getHash()))
@@ -668,6 +715,54 @@ public abstract class AbstractBlockChain {
                                                          StoredBlock newStoredBlock, boolean first,
                                                          TransactionReceivedInBlockListener listener,
                                                          Set<Sha256Hash> falsePositives) throws VerificationException {
+        if ((filteredTxHashList != null ? filteredTxHashList.size() : 0) > 1) {
+            checkNotNull(filteredTxn);
+            // not the prettiest sorter, but it is very fast in most cases ever encountered here
+            List<Sha256Hash> orderedTxHashList = new ArrayList<>(filteredTxHashList);
+            for (int i = 0; i < filteredTxHashList.size(); i++) {
+                Sha256Hash childHash = filteredTxHashList.get(i);
+                Transaction childTx = filteredTxn.get(childHash);
+                if (childTx == null)
+                    continue;
+
+                for (TransactionInput input : childTx.getInputs()) {
+                    Sha256Hash parentHash = input.getOutpoint().getHash();
+                    // does this transaction's input depend on a transaction in our list?
+                    if (filteredTxHashList.contains(parentHash)) {
+                        Transaction parentTx = filteredTxn.get(parentHash);
+                        if(parentTx == null)
+                            continue;
+
+                        for (TransactionInput parentInput : parentTx.getInputs()) {
+                            Sha256Hash parentParentHash = parentInput.getOutpoint().getHash();
+
+                            if (filteredTxHashList.contains(parentParentHash)) {
+                                int parentIndex = orderedTxHashList.indexOf(parentHash);
+                                if (parentIndex < orderedTxHashList.indexOf(parentParentHash)) {
+                                    // yes; so, remove the parent and place it directly above the child
+                                    orderedTxHashList.remove(parentParentHash);
+                                    orderedTxHashList.add(0, parentParentHash);
+                                    // step back one array element for the next loop, checking this parent is checked for a parent
+                                    i = 0;
+                                }
+                            }
+                        }
+                        // yes; so, does the parent need to be moved above the child?
+                        int childIndex = orderedTxHashList.indexOf(childHash);
+                        if (childIndex < orderedTxHashList.indexOf(parentHash)) {
+                            // yes; so, remove the parent and place it directly above the child
+                            orderedTxHashList.remove(parentHash);
+                            orderedTxHashList.add(childIndex, parentHash);
+                            // step back one array element for the next loop, checking this parent is checked for a parent
+                            i = 0;
+                        }
+                    }
+                }
+            }
+            // all transactions now have their parents above them
+            filteredTxHashList = orderedTxHashList;
+        }
+
         if (block.getTransactions() != null) {
             // If this is not the first wallet, ask for the transactions to be duplicated before being given
             // to the wallet when relevant. This ensures that if we have two connected wallets and a tx that

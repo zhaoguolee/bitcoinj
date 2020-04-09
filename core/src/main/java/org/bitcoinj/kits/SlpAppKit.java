@@ -91,7 +91,7 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public SlpAppKit(NetworkParameters params, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params).build(), file, walletName);
+        this(params, KeyChainGroup.builder(params).fromRandom(Script.ScriptType.P2PKH).build(), file, walletName);
     }
 
     public SlpAppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
