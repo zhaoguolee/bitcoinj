@@ -783,55 +783,12 @@ public class BIP47AppKit extends AbstractIdleService {
                 vWallet.getKeyChainSeed().getMnemonicCode());
     }
 
-    public Address getCurrentAddress() {
+    public CashAddress getCurrentAddress() {
         return vWallet.currentReceiveAddress();
     }
 
-    public Address getAddressFromBase58(String addr) {
+    public LegacyAddress getAddressFromBase58(String addr) {
         return LegacyAddress.fromBase58(getParams(), addr);
-    }
-
-    /**
-     * <p>Returns true if the given address is a valid payment code or a valid address in the
-     * wallet's blockchain network.</p>
-     */
-    public boolean isValidAddress(String address) {
-        if (address == null)
-            return false;
-
-        try {
-            BIP47PaymentCode BIP47PaymentCode = new BIP47PaymentCode(address);
-            return true;
-        } catch (AddressFormatException e) {
-        }
-
-        try {
-            LegacyAddress.fromBase58(getParams(), address);
-            return true;
-        } catch (AddressFormatException e) {
-            return false;
-            /*try {
-                CashAddress.fromCashAddr(getParams(), address);
-                return true;
-            } catch (AddressFormatException e2) {
-                return false;
-            }*/
-        }
-    }
-
-    public Transaction createSend(String strAddr, long amount) throws InsufficientMoneyException {
-        Address address;
-        try {
-            address = LegacyAddress.fromBase58(getParams(), strAddr);
-        } catch (AddressFormatException e1) {
-            /*try {
-                address = CashAddress.fromCashAddr(getParams(), strAddr);
-            } catch (AddressFormatException e2) {
-                return null;
-            }*/
-            address = null;
-        }
-        return createSend(address, amount);
     }
 
     private static Coin getDefaultFee(NetworkParameters params) {
