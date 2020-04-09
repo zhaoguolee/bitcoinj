@@ -52,6 +52,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -178,17 +179,27 @@ public class BIP47AppKit extends AbstractIdleService {
         this.grabNotificationAddressUtxos(notifAsCashAddr);
     }
 
+    private String[] apiServersAddress = new String[] {"https://insomnia.fountainhead.cash/v1/address/utxos/", "http://rest.bitcoin.com/v2/address/utxo/"};
+    private String[] apiServersTx = new String[] {"https://insomnia.fountainhead.cash/v1/tx/data/", "http://rest.bitcoin.com/v2/rawtransactions/getRawTransaction/"};
+
     private void grabNotificationAddressUtxos(final String cashAddr) {
         new Thread() {
             @Override
             public void run() {
                 ArrayList<String> txids = new ArrayList<String>();
-                JSONObject utxosJson = getJSONObject("https://insomnia.fountainhead.cash/v1/address/utxos/" + cashAddr);
+                String randApiServer = apiServersAddress[new Random().nextInt(apiServersAddress.length)];
+                String apiUrl = randApiServer + cashAddr;
+                JSONObject utxosJson = getJSONObject(apiUrl);
                 try {
                     JSONArray utxos = utxosJson.getJSONArray("utxos");
                     for (int x = 0; x < utxos.length(); x++) {
                         JSONObject utxo = utxos.getJSONObject(x);
-                        String txid = utxo.getString("tx_hash");
+                        String txid = "";
+                        if(randApiServer.contains("rest.bitcoin.com")) {
+                            txid = utxo.getString("txid");
+                        } else if(randApiServer.contains("insomnia.fountainhead.cash")) {
+                            txid = utxo.getString("tx_hash");
+                        }
                         txids.add(txid);
                     }
 
@@ -203,10 +214,18 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     private void grabTransactionAndProcessNotificationTransaction(String txid) {
-        JSONObject txJson = getJSONObject("https://insomnia.fountainhead.cash/v1/tx/data/" + txid);
+        String randApiServer = apiServersTx[new Random().nextInt(apiServersTx.length)];
+        JSONObject txJson = getJSONObject(randApiServer + txid);
         if(txJson != null) {
             try {
-                String txHex = txJson.getString("tx");
+                String txHexVariable = "";
+                if(randApiServer.contains("rest.bitcoin.com")) {
+                    txHexVariable = "hex";
+                } else if(randApiServer.contains("insomnia.fountainhead.cash")) {
+                    txHexVariable = "tx";
+                }
+
+                String txHex = txJson.getString(txHexVariable);
                 Transaction tx = new Transaction(this.params, Hex.decode(txHex));
                 if (isNotificationTransaction(tx)) {
                     System.out.println("Valid notification transaction received");
