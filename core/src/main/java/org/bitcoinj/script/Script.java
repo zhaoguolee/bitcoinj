@@ -81,7 +81,8 @@ public class Script {
         CLEANSTACK, // Require that only a single stack element remains after evaluation.
         CHECKLOCKTIMEVERIFY, // Enable CHECKLOCKTIMEVERIFY operation
         CHECKSEQUENCEVERIFY, // Enable CHECKSEQUENCEVERIFY operation
-        ENABLESIGHASHFORKID
+        ENABLESIGHASHFORKID,
+        MONOLITH_OPCODES // May 15, 2018 Hard fork
     }
     public static final EnumSet<VerifyFlag> ALL_VERIFY_FLAGS = EnumSet.allOf(VerifyFlag.class);
 
@@ -790,7 +791,7 @@ public class Script {
             }
 
             // Disabled opcodes.
-            if (opcode == OP_CAT || opcode == OP_SUBSTR || opcode == OP_LEFT || opcode == OP_RIGHT ||
+            if (opcode == OP_CAT || opcode == OP_SPLIT || opcode == OP_NUM2BIN || opcode == OP_BIN2NUM ||
                     opcode == OP_INVERT || opcode == OP_AND || opcode == OP_OR || opcode == OP_XOR ||
                     opcode == OP_2MUL || opcode == OP_2DIV || opcode == OP_MUL || opcode == OP_DIV ||
                     opcode == OP_MOD || opcode == OP_LSHIFT || opcode == OP_RSHIFT)
