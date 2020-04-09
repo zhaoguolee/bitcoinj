@@ -16,5 +16,5 @@ allprojects {
     }
 
 
-    group = 'org.bitcoinj'
+    group = 'bitcoincashj'
 }
