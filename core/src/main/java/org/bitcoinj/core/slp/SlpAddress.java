@@ -2,6 +2,7 @@ package org.bitcoinj.core.slp;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.CashAddress;
+import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.core.NetworkParameters;
 
 public class SlpAddress {
@@ -19,7 +20,7 @@ public class SlpAddress {
     }
 
     public String toLegacyAddress() {
-        return CashAddress.fromCashAddress(this.params, this.toCashAddress()).getLegacyAddress().toBase58();
+        return LegacyAddress.fromCashAddress(this.params, this.toCashAddress()).toBase58();
     }
 
     public static SlpAddress fromCashAddr(NetworkParameters params, String address) {
