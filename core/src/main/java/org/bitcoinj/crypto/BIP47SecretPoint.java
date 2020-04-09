@@ -39,6 +39,7 @@ public class BIP47SecretPoint {
     }
 
     public BIP47SecretPoint(byte[] dataPrv, byte[] dataPub) throws InvalidKeySpecException, InvalidKeyException, IllegalStateException, NoSuchAlgorithmException, NoSuchProviderException {
+        Security.addProvider(new org.spongycastle.jce.provider.BouncyCastleProvider());
         this.kf = KeyFactory.getInstance("ECDH", "SC");
         this.privKey = this.loadPrivateKey(dataPrv);
         this.pubKey = this.loadPublicKey(dataPub);
