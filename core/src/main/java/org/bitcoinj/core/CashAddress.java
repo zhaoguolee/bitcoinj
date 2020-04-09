@@ -23,7 +23,7 @@ public class CashAddress extends Address {
             if (Address.isValidLegacyAddress(params, legacy)) {
                 return new CashAddress(params, legacyAddress.getHash(), cashAddr, legacyAddress);
             } else {
-                return null;
+                throw new AddressFormatException("Invalid address!");
             }
         } catch(Exception e) {
             throw e;
