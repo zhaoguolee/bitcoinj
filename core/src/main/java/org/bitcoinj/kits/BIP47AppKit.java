@@ -166,6 +166,7 @@ public class BIP47AppKit extends AbstractIdleService {
         Address notificationAddress = this.mAccounts.get(0).getNotificationAddress();
         System.out.println("BIP47AppKit notification address: " + notificationAddress.toString());
 
+        this.vWallet.allowSpendingUnconfirmedTransactions();
         this.vWallet.setAcceptRiskyTransactions(true);
 
         if (!this.vWallet.isAddressWatched(notificationAddress)) {
