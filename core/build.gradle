@@ -13,6 +13,7 @@ version = '0.16-SNAPSHOT'
 dependencies {
     compile 'com.github.sealedtx:bitcoin-cash-converter:1.0'
     compile 'org.bouncycastle:bcprov-jdk15on:1.64'
+    compile 'com.madgag.spongycastle:prov:1.51.0.0'
     api 'com.google.guava:guava:28.2-android'
     compile 'commons-io:commons-io:2.5'
     compile 'org.json:json:20180813'

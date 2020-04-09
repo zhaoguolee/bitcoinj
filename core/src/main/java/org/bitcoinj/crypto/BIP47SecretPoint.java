@@ -39,7 +39,7 @@ public class BIP47SecretPoint {
     }
 
     public BIP47SecretPoint(byte[] dataPrv, byte[] dataPub) throws InvalidKeySpecException, InvalidKeyException, IllegalStateException, NoSuchAlgorithmException, NoSuchProviderException {
-        this.kf = KeyFactory.getInstance("ECDH", "BC");
+        this.kf = KeyFactory.getInstance("ECDH", "SC");
         this.privKey = this.loadPrivateKey(dataPrv);
         this.pubKey = this.loadPublicKey(dataPub);
     }
@@ -69,7 +69,7 @@ public class BIP47SecretPoint {
     }
 
     private SecretKey ECDHSecret() throws InvalidKeyException, IllegalStateException, NoSuchAlgorithmException, NoSuchProviderException {
-        KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
+        KeyAgreement ka = KeyAgreement.getInstance("ECDH", "SC");
         ka.init(this.privKey);
         ka.doPhase(this.pubKey, true);
         SecretKey secret = ka.generateSecret("AES");
