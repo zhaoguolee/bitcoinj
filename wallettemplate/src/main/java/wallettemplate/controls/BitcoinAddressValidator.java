@@ -47,8 +47,10 @@ public class BitcoinAddressValidator {
     }
 
     private void toggleButtons(String current) {
-        boolean valid = testAddr(current);
-        for (Node n : nodes) n.setDisable(!valid);
+        if(!current.isEmpty()) {
+            boolean valid = testAddr(current);
+            for (Node n : nodes) n.setDisable(!valid);
+        }
     }
 
     private boolean testAddr(String text) {

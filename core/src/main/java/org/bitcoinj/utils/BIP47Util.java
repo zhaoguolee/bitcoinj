@@ -13,6 +13,7 @@ import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptChunk;
+import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.signers.MissingSigResolutionSigner;
 import org.bitcoinj.signers.TransactionSigner;
 import org.bitcoinj.wallet.CoinSelection;
@@ -366,7 +367,7 @@ public class BIP47Util {
     /* Extract the payment code from an incoming notification transaction */
     public static BIP47PaymentCode getPaymentCodeInNotificationTransaction(byte[] privKeyBytes, Transaction tx) {
         log.debug( "Getting pub key");
-        byte[] pubKeyBytes = tx.getInput(0).getScriptSig().getPubKey();
+        byte[] pubKeyBytes = tx.getInput(0).getScriptSig().getPubKeys().get(0).getPubKey();
 
         log.debug( "Private Key: "+ HEX.encode(privKeyBytes));
         log.debug( "Public Key: "+HEX.encode(pubKeyBytes));

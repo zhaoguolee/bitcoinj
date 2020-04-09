@@ -58,6 +58,7 @@ public class MainController {
     }
 
     public void onBitcoinSetup() {
+        bitcoin.wallet().setAcceptRiskyTransactions(true);
         model.setWallet(bitcoin.wallet());
         addressControl.addressProperty().bind(model.addressProperty());
         balance.textProperty().bind(createBalanceStringBinding(model.balanceProperty()));

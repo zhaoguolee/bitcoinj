@@ -123,6 +123,9 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     public static final HDPath BIP44_ACCOUNT_SLP_PATH = HDPath.M(new ChildNumber(44, true))
             .extend(new ChildNumber(245, true), ChildNumber.ZERO_HARDENED);
 
+    public static final ImmutableList<ChildNumber> BIP44_ACCOUNT_SLP_PATH_CHILD_NUM =
+            ImmutableList.of(new ChildNumber(44, true), new ChildNumber(245, true), ChildNumber.ZERO_HARDENED);
+
     private HDPath accountPath = BIP44_ACCOUNT_ZERO_PATH;
 
     public static final HDPath EXTERNAL_SUBPATH = HDPath.M(ChildNumber.ZERO);

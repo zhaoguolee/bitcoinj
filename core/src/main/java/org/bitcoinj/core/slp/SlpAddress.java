@@ -1,7 +1,6 @@
 package org.bitcoinj.core.slp;
 
 import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.CashAddress;
 import org.bitcoinj.core.NetworkParameters;
 
 public class SlpAddress {
@@ -18,9 +17,9 @@ public class SlpAddress {
         return Util.encodeCashAddress(this.params.getCashAddrPrefix(), Util.packAddressData(addrData.getBytes(), addrData.getVersion()));
     }
 
-    public String toLegacyAddress() {
+    /*public String toLegacyAddress() {
         return CashAddress.fromCashAddr(this.params, this.toCashAddress()).toBase58();
-    }
+    }*/
 
     public static SlpAddress fromCashAddr(NetworkParameters params, String address) {
         SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getCashAddrPrefix(), address);

@@ -717,12 +717,13 @@ public class BIP47AppKit extends AbstractIdleService {
             LegacyAddress.fromBase58(getParams(), address);
             return true;
         } catch (AddressFormatException e) {
-            try {
+            return false;
+            /*try {
                 CashAddress.fromCashAddr(getParams(), address);
                 return true;
             } catch (AddressFormatException e2) {
                 return false;
-            }
+            }*/
         }
     }
 
@@ -731,11 +732,12 @@ public class BIP47AppKit extends AbstractIdleService {
         try {
             address = LegacyAddress.fromBase58(getParams(), strAddr);
         } catch (AddressFormatException e1) {
-            try {
+            /*try {
                 address = CashAddress.fromCashAddr(getParams(), strAddr);
             } catch (AddressFormatException e2) {
                 return null;
-            }
+            }*/
+            address = null;
         }
         return createSend(address, amount);
     }

@@ -2,7 +2,7 @@ package org.bitcoinj.net;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.spongycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Base64;
 
 import java.nio.charset.StandardCharsets;
 

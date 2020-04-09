@@ -20,19 +20,16 @@ package org.bitcoinj.wallet;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.bitcoin.protocols.payments.Protos.PaymentDetails;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.core.*;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.wallet.KeyChain.KeyPurpose;
 import org.bitcoinj.wallet.Wallet.MissingSigsMode;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 import com.google.common.base.MoreObjects;
+
+import java.util.List;
 
 /**
  * A SendRequest gives the wallet information about precisely how to send money to a recipient or set of recipients.
@@ -65,6 +62,11 @@ public class SendRequest {
     public boolean emptyWallet = false;
 
     /**
+     * UTXOs to use when sending. If left null, then the wallet automatically determine the UTXOs to use.
+     */
+    public List<TransactionOutput> utxos = null;
+
+    /**
      * "Change" means the difference between the value gathered by a transactions inputs (the size of which you
      * don't really control as it depends on who sent you money), and the value being sent somewhere else. The
      * change address should be selected from this wallet, normally. <b>If null this will be chosen for you.</b>
@@ -84,6 +86,13 @@ public class SendRequest {
      * definition, a virtual kilobyte is defined as 1000 virtual bytes, not 1024.</p>
      */
     public Coin feePerKb = Context.get().getFeePerKb();
+
+    public static SendRequest createSlpTransaction(NetworkParameters params) {
+        SendRequest req = new SendRequest();
+        checkNotNull(params, "Address is for an unknown network");
+        req.tx = new Transaction(params);
+        return req;
+    }
 
     public void setFeePerVkb(Coin feePerVkb) {
         this.feePerKb = feePerVkb;
@@ -242,6 +251,18 @@ public class SendRequest {
             this.memo = paymentDetails.getMemo();
         return this;
     }
+
+    /** Use Version 2 Transactions with forkid signatures **/
+    private boolean useForkId = false;
+
+    public void setUseForkId(boolean useForkId)
+    {
+        this.useForkId = useForkId;
+        if(tx != null)
+            tx.setVersion(Transaction.CURRENT_VERSION);
+    }
+
+    public boolean getUseForkId() { return useForkId; }
 
     @Override
     public String toString() {

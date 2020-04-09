@@ -59,13 +59,14 @@ public abstract class Address extends PrefixedChecksummedBytes {
         } catch (AddressFormatException.WrongNetwork x) {
             throw x;
         } catch (AddressFormatException x) {
-            try {
+            throw x;
+            /*try {
                 return CashAddress.fromCashAddr(params, str);
             } catch (AddressFormatException.WrongNetwork x2) {
                 throw x;
             } catch (AddressFormatException x2) {
                 throw new AddressFormatException(str);
-            }
+            }*/
         }
     }
 
@@ -98,7 +99,7 @@ public abstract class Address extends PrefixedChecksummedBytes {
      * @return
      *             Whether the address is valid or not.
      */
-    public static boolean isValidCashAddr(NetworkParameters params, String cashaddr)
+    /*public static boolean isValidCashAddr(NetworkParameters params, String cashaddr)
     {
         try {
             CashAddress.fromCashAddr(params, cashaddr);
@@ -106,7 +107,7 @@ public abstract class Address extends PrefixedChecksummedBytes {
         } catch(AddressFormatException e) {
             return false;
         }
-    }
+    }*/
 
     public static boolean isValidPaymentCode(String paymentCode)
     {

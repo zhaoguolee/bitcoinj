@@ -39,6 +39,11 @@ public class TransactionSignature extends ECKey.ECDSASignature {
      */
     public final int sighashFlags;
 
+    public TransactionSignature(ECKey.ECDSASignature signature, Transaction.SigHash mode, boolean anyoneCanPay, boolean useForkId) {
+        super(signature.r, signature.s);
+        sighashFlags = calcSigHashValue(mode, anyoneCanPay, useForkId);
+    }
+
     /** Constructs a signature with the given components and SIGHASH_ALL. */
     public TransactionSignature(BigInteger r, BigInteger s) {
         this(r, s, Transaction.SigHash.ALL.value);
@@ -65,6 +70,16 @@ public class TransactionSignature extends ECKey.ECDSASignature {
     public static TransactionSignature dummy() {
         BigInteger val = ECKey.HALF_CURVE_ORDER;
         return new TransactionSignature(val, val);
+    }
+
+    public static int calcSigHashValue(Transaction.SigHash mode, boolean anyoneCanPay, boolean useForkId) {
+        Preconditions.checkArgument(SigHash.ALL == mode || SigHash.NONE == mode || SigHash.SINGLE == mode); // enforce compatibility since this code was made before the SigHash enum was updated
+        int sighashFlags = mode.value;
+        if (anyoneCanPay)
+            sighashFlags |= Transaction.SigHash.ANYONECANPAY.value;
+        if(useForkId)
+            sighashFlags |= SigHash.FORKID.value;
+        return sighashFlags;
     }
 
     /** Calculates the byte used in the protocol to represent the combination of mode and anyoneCanPay. */
@@ -98,7 +113,7 @@ public class TransactionSignature extends ECKey.ECDSASignature {
         if (signature.length < 9 || signature.length > 73)
             return false;
 
-        int hashType = (signature[signature.length-1] & 0xff) & ~Transaction.SigHash.ANYONECANPAY.value; // mask the byte to prevent sign-extension hurting us
+        int hashType = (signature[signature.length-1] & 0xff) & ~(Transaction.SigHash.ANYONECANPAY.value| SigHash.FORKID.value); // mask the byte to prevent sign-extension hurting us
         if (hashType < Transaction.SigHash.ALL.value || hashType > Transaction.SigHash.SINGLE.value)
             return false;
 
@@ -126,6 +141,10 @@ public class TransactionSignature extends ECKey.ECDSASignature {
             return false; // S value excessively padded
 
         return true;
+    }
+
+    public boolean useForkId() {
+        return (sighashFlags & SigHash.FORKID.value) != 0;
     }
 
     public boolean anyoneCanPay() {
@@ -159,7 +178,7 @@ public class TransactionSignature extends ECKey.ECDSASignature {
 
     @Override
     public ECKey.ECDSASignature toCanonicalised() {
-        return new TransactionSignature(super.toCanonicalised(), sigHashMode(), anyoneCanPay());
+        return new TransactionSignature(super.toCanonicalised(), sigHashMode(), anyoneCanPay(), useForkId());
     }
 
     /**

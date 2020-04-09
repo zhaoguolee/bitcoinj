@@ -60,7 +60,7 @@ public abstract class CustomTransactionSigner implements TransactionSigner {
                 continue;
             }
             Script scriptPubKey = txOut.getScriptPubKey();
-            if (!ScriptPattern.isP2SH(scriptPubKey)) {
+            if (!scriptPubKey.isPayToScriptHash()) {
                 log.warn("CustomTransactionSigner works only with P2SH transactions");
                 return false;
             }
@@ -71,8 +71,7 @@ public abstract class CustomTransactionSigner implements TransactionSigner {
                 // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
                 // we sign missing pieces (to check this would require either assuming any signatures are signing
                 // standard output types or a way to get processed signatures out of script execution)
-                txIn.getScriptSig().correctlySpends(tx, i, txIn.getWitness(), txOut.getValue(), txOut.getScriptPubKey(),
-                        Script.ALL_VERIFY_FLAGS);
+                txIn.getScriptSig().correctlySpends(tx, i, txIn.getConnectedOutput().getScriptPubKey());
                 log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
                 continue;
             } catch (ScriptException e) {
@@ -85,9 +84,11 @@ public abstract class CustomTransactionSigner implements TransactionSigner {
                 continue;
             }
 
-            Sha256Hash sighash = tx.hashForSignature(i, redeemData.redeemScript, Transaction.SigHash.ALL, false);
+            Sha256Hash sighash = propTx.useForkId ?
+                    tx.hashForSignatureWitness(i, redeemData.redeemScript, tx.getInput(i).getConnectedOutput().getValue(), Transaction.SigHash.ALL, false) :
+                    tx.hashForSignature(i, redeemData.redeemScript, Transaction.SigHash.ALL, false);
             SignatureAndKey sigKey = getSignature(sighash, propTx.keyPaths.get(scriptPubKey));
-            TransactionSignature txSig = new TransactionSignature(sigKey.sig, Transaction.SigHash.ALL, false);
+            TransactionSignature txSig = new TransactionSignature(sigKey.sig, Transaction.SigHash.ALL, false, propTx.useForkId);
             int sigIndex = inputScript.getSigInsertionIndex(sighash, sigKey.pubKey);
             inputScript = scriptPubKey.getScriptSigWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex);
             txIn.setScriptSig(inputScript);

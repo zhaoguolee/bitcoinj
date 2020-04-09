@@ -557,10 +557,10 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #currentKey(KeyChain.KeyPurpose)}
      */
-    public CashAddress currentAddress(KeyChain.KeyPurpose purpose) {
+    public Address currentAddress(KeyChain.KeyPurpose purpose) {
         keyChainGroupLock.lock();
         try {
-            return CashAddress.fromBase58(getParams(), keyChainGroup.currentAddress(purpose).toString());
+            return keyChainGroup.currentAddress(purpose);
         } finally {
             keyChainGroupLock.unlock();
         }
@@ -570,7 +570,7 @@ public class Wallet extends BaseTaggableObject
      * An alias for calling {@link #currentAddress(KeyChain.KeyPurpose)} with
      * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public CashAddress currentReceiveAddress() {
+    public Address currentReceiveAddress() {
         return currentAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
@@ -619,7 +619,7 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #freshKey(KeyChain.KeyPurpose)}
      */
-    public CashAddress freshAddress(KeyChain.KeyPurpose purpose) {
+    public Address freshAddress(KeyChain.KeyPurpose purpose) {
         Address address;
         keyChainGroupLock.lock();
         try {
@@ -628,14 +628,14 @@ public class Wallet extends BaseTaggableObject
             keyChainGroupLock.unlock();
         }
         saveNow();
-        return CashAddress.fromBase58(getParams(), address.toString());
+        return address;
     }
 
     /**
      * An alias for calling {@link #freshAddress(KeyChain.KeyPurpose)} with
      * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public CashAddress freshReceiveAddress() {
+    public Address freshReceiveAddress() {
         return freshAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
@@ -645,7 +645,7 @@ public class Wallet extends BaseTaggableObject
      * using {@link #freshAddress(KeyChain.KeyPurpose)} or
      * {@link #currentAddress(KeyChain.KeyPurpose)}.</p>
      */
-    public CashAddress freshReceiveAddress(Script.ScriptType scriptType) {
+    public Address freshReceiveAddress(Script.ScriptType scriptType) {
         Address address;
         keyChainGroupLock.lock();
         try {
@@ -655,7 +655,7 @@ public class Wallet extends BaseTaggableObject
             keyChainGroupLock.unlock();
         }
         saveNow();
-        return CashAddress.fromBase58(getParams(), address.toString());
+        return address;
     }
 
     /**
@@ -4190,6 +4190,10 @@ public class Wallet extends BaseTaggableObject
         lock.lock();
         try {
             checkArgument(!req.completed, "Given SendRequest has already been completed.");
+            // set version
+            if(req.getUseForkId())
+                req.tx.setVersion(Transaction.CURRENT_VERSION);
+
             // Calculate the amount of value we need to import.
             Coin value = Coin.ZERO;
             for (TransactionOutput output : req.tx.getOutputs()) {
@@ -4227,7 +4231,12 @@ public class Wallet extends BaseTaggableObject
             // with the actual outputs that'll be used to gather the required amount of value. In this way, users
             // can customize coin selection policies. The call below will ignore immature coinbases and outputs
             // we don't have the keys for.
-            List<TransactionOutput> candidates = calculateAllSpendCandidates(true, req.missingSigsMode == MissingSigsMode.THROW);
+            List<TransactionOutput> candidates;
+            if(req.utxos == null || req.utxos.size() == 0) {
+                candidates = calculateAllSpendCandidates(true, req.missingSigsMode == MissingSigsMode.THROW);
+            } else {
+                candidates = req.utxos;
+            }
 
             CoinSelection bestCoinSelection;
             TransactionOutput bestChangeOutput = null;
@@ -4306,7 +4315,8 @@ public class Wallet extends BaseTaggableObject
      * transaction will be complete in the end.</p>
      * @throws BadWalletEncryptionKeyException if the supplied {@link SendRequest#aesKey} is wrong.
      */
-    public void signTransaction(SendRequest req) throws BadWalletEncryptionKeyException {
+    public void signTransaction(SendRequest req) {
+        req.setUseForkId(true);
         lock.lock();
         try {
             Transaction tx = req.tx;
@@ -4320,19 +4330,16 @@ public class Wallet extends BaseTaggableObject
             int numInputs = tx.getInputs().size();
             for (int i = 0; i < numInputs; i++) {
                 TransactionInput txIn = tx.getInput(i);
-                TransactionOutput connectedOutput = txIn.getConnectedOutput();
-                if (connectedOutput == null) {
+                if (txIn.getConnectedOutput() == null) {
                     // Missing connected output, assuming already signed.
                     continue;
                 }
-                Script scriptPubKey = connectedOutput.getScriptPubKey();
 
                 try {
                     // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
                     // we sign missing pieces (to check this would require either assuming any signatures are signing
                     // standard output types or a way to get processed signatures out of script execution)
-                    txIn.getScriptSig().correctlySpends(tx, i, txIn.getWitness(), connectedOutput.getValue(),
-                            connectedOutput.getScriptPubKey(), Script.ALL_VERIFY_FLAGS);
+                    txIn.getScriptSig().correctlySpends(tx, i, txIn.getConnectedOutput().getScriptPubKey(), txIn.getConnectedOutput().getValue(), Script.ALL_VERIFY_FLAGS);
                     log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
                     continue;
                 } catch (ScriptException e) {
@@ -4340,13 +4347,13 @@ public class Wallet extends BaseTaggableObject
                     // Expected.
                 }
 
+                Script scriptPubKey = txIn.getConnectedOutput().getScriptPubKey();
                 RedeemData redeemData = txIn.getConnectedRedeemData(maybeDecryptingKeyBag);
                 checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
                 txIn.setScriptSig(scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript));
-                txIn.setWitness(scriptPubKey.createEmptyWitness(redeemData.keys.get(0)));
             }
 
-            TransactionSigner.ProposedTransaction proposal = new TransactionSigner.ProposedTransaction(tx);
+            TransactionSigner.ProposedTransaction proposal = new TransactionSigner.ProposedTransaction(tx, req.getUseForkId());
             for (TransactionSigner signer : signers) {
                 if (!signer.signInputs(proposal, maybeDecryptingKeyBag))
                     log.info("{} returned false for the tx", signer.getClass().getName());
@@ -4354,10 +4361,6 @@ public class Wallet extends BaseTaggableObject
 
             // resolve missing sigs if any
             new MissingSigResolutionSigner(req.missingSigsMode).signInputs(proposal, maybeDecryptingKeyBag);
-        } catch (KeyCrypterException.InvalidCipherText e) {
-            throw new BadWalletEncryptionKeyException(e);
-        } catch (KeyCrypterException.PublicPrivateMismatch e) {
-            throw new BadWalletEncryptionKeyException(e);
         } finally {
             lock.unlock();
         }
@@ -4365,9 +4368,9 @@ public class Wallet extends BaseTaggableObject
 
     /** Reduce the value of the first output of a transaction to pay the given feePerKb as appropriate for its size. */
     private boolean adjustOutputDownwardsForFee(Transaction tx, CoinSelection coinSelection, Coin feePerKb,
-            boolean ensureMinRequiredFee) {
-        final int vsize = tx.getVsize() + estimateVirtualBytesForSigning(coinSelection);
-        Coin fee = feePerKb.multiply(vsize).divide(1000);
+                                                boolean ensureMinRequiredFee) {
+        final int size = tx.unsafeBitcoinSerialize().length + estimateBytesForSigning(coinSelection);
+        Coin fee = feePerKb.multiply(size).divide(1000);
         if (ensureMinRequiredFee && fee.compareTo(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE) < 0)
             fee = Transaction.REFERENCE_DEFAULT_MIN_TX_FEE;
         TransactionOutput output = tx.getOutput(0);
@@ -5045,110 +5048,186 @@ public class Wallet extends BaseTaggableObject
 
     //region Fee calculation code
 
-    private FeeCalculation calculateFee(SendRequest req, Coin value, List<TransactionInput> originalInputs,
+    public FeeCalculation calculateFee(SendRequest req, Coin value, List<TransactionInput> originalInputs,
                                        boolean needAtLeastReferenceFee, List<TransactionOutput> candidates) throws InsufficientMoneyException {
         checkState(lock.isHeldByCurrentThread());
-        FeeCalculation result;
-        Coin fee = Coin.ZERO;
+        // There are 3 possibilities for what adding change might do:
+        // 1) No effect
+        // 2) Causes increase in fee (change < 0.01 COINS)
+        // 3) Causes the transaction to have a dust output or change < fee increase (ie change will be thrown away)
+        // If we get either of the last 2, we keep note of what the inputs looked like at the time and try to
+        // add inputs as we go up the list (keeping track of minimum inputs for each category).  At the end, we pick
+        // the best input set as the one which generates the lowest total fee.
+        Coin additionalValueForNextCategory = null;
+        CoinSelection selection3 = null;
+        CoinSelection selection2 = null;
+        TransactionOutput selection2Change = null;
+        CoinSelection selection1 = null;
+        TransactionOutput selection1Change = null;
+        // We keep track of the last size of the transaction we calculated.
+        int lastCalculatedSize = 0;
+        Coin valueNeeded, valueMissing = null;
         while (true) {
-            result = new FeeCalculation();
-            Transaction tx = new Transaction(params);
-            addSuppliedInputs(tx, req.tx.getInputs());
+            resetTxInputs(req, originalInputs);
 
-            Coin valueNeeded = value;
-            if (!req.recipientsPayFees) {
-                valueNeeded = valueNeeded.add(fee);
-            }
-            if (req.recipientsPayFees) {
-                result.updatedOutputValues = new ArrayList<>();
-            }
-            for (int i = 0; i < req.tx.getOutputs().size(); i++) {
-                TransactionOutput output = new TransactionOutput(params, tx,
-                        req.tx.getOutputs().get(i).bitcoinSerialize(), 0);
-                if (req.recipientsPayFees) {
-                    // Subtract fee equally from each selected recipient
-                    output.setValue(output.getValue().subtract(fee.divide(req.tx.getOutputs().size())));
-                    // first receiver pays the remainder not divisible by output count
-                    if (i == 0) {
-                        output.setValue(
-                                output.getValue().subtract(fee.divideAndRemainder(req.tx.getOutputs().size())[1])); // Subtract fee equally from each selected recipient
-                    }
-                    result.updatedOutputValues.add(output.getValue());
-                    if (output.getMinNonDustValue().isGreaterThan(output.getValue())) {
-                        throw new CouldNotAdjustDownwards();
-                    }
-                }
-                tx.addOutput(output);
-            }
+            Coin fees = req.feePerKb.multiply(lastCalculatedSize).divide(1000);
+            if (needAtLeastReferenceFee && fees.compareTo(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE) < 0)
+                fees = Transaction.REFERENCE_DEFAULT_MIN_TX_FEE;
+
+            valueNeeded = value.add(fees);
+            if (additionalValueForNextCategory != null)
+                valueNeeded = valueNeeded.add(additionalValueForNextCategory);
+            Coin additionalValueSelected = additionalValueForNextCategory;
+
+            // Of the coins we could spend, pick some that we actually will spend.
             CoinSelector selector = req.coinSelector == null ? coinSelector : req.coinSelector;
             // selector is allowed to modify candidates list.
-            CoinSelection selection = selector.select(valueNeeded, new LinkedList<>(candidates));
-            result.bestCoinSelection = selection;
+            CoinSelection selection = selector.select(valueNeeded, new LinkedList<TransactionOutput>(candidates));
             // Can we afford this?
             if (selection.valueGathered.compareTo(valueNeeded) < 0) {
-                Coin valueMissing = valueNeeded.subtract(selection.valueGathered);
-                throw new InsufficientMoneyException(valueMissing);
+                valueMissing = valueNeeded.subtract(selection.valueGathered);
+                break;
             }
+            checkState(selection.gathered.size() > 0 || originalInputs.size() > 0);
+
+            // We keep track of an upper bound on transaction size to calculate fees that need to be added.
+            // Note that the difference between the upper bound and lower bound is usually small enough that it
+            // will be very rare that we pay a fee we do not need to.
+            //
+            // We can't be sure a selection is valid until we check fee per kb at the end, so we just store
+            // them here temporarily.
+            boolean eitherCategory2Or3 = false;
+            boolean isCategory3 = false;
+
             Coin change = selection.valueGathered.subtract(valueNeeded);
-            if (change.isGreaterThan(Coin.ZERO)) {
+            if (additionalValueSelected != null)
+                change = change.add(additionalValueSelected);
+
+            // If change is < 0.01 BTC, we will need to have at least minfee to be accepted by the network
+            if (req.ensureMinRequiredFee && !change.equals(Coin.ZERO) &&
+                    change.compareTo(Coin.CENT) < 0 && fees.compareTo(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE) < 0) {
+                // This solution may fit into category 2, but it may also be category 3, we'll check that later
+                eitherCategory2Or3 = true;
+                additionalValueForNextCategory = Coin.CENT;
+                // If the change is smaller than the fee we want to add, this will be negative
+                change = change.subtract(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.subtract(fees));
+            }
+
+            int size = 0;
+            TransactionOutput changeOutput = null;
+            if (change.signum() > 0) {
                 // The value of the inputs is greater than what we want to send. Just like in real life then,
                 // we need to take back some coins ... this is called "change". Add another output that sends the change
                 // back to us. The address comes either from the request or currentChangeAddress() as a default.
                 Address changeAddress = req.changeAddress;
                 if (changeAddress == null)
                     changeAddress = currentChangeAddress();
-                TransactionOutput changeOutput = new TransactionOutput(params, tx, change, changeAddress);
-                if (req.recipientsPayFees && changeOutput.isDust()) {
-                    // We do not move dust-change to fees, because the sender would end up paying more than requested.
-                    // This would be against the purpose of the all-inclusive feature.
-                    // So instead we raise the change and deduct from the first recipient.
-                    Coin missingToNotBeDust = changeOutput.getMinNonDustValue().subtract(changeOutput.getValue());
-                    changeOutput.setValue(changeOutput.getValue().add(missingToNotBeDust));
-                    TransactionOutput firstOutput = tx.getOutputs().get(0);
-                    firstOutput.setValue(firstOutput.getValue().subtract(missingToNotBeDust));
-                    result.updatedOutputValues.set(0, firstOutput.getValue());
-                    if (firstOutput.isDust()) {
-                        throw new CouldNotAdjustDownwards();
-                    }
-                }
-                if (changeOutput.isDust()) {
-                    // Never create dust outputs; if we would, just
-                    // add the dust to the fee.
-                    // Oscar comment: This seems like a way to make the condition below "if
-                    // (!fee.isLessThan(feeNeeded))" to become true.
-                    // This is a non-easy to understand way to do that.
-                    // Maybe there are other effects I am missing
-                    fee = fee.add(changeOutput.getValue());
+                changeOutput = new TransactionOutput(params, req.tx, change, changeAddress);
+                // If the change output would result in this transaction being rejected as dust, just drop the change and make it a fee
+                if (req.ensureMinRequiredFee && changeOutput.isDust()) {
+                    // This solution definitely fits in category 3
+                    isCategory3 = true;
+                    additionalValueForNextCategory = Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.add(
+                            changeOutput.getMinNonDustValue().add(Coin.SATOSHI));
                 } else {
-                    tx.addOutput(changeOutput);
-                    result.bestChangeOutput = changeOutput;
+                    size += changeOutput.unsafeBitcoinSerialize().length + VarInt.sizeOf(req.tx.getOutputs().size()) - VarInt.sizeOf(req.tx.getOutputs().size() - 1);
+                    // This solution is either category 1 or 2
+                    if (!eitherCategory2Or3) // must be category 1
+                        additionalValueForNextCategory = null;
+                }
+            } else {
+                if (eitherCategory2Or3) {
+                    // This solution definitely fits in category 3 (we threw away change because it was smaller than MIN_TX_FEE)
+                    isCategory3 = true;
+                    additionalValueForNextCategory = Transaction.REFERENCE_DEFAULT_MIN_TX_FEE.add(Coin.SATOSHI);
                 }
             }
 
-            for (TransactionOutput selectedOutput : selection.gathered) {
-                TransactionInput input = tx.addInput(selectedOutput);
+            // Now add unsigned inputs for the selected coins.
+            for (TransactionOutput output : selection.gathered) {
+                TransactionInput input = req.tx.addInput(output);
                 // If the scriptBytes don't default to none, our size calculations will be thrown off.
                 checkState(input.getScriptBytes().length == 0);
-                checkState(!input.hasWitness());
             }
 
-            Coin feePerKb = req.feePerKb;
-            if (needAtLeastReferenceFee && feePerKb.compareTo(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE) < 0)
-                feePerKb = Transaction.REFERENCE_DEFAULT_MIN_TX_FEE;
-
-            final int vsize = tx.getVsize() + estimateVirtualBytesForSigning(selection);
-            Coin feeNeeded = feePerKb.multiply(vsize).divide(1000);
-
-            if (!fee.isLessThan(feeNeeded)) {
-                // Done, enough fee included.
-                break;
+            // Estimate transaction size and loop again if we need more fee per kb. The serialized tx doesn't
+            // include things we haven't added yet like input signatures/scripts or the change output.
+            size += req.tx.unsafeBitcoinSerialize().length;
+            size += estimateBytesForSigning(selection);
+            if (size > lastCalculatedSize && req.feePerKb.signum() > 0) {
+                lastCalculatedSize = size;
+                // We need more fees anyway, just try again with the same additional value
+                additionalValueForNextCategory = additionalValueSelected;
+                continue;
             }
 
-            // Include more fee and try again.
-            fee = feeNeeded;
+            if (isCategory3) {
+                if (selection3 == null)
+                    selection3 = selection;
+            } else if (eitherCategory2Or3) {
+                // If we are in selection2, we will require at least CENT additional. If we do that, there is no way
+                // we can end up back here because CENT additional will always get us to 1
+                checkState(selection2 == null);
+                checkState(additionalValueForNextCategory.equals(Coin.CENT));
+                selection2 = selection;
+                selection2Change = checkNotNull(changeOutput); // If we get no change in category 2, we are actually in category 3
+            } else {
+                // Once we get a category 1 (change kept), we should break out of the loop because we can't do better
+                checkState(selection1 == null);
+                checkState(additionalValueForNextCategory == null);
+                selection1 = selection;
+                selection1Change = changeOutput;
+            }
+
+            if (additionalValueForNextCategory != null) {
+                if (additionalValueSelected != null)
+                    checkState(additionalValueForNextCategory.compareTo(additionalValueSelected) > 0);
+                continue;
+            }
+            break;
+        }
+
+        resetTxInputs(req, originalInputs);
+
+        if (selection3 == null && selection2 == null && selection1 == null) {
+            checkNotNull(valueMissing);
+            log.warn("Insufficient value in wallet for send: needed {} more", valueMissing.toFriendlyString());
+            throw new InsufficientMoneyException(valueMissing);
+        }
+
+        Coin lowestFee = null;
+        FeeCalculation result = new FeeCalculation();
+        if (selection1 != null) {
+            if (selection1Change != null)
+                lowestFee = selection1.valueGathered.subtract(selection1Change.getValue());
+            else
+                lowestFee = selection1.valueGathered;
+            result.bestCoinSelection = selection1;
+            result.bestChangeOutput = selection1Change;
+        }
+
+        if (selection2 != null) {
+            Coin fee = selection2.valueGathered.subtract(checkNotNull(selection2Change).getValue());
+            if (lowestFee == null || fee.compareTo(lowestFee) < 0) {
+                lowestFee = fee;
+                result.bestCoinSelection = selection2;
+                result.bestChangeOutput = selection2Change;
+            }
+        }
+
+        if (selection3 != null) {
+            if (lowestFee == null || selection3.valueGathered.compareTo(lowestFee) < 0) {
+                result.bestCoinSelection = selection3;
+                result.bestChangeOutput = null;
+            }
         }
         return result;
+    }
 
+    private void resetTxInputs(SendRequest req, List<TransactionInput> originalInputs) {
+        req.tx.clearInputs();
+        for (TransactionInput input : originalInputs)
+            req.tx.addInput(input);
     }
 
     private void addSuppliedInputs(Transaction tx, List<TransactionInput> originalInputs) {
@@ -5156,31 +5235,28 @@ public class Wallet extends BaseTaggableObject
             tx.addInput(new TransactionInput(params, tx, input.bitcoinSerialize()));
     }
 
-    private int estimateVirtualBytesForSigning(CoinSelection selection) {
-        int vsize = 0;
+    private int estimateBytesForSigning(CoinSelection selection) {
+        int size = 0;
         for (TransactionOutput output : selection.gathered) {
             try {
                 Script script = output.getScriptPubKey();
                 ECKey key = null;
                 Script redeemScript = null;
-                if (ScriptPattern.isP2PKH(script)) {
-                    key = findKeyFromPubKeyHash(ScriptPattern.extractHashFromP2PKH(script), Script.ScriptType.P2PKH);
+                if (script.isSentToAddress()) {
+                    key = findKeyFromPubHash(script.getPubKeyHash());
                     checkNotNull(key, "Coin selection includes unspendable outputs");
-                    vsize += script.getNumberOfBytesRequiredToSpend(key, redeemScript);
-                } else if (ScriptPattern.isP2SH(script)) {
-                    redeemScript = findRedeemDataFromScriptHash(ScriptPattern.extractHashFromP2SH(script)).redeemScript;
+                } else if (script.isPayToScriptHash()) {
+                    redeemScript = findRedeemDataFromScriptHash(script.getPubKeyHash()).redeemScript;
                     checkNotNull(redeemScript, "Coin selection includes unspendable outputs");
-                    vsize += script.getNumberOfBytesRequiredToSpend(key, redeemScript);
-                } else {
-                    vsize += script.getNumberOfBytesRequiredToSpend(key, redeemScript);
                 }
+                size += script.getNumberOfBytesRequiredToSpend(key, redeemScript);
             } catch (ScriptException e) {
                 // If this happens it means an output script in a wallet tx could not be understood. That should never
                 // happen, if it does it means the wallet has got into an inconsistent state.
                 throw new IllegalStateException(e);
             }
         }
-        return vsize;
+        return size;
     }
 
     //endregion

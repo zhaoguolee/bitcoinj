@@ -488,7 +488,6 @@ public class Block extends Message {
         s.append("   nonce: ").append(nonce).append("\n");
         if (transactions != null && transactions.size() > 0) {
             s.append("   merkle root: ").append(getMerkleRoot()).append("\n");
-            s.append("   witness root: ").append(getWitnessRoot()).append("\n");
             s.append("   with ").append(transactions.size()).append(" transaction(s):\n");
             for (Transaction tx : transactions) {
                 s.append(tx).append('\n');
@@ -581,39 +580,8 @@ public class Block extends Message {
         }
     }
 
-    @VisibleForTesting
-    void checkWitnessRoot() throws VerificationException {
-        Transaction coinbase = transactions.get(0);
-        checkState(coinbase.isCoinBase());
-        Sha256Hash witnessCommitment = coinbase.findWitnessCommitment();
-        if (witnessCommitment != null) {
-            byte[] witnessReserved = null;
-            TransactionWitness witness = coinbase.getInput(0).getWitness();
-            if (witness.getPushCount() != 1)
-                throw new VerificationException("Coinbase witness reserved invalid: push count");
-            witnessReserved = witness.getPush(0);
-            if (witnessReserved.length != 32)
-                throw new VerificationException("Coinbase witness reserved invalid: length");
-
-            Sha256Hash witnessRootHash = Sha256Hash.twiceOf(getWitnessRoot().getReversedBytes(), witnessReserved);
-            if (!witnessRootHash.equals(witnessCommitment))
-                throw new VerificationException("Witness merkle root invalid. Expected " + witnessCommitment.toString()
-                        + " but got " + witnessRootHash.toString());
-        } else {
-            for (Transaction tx : transactions) {
-                if (tx.hasWitnesses())
-                    throw new VerificationException("Transaction witness found but no witness commitment present");
-            }
-        }
-    }
-
     private Sha256Hash calculateMerkleRoot() {
         List<byte[]> tree = buildMerkleTree(false);
-        return Sha256Hash.wrap(tree.get(tree.size() - 1));
-    }
-
-    private Sha256Hash calculateWitnessRoot() {
-        List<byte[]> tree = buildMerkleTree(true);
         return Sha256Hash.wrap(tree.get(tree.size() - 1));
     }
 
@@ -651,11 +619,7 @@ public class Block extends Message {
         ArrayList<byte[]> tree = new ArrayList<>(transactions.size());
         // Start by adding all the hashes of the transactions as leaves of the tree.
         for (Transaction tx : transactions) {
-            final Sha256Hash id;
-            if (useWTxId && tx.isCoinBase())
-                id = Sha256Hash.ZERO_HASH;
-            else
-                id = useWTxId ? tx.getWTxId() : tx.getTxId();
+            final Sha256Hash id = tx.getTxId();
             tree.add(id.getBytes());
         }
         int levelOffset = 0; // Offset in the list where the currently processed level starts.
@@ -783,15 +747,6 @@ public class Block extends Message {
         unCacheHeader();
         merkleRoot = value;
         hash = null;
-    }
-
-    /**
-     * Returns the witness root in big endian form, calculating it from transactions if necessary.
-     */
-    public Sha256Hash getWitnessRoot() {
-        if (witnessRoot == null)
-            witnessRoot = calculateWitnessRoot();
-        return witnessRoot;
     }
 
     /** Adds a transaction to this block. The nonce and merkle root are invalid after this. */

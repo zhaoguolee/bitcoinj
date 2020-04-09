@@ -113,7 +113,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        wallet = new Wallet(params, keyChainGroup, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
+        //wallet = new Wallet(params, keyChainGroup, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH);
+        wallet = new Wallet(params, keyChainGroup);
         this.context = new Context(params);
         this.params = params;
         this.baseDirectory = file;
@@ -121,12 +122,8 @@ public class SlpAppKit extends AbstractIdleService {
         this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
         DeterministicKeyChain cachedChain = wallet.getActiveKeyChain();
         wallet.removeHDChainByIndex(0);
-        wallet.addAndActivateHDChain(new DeterministicKeyChain(cachedChain.getSeed()) {
-            @Override
-            public HDPath getAccountPath() {
-                return BIP44_ACCOUNT_SLP_PATH;
-            }
-        });
+        DeterministicKeyChain keyChain = DeterministicKeyChain.builder().seed(cachedChain.getSeed()).accountPath(DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH_CHILD_NUM).build();
+        wallet.addAndActivateHDChain(keyChain);
         this.completeSetupOfWallet();
     }
 
@@ -243,7 +240,8 @@ public class SlpAppKit extends AbstractIdleService {
             FileInputStream stream = null;
             try {
                 stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
-                Wallet wallet = Wallet.loadFromFileStream(stream, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH, walletExtensions);
+                //Wallet wallet = Wallet.loadFromFileStream(stream, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH, walletExtensions);
+                Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
                 return new SlpAppKit(wallet, baseDir, walletName);
             } finally {
                 if (stream != null) stream.close();
@@ -335,7 +333,7 @@ public class SlpAppKit extends AbstractIdleService {
         return SlpTxBuilder.buildTx(tokenId, numTokens, slpDestinationAddress, this, aesKey).blockingGet();
     }
 
-    public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
+    /*public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
         SendRequest req = SendRequest.createSlpTransaction(this.wallet.getParams());
         req.aesKey = aesKey;
         req.shuffleOutputs = false;
@@ -344,7 +342,7 @@ public class SlpAppKit extends AbstractIdleService {
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
         req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), CashAddress.fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString()));
         return wallet.sendCoinsOffline(req);
-    }
+    }*/
 
     public void broadcastSlpTransaction(Transaction tx) {
         for(Peer peer : this.peerGroup.getConnectedPeers()) {
