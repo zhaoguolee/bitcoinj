@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.*;
 import org.bitcoinj.core.listeners.*;
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.net.BlockingClientManager;
 import org.bitcoinj.net.discovery.*;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.*;
@@ -86,6 +87,9 @@ public class WalletAppKit extends AbstractIdleService {
     @Nullable protected DeterministicSeed restoreFromSeed;
     @Nullable protected DeterministicKey restoreFromKey;
     @Nullable protected PeerDiscovery discovery;
+    private boolean useTor = false;
+    private String torProxyIp = "127.0.0.1";
+    private String torProxyPort = "9050";
 
     protected volatile Context context;
 
@@ -460,7 +464,13 @@ public class WalletAppKit extends AbstractIdleService {
     }
 
     protected PeerGroup createPeerGroup() {
-        return new PeerGroup(params, vChain);
+        if(useTor) {
+            System.setProperty("socksProxyHost", torProxyIp);
+            System.setProperty("socksProxyPort", torProxyPort);
+            return new PeerGroup(this.vWallet.getParams(), this.vChain, new BlockingClientManager());
+        } else {
+            return new PeerGroup(this.vWallet.getParams(), this.vChain);
+        }
     }
 
     private void installShutdownHook() {
@@ -496,6 +506,18 @@ public class WalletAppKit extends AbstractIdleService {
 
     public NetworkParameters params() {
         return params;
+    }
+
+    public void setUseTor(boolean status) {
+        this.useTor = status;
+    }
+
+    public void setTorProxyIp(String ip) {
+        this.torProxyIp = ip;
+    }
+
+    public void setTorProxyPort(String port) {
+        this.torProxyPort = port;
     }
 
     public BlockChain chain() {

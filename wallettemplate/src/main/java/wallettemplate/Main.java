@@ -58,7 +58,7 @@ public class Main extends Application {
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static SlpAppKit bitcoin;
+    public static BIP47AppKit bitcoin;
     public static Main instance;
 
     private StackPane uiStack;
@@ -130,42 +130,13 @@ public class Main extends Application {
         bitcoin.startAsync();
 
         scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.getPeerGroup().getDownloadPeer().close());
-
-        new Thread() {
-            @Override
-            public void run() {
-                while(true) {
-                    System.out.println("SLP TOKEN BALANCES");
-                    for(int x = 0; x < bitcoin.getSlpBalances().size(); x++) {
-                        SlpToken slpToken = bitcoin.getSlpToken(bitcoin.getSlpBalances().get(x).getTokenId());
-                        System.out.println("Token: " + slpToken.getTicker());
-                        System.out.println("Token Id: " + slpToken.getTokenId());
-                        double balance = bitcoin.getSlpBalances().get(x).getBalance();
-                        System.out.println("Balance: " + balance);
-                    }
-
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    bitcoin.recalculateSlpUtxos();
-
-                    for(TransactionOutput utxo : bitcoin.getWallet().getUtxos()) {
-                        System.out.println(utxo.getOutPointFor().getHash());
-                        System.out.println(utxo.getValue().value);
-                    }
-                }
-            }
-        }.start();
     }
 
     public void setupWalletKit(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
         // If seed is non-null it means we are restoring from backup.
         File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
-        bitcoin = new SlpAppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
+        bitcoin = new BIP47AppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
         Platform.runLater(controller::onBitcoinSetup);
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.

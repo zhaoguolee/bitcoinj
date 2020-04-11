@@ -12,6 +12,7 @@ import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.core.slp.*;
 import org.bitcoinj.crypto.HDPath;
+import org.bitcoinj.net.BlockingClientManager;
 import org.bitcoinj.net.SlpDbProcessor;
 import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.SlpDbValidTransaction;
@@ -61,6 +62,10 @@ public class SlpAppKit extends AbstractIdleService {
     private final String genesisTxType = "47454e45534953";
     private final String mintTxType = "4d494e54";
     private final String sendTxType = "53454e44";
+    private boolean useTor = false;
+    private String torProxyIp = "127.0.0.1";
+    private String torProxyPort = "9050";
+
     @Nullable protected DeterministicSeed restoreFromSeed;
     @Nullable protected PeerDiscovery discovery;
 
@@ -280,7 +285,14 @@ public class SlpAppKit extends AbstractIdleService {
         }
 
         this.blockChain = new BlockChain(this.wallet.getParams(), this.spvBlockStore);
-        this.peerGroup = new PeerGroup(this.wallet.getParams(), this.blockChain);
+        if(useTor) {
+            System.setProperty("socksProxyHost", torProxyIp);
+            System.setProperty("socksProxyPort", torProxyPort);
+            this.peerGroup = new PeerGroup(this.wallet.getParams(), this.blockChain, new BlockingClientManager());
+        } else {
+            this.peerGroup = new PeerGroup(this.wallet.getParams(), this.blockChain);
+        }
+
         if (peerAddresses != null) {
             for (PeerAddress addr : peerAddresses) this.peerGroup.addAddress(addr);
             this.peerGroup.setMaxConnections(peerAddresses.length);
@@ -321,6 +333,18 @@ public class SlpAppKit extends AbstractIdleService {
             Closeables.closeQuietly(checkpoints);
         this.checkpoints = checkNotNull(checkpoints);
         return this;
+    }
+
+    public void setUseTor(boolean status) {
+        this.useTor = status;
+    }
+
+    public void setTorProxyIp(String ip) {
+        this.torProxyIp = ip;
+    }
+
+    public void setTorProxyPort(String port) {
+        this.torProxyPort = port;
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {

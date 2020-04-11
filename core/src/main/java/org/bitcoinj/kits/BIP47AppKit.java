@@ -25,6 +25,7 @@ import org.bitcoinj.crypto.BIP47SecretPoint;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.HDKeyDerivation;
+import org.bitcoinj.net.BlockingClientManager;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
@@ -100,6 +101,9 @@ public class BIP47AppKit extends AbstractIdleService {
     // Will be null if it's not a restored wallet.
     private DeterministicSeed restoreFromSeed;
     private Runnable onReceiveRunnable;
+    private boolean useTor = false;
+    private String torProxyIp = "127.0.0.1";
+    private String torProxyPort = "9050";
 
     // Support for BIP47-type accounts. Only one account is currently handled in this wallet.
     private List<BIP47Account> mAccounts = new ArrayList<BIP47Account>(1);
@@ -978,6 +982,18 @@ public class BIP47AppKit extends AbstractIdleService {
         return addresses;
     }
 
+    public void setUseTor(boolean status) {
+        this.useTor = status;
+    }
+
+    public void setTorProxyIp(String ip) {
+        this.torProxyIp = ip;
+    }
+
+    public void setTorProxyPort(String port) {
+        this.torProxyPort = port;
+    }
+
     public int getExternalAddressCount() {
         return vWallet.getActiveKeyChain().getIssuedReceiveKeys().size();
     }
@@ -1036,7 +1052,15 @@ public class BIP47AppKit extends AbstractIdleService {
         }
 
         this.vChain = new BlockChain(this.vWallet.getParams(), this.vStore);
-        this.vPeerGroup = new PeerGroup(this.vWallet.getParams(), this.vChain);
+
+        if(useTor) {
+            System.setProperty("socksProxyHost", torProxyIp);
+            System.setProperty("socksProxyPort", torProxyPort);
+            this.vPeerGroup = new PeerGroup(this.vWallet.getParams(), this.vChain, new BlockingClientManager());
+        } else {
+            this.vPeerGroup = new PeerGroup(this.vWallet.getParams(), this.vChain);
+        }
+
         if (peerAddresses != null) {
             for (PeerAddress addr : peerAddresses) this.vPeerGroup.addAddress(addr);
             this.vPeerGroup.setMaxConnections(peerAddresses.length);
