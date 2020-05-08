@@ -76,6 +76,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
 
         dnsSeeds = new String[] {
                 "seed-bch.bitcoinforks.org",
+                "seed.bchd.cash",
                 "btccash-seeder.bitcoinunlimited.info"
         };
         httpSeeds = null;
