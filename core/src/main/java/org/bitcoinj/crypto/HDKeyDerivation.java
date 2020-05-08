@@ -80,21 +80,11 @@ public final class HDKeyDerivation {
     /**
      * @throws HDDerivationException if privKeyBytes is invalid (not between 0 and n inclusive).
      */
-    public static DeterministicKey createMasterPrivKeyFromBytes(byte[] privKeyBytes, byte[] chainCode)
-            throws HDDerivationException {
-        // childNumberPath is an empty list because we are creating the root key.
-        return createMasterPrivKeyFromBytes(privKeyBytes, chainCode, HDPath.M());
-    }
-
-    /**
-     * @throws HDDerivationException if privKeyBytes is invalid (not between 0 and n inclusive).
-     */
-    public static DeterministicKey createMasterPrivKeyFromBytes(byte[] privKeyBytes, byte[] chainCode,
-            List<ChildNumber> childNumberPath) throws HDDerivationException {
+    public static DeterministicKey createMasterPrivKeyFromBytes(byte[] privKeyBytes, byte[] chainCode) throws HDDerivationException {
         BigInteger priv = new BigInteger(1, privKeyBytes);
         assertNonZero(priv, "Generated master key is invalid.");
         assertLessThanN(priv, "Generated master key is invalid.");
-        return new DeterministicKey(childNumberPath, chainCode, priv, null);
+        return new DeterministicKey(HDPath.m(), chainCode, priv, null);
     }
 
     public static DeterministicKey createMasterPubKeyFromBytes(byte[] pubKeyBytes, byte[] chainCode) {
@@ -151,7 +141,7 @@ public final class HDKeyDerivation {
     }
 
     public static RawKeyBytes deriveChildKeyBytesFromPrivate(DeterministicKey parent,
-                                                              ChildNumber childNumber) throws HDDerivationException {
+                                                             ChildNumber childNumber) throws HDDerivationException {
         checkArgument(parent.hasPrivKey(), "Parent key must have private key bytes for this method.");
         byte[] parentPublicKey = parent.getPubKeyPoint().getEncoded(true);
         checkState(parentPublicKey.length == 33, "Parent pubkey must be 33 bytes, but is " + parentPublicKey.length);
@@ -180,7 +170,7 @@ public final class HDKeyDerivation {
     }
 
     public static DeterministicKey deriveChildKeyFromPublic(DeterministicKey parent, ChildNumber childNumber,
-            PublicDeriveMode mode) throws HDDerivationException {
+                                                            PublicDeriveMode mode) throws HDDerivationException {
         RawKeyBytes rawKey = deriveChildKeyBytesFromPublic(parent, childNumber, PublicDeriveMode.NORMAL);
         return new DeterministicKey(parent.getPath().extend(childNumber), rawKey.chainCode,
                 new LazyECPoint(ECKey.CURVE.getCurve(), rawKey.keyBytes), null, parent);

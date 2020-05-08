@@ -64,56 +64,80 @@ public class ChildKeyDerivationTest {
             //////////////////////////////////////////////////////////////////////////
             // Start with an extended PRIVATE key
             DeterministicKey ekprv = HDKeyDerivation.createMasterPrivKeyFromBytes(priv, chain);
+            assertEquals("m", ekprv.getPath().toString());
 
             // Create two accounts
             DeterministicKey ekprv_0 = HDKeyDerivation.deriveChildKey(ekprv, 0);
+            assertEquals("m/0", ekprv_0.getPath().toString());
             DeterministicKey ekprv_1 = HDKeyDerivation.deriveChildKey(ekprv, 1);
+            assertEquals("m/1", ekprv_1.getPath().toString());
 
             // Create internal and external chain on Account 0
             DeterministicKey ekprv_0_EX = HDKeyDerivation.deriveChildKey(ekprv_0, HDW_CHAIN_EXTERNAL);
+            assertEquals("m/0/0", ekprv_0_EX.getPath().toString());
             DeterministicKey ekprv_0_IN = HDKeyDerivation.deriveChildKey(ekprv_0, HDW_CHAIN_INTERNAL);
+            assertEquals("m/0/1", ekprv_0_IN.getPath().toString());
 
             // Create three addresses on external chain
             DeterministicKey ekprv_0_EX_0 = HDKeyDerivation.deriveChildKey(ekprv_0_EX, 0);
+            assertEquals("m/0/0/0", ekprv_0_EX_0.getPath().toString());
             DeterministicKey ekprv_0_EX_1 = HDKeyDerivation.deriveChildKey(ekprv_0_EX, 1);
+            assertEquals("m/0/0/1", ekprv_0_EX_1.getPath().toString());
             DeterministicKey ekprv_0_EX_2 = HDKeyDerivation.deriveChildKey(ekprv_0_EX, 2);
+            assertEquals("m/0/0/2", ekprv_0_EX_2.getPath().toString());
 
             // Create three addresses on internal chain
             DeterministicKey ekprv_0_IN_0 = HDKeyDerivation.deriveChildKey(ekprv_0_IN, 0);
+            assertEquals("m/0/1/0", ekprv_0_IN_0.getPath().toString());
             DeterministicKey ekprv_0_IN_1 = HDKeyDerivation.deriveChildKey(ekprv_0_IN, 1);
+            assertEquals("m/0/1/1", ekprv_0_IN_1.getPath().toString());
             DeterministicKey ekprv_0_IN_2 = HDKeyDerivation.deriveChildKey(ekprv_0_IN, 2);
+            assertEquals("m/0/1/2", ekprv_0_IN_2.getPath().toString());
 
             // Now add a few more addresses with very large indices
             DeterministicKey ekprv_1_IN = HDKeyDerivation.deriveChildKey(ekprv_1, HDW_CHAIN_INTERNAL);
+            assertEquals("m/1/1", ekprv_1_IN.getPath().toString());
             DeterministicKey ekprv_1_IN_4095 = HDKeyDerivation.deriveChildKey(ekprv_1_IN, 4095);
-//            ExtendedHierarchicKey ekprv_1_IN_4bil = HDKeyDerivation.deriveChildKey(ekprv_1_IN, 4294967295L);
+            assertEquals("m/1/1/4095", ekprv_1_IN_4095.getPath().toString());
 
             //////////////////////////////////////////////////////////////////////////
             // Repeat the above with PUBLIC key
             DeterministicKey ekpub = HDKeyDerivation.createMasterPubKeyFromBytes(HDUtils.toCompressed(pub), chain);
+            assertEquals("M", ekpub.getPath().toString());
 
             // Create two accounts
             DeterministicKey ekpub_0 = HDKeyDerivation.deriveChildKey(ekpub, 0);
+            assertEquals("M/0", ekpub_0.getPath().toString());
             DeterministicKey ekpub_1 = HDKeyDerivation.deriveChildKey(ekpub, 1);
+            assertEquals("M/1", ekpub_1.getPath().toString());
 
             // Create internal and external chain on Account 0
             DeterministicKey ekpub_0_EX = HDKeyDerivation.deriveChildKey(ekpub_0, HDW_CHAIN_EXTERNAL);
+            assertEquals("M/0/0", ekpub_0_EX.getPath().toString());
             DeterministicKey ekpub_0_IN = HDKeyDerivation.deriveChildKey(ekpub_0, HDW_CHAIN_INTERNAL);
+            assertEquals("M/0/1", ekpub_0_IN.getPath().toString());
 
             // Create three addresses on external chain
             DeterministicKey ekpub_0_EX_0 = HDKeyDerivation.deriveChildKey(ekpub_0_EX, 0);
+            assertEquals("M/0/0/0", ekpub_0_EX_0.getPath().toString());
             DeterministicKey ekpub_0_EX_1 = HDKeyDerivation.deriveChildKey(ekpub_0_EX, 1);
+            assertEquals("M/0/0/1", ekpub_0_EX_1.getPath().toString());
             DeterministicKey ekpub_0_EX_2 = HDKeyDerivation.deriveChildKey(ekpub_0_EX, 2);
+            assertEquals("M/0/0/2", ekpub_0_EX_2.getPath().toString());
 
             // Create three addresses on internal chain
             DeterministicKey ekpub_0_IN_0 = HDKeyDerivation.deriveChildKey(ekpub_0_IN, 0);
+            assertEquals("M/0/1/0", ekpub_0_IN_0.getPath().toString());
             DeterministicKey ekpub_0_IN_1 = HDKeyDerivation.deriveChildKey(ekpub_0_IN, 1);
+            assertEquals("M/0/1/1", ekpub_0_IN_1.getPath().toString());
             DeterministicKey ekpub_0_IN_2 = HDKeyDerivation.deriveChildKey(ekpub_0_IN, 2);
+            assertEquals("M/0/1/2", ekpub_0_IN_2.getPath().toString());
 
             // Now add a few more addresses with very large indices
             DeterministicKey ekpub_1_IN = HDKeyDerivation.deriveChildKey(ekpub_1, HDW_CHAIN_INTERNAL);
+            assertEquals("M/1/1", ekpub_1_IN.getPath().toString());
             DeterministicKey ekpub_1_IN_4095 = HDKeyDerivation.deriveChildKey(ekpub_1_IN, 4095);
-//            ExtendedHierarchicKey ekpub_1_IN_4bil = HDKeyDerivation.deriveChildKey(ekpub_1_IN, 4294967295L);
+            assertEquals("M/1/1/4095", ekpub_1_IN_4095.getPath().toString());
 
             assertEquals(hexEncodePub(ekprv.dropPrivateBytes().dropParent()), hexEncodePub(ekpub));
             assertEquals(hexEncodePub(ekprv_0.dropPrivateBytes().dropParent()), hexEncodePub(ekpub_0));
@@ -127,7 +151,6 @@ public class ChildKeyDerivationTest {
             assertEquals(hexEncodePub(ekprv_0_EX_2.dropPrivateBytes().dropParent()), hexEncodePub(ekpub_0_EX_2));
             assertEquals(hexEncodePub(ekprv_1_IN.dropPrivateBytes().dropParent()), hexEncodePub(ekpub_1_IN));
             assertEquals(hexEncodePub(ekprv_1_IN_4095.dropPrivateBytes().dropParent()), hexEncodePub(ekpub_1_IN_4095));
-            //assertEquals(hexEncodePub(ekprv_1_IN_4bil.dropPrivateBytes()), hexEncodePub(ekpub_1_IN_4bil));
         }
     }
 
@@ -261,31 +284,31 @@ public class ChildKeyDerivationTest {
         // This is the public encoding of the key with path m/0H/1/2H from BIP32 published test vector 1:
         // https://en.bitcoin.it/wiki/BIP_0032_TestVectors
         String encoded =
-            "xpub6D4BDPcP2GT577Vvch3R8wDkScZWzQzMMUm3PWbmWvVJrZwQY4VUNgqFJPMM3No2dFDFGTsxxpG5uJh7n7epu4trkrX7x7DogT5Uv6fcLW5";
+                "xpub6D4BDPcP2GT577Vvch3R8wDkScZWzQzMMUm3PWbmWvVJrZwQY4VUNgqFJPMM3No2dFDFGTsxxpG5uJh7n7epu4trkrX7x7DogT5Uv6fcLW5";
         DeterministicKey key = DeterministicKey.deserializeB58(encoded, MAINNET);
         assertEquals("Reserialized parentless private HD key is wrong", key.serializePubB58(MAINNET), encoded);
         assertEquals("Depth of deserialized parentless public HD key is wrong", key.getDepth(), 3);
         assertEquals("Path size of deserialized parentless public HD key is wrong", key.getPath().size(), 1);
         assertEquals("Parent fingerprint of deserialized parentless public HD key is wrong",
-                          key.getParentFingerprint(), 0xbef5a2f9);
+                key.getParentFingerprint(), 0xbef5a2f9);
 
         // This encoding is the same key but including its private data:
         encoded =
-            "xprv9z4pot5VBttmtdRTWfWQmoH1taj2axGVzFqSb8C9xaxKymcFzXBDptWmT7FwuEzG3ryjH4ktypQSAewRiNMjANTtpgP4mLTj34bhnZX7UiM";
+                "xprv9z4pot5VBttmtdRTWfWQmoH1taj2axGVzFqSb8C9xaxKymcFzXBDptWmT7FwuEzG3ryjH4ktypQSAewRiNMjANTtpgP4mLTj34bhnZX7UiM";
         key = DeterministicKey.deserializeB58(encoded, MAINNET);
         assertEquals("Reserialized parentless private HD key is wrong", key.serializePrivB58(MAINNET), encoded);
         assertEquals("Depth of deserialized parentless private HD key is wrong", key.getDepth(), 3);
         assertEquals("Path size of deserialized parentless private HD key is wrong", key.getPath().size(), 1);
         assertEquals("Parent fingerprint of deserialized parentless private HD key is wrong",
-                          key.getParentFingerprint(), 0xbef5a2f9);
+                key.getParentFingerprint(), 0xbef5a2f9);
 
         // These encodings are of the the root key of that hierarchy
         assertEquals("Parent fingerprint of root node public HD key should be zero",
-                          DeterministicKey.deserializeB58("xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB", MAINNET).getParentFingerprint(),
-                          0);
+                DeterministicKey.deserializeB58("xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB", MAINNET).getParentFingerprint(),
+                0);
         assertEquals("Parent fingerprint of root node private HD key should be zero",
-                          DeterministicKey.deserializeB58("xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U", MAINNET).getParentFingerprint(),
-                          0);
+                DeterministicKey.deserializeB58("xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U", MAINNET).getParentFingerprint(),
+                0);
 
     }
 
