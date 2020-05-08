@@ -75,11 +75,8 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         checkpoints.put(609136, Sha256Hash.wrap("000000000000000000b48bb207faac5ac655c313e41ac909322eaa694f5bc5b1")); //November 15, 2019
 
         dnsSeeds = new String[] {
-                "seed.bitcoinabc.org",
-                "seed-abc.bitcoinforks.org",
-                "btccash-seeder.bitcoinunlimited.info",
-                "seed.bitprim.org",
-                "seed.deadalnix.me"
+                "seed-bch.bitcoinforks.org",
+                "btccash-seeder.bitcoinunlimited.info"
         };
         httpSeeds = null;
         addrSeeds = null;
