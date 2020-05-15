@@ -32,7 +32,6 @@ class SlpTxBuilder {
                         }
 
                         req.tx.addOutput(Coin.ZERO, opReturn.script)
-                        //TODO fix cashaddr shit for SLP wallets
                         req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, addrTo)
 
                         // Send our token change back to our SLP address
