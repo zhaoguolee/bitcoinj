@@ -42,7 +42,6 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         dumpedPrivateKeyHeader = 128;
         addressHeader = 0;
         p2shHeader = 5;
-        segwitAddressHrp = "bc";
         port = 8333;
         packetMagic = 0xe3e1f3e8L;
         bip32HeaderP2PKHpub = 0x0488b21e; // The 4 byte header that serializes in base58 to "xpub".
@@ -73,6 +72,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         checkpoints.put(556767, Sha256Hash.wrap("0000000000000000004626ff6e3b936941d341c5932ece4357eeccac44e6d56c")); //November 15, 2018
         checkpoints.put(582680, Sha256Hash.wrap("000000000000000001b4b8e36aec7d4f9671a47872cb9a74dc16ca398c7dcc18")); //May 15, 2019
         checkpoints.put(609136, Sha256Hash.wrap("000000000000000000b48bb207faac5ac655c313e41ac909322eaa694f5bc5b1")); //November 15, 2019
+        checkpoints.put(635259, Sha256Hash.wrap("00000000000000000033dfef1fc2d6a5d5520b078c55193a9bf498c5b27530f7")); //May 15, 2020
 
         dnsSeeds = new String[] {
                 "seed-bch.bitcoinforks.org",

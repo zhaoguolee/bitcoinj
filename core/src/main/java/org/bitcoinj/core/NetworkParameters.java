@@ -76,7 +76,6 @@ public abstract class NetworkParameters {
     protected int addressHeader;
     protected int p2shHeader;
     protected int dumpedPrivateKeyHeader;
-    protected String segwitAddressHrp;
     protected int interval;
     protected int targetTimespan;
     protected byte[] alertSigningKey;
@@ -319,11 +318,6 @@ public abstract class NetworkParameters {
     /** First byte of a base58 encoded dumped private key. See {@link DumpedPrivateKey}. */
     public int getDumpedPrivateKeyHeader() {
         return dumpedPrivateKeyHeader;
-    }
-
-    /** Human readable part of bech32 encoded segwit address. */
-    public String getSegwitAddressHrp() {
-        return segwitAddressHrp;
     }
 
     /**

@@ -43,7 +43,6 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         port = 18333;
         interval = 10;
         dumpedPrivateKeyHeader = 239;
-        segwitAddressHrp = "tb";
         targetTimespan = 200000000;  // 6 years. Just a very big number.
         spendableCoinbaseDepth = 5;
         subsidyDecreaseBlockCount = 100;
