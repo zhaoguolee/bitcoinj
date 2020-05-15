@@ -1,6 +1,7 @@
 package org.bitcoinj.core.slp
 
 import io.reactivex.Single
+import org.bitcoinj.core.CashAddress
 import org.bitcoinj.core.Coin
 import org.bitcoinj.core.Transaction
 import org.bitcoinj.core.TransactionOutput
@@ -16,6 +17,7 @@ class SlpTxBuilder {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
                         val cashAddr = SlpAddress(slpAppKit.wallet.params, toAddress).toCashAddress()
+                        val addrTo = CashAddress.fromCashAddress(slpAppKit.wallet.params, cashAddr)
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
                         req.aesKey = aesKey
@@ -31,16 +33,16 @@ class SlpTxBuilder {
 
                         req.tx.addOutput(Coin.ZERO, opReturn.script)
                         //TODO fix cashaddr shit for SLP wallets
-                        //req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddress.fromCashAddr(slpAppKit.wallet.params, cashAddr))
+                        req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, addrTo)
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                          //  req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddress.fromCashAddr(slpAppKit.wallet.params, slpAppKit.freshSlpReceiveAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddress.fromCashAddress(slpAppKit.wallet.params, slpAppKit.freshSlpReceiveAddress().toCashAddress()))
                         }
 
                         // Send our BCH change back to our BCH address
                         if (it.changeSatoshi >= DUST_LIMIT) {
-                         //   req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet.freshReceiveAddress())
+                            req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet.freshReceiveAddress())
                         }
 
                         it.selectedUtxos.forEach { req.tx.addInput(it) }
