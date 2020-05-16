@@ -822,6 +822,10 @@ public class Wallet extends BaseTaggableObject
         return currentAddress(KeyChain.KeyPurpose.CHANGE);
     }
 
+    public CashAddress freshChangeAddress() {
+        return freshAddress(KeyChain.KeyPurpose.CHANGE);
+    }
+
     /**
      * <p>Imports the given ECKey to the wallet.</p>
      *

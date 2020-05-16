@@ -36,12 +36,12 @@ class SlpTxBuilder {
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddress.fromCashAddress(slpAppKit.wallet.params, slpAppKit.freshSlpReceiveAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddress.fromCashAddress(slpAppKit.wallet.params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
                         }
 
                         // Send our BCH change back to our BCH address
                         if (it.changeSatoshi >= DUST_LIMIT) {
-                            req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet.freshReceiveAddress())
+                            req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet.freshChangeAddress())
                         }
 
                         it.selectedUtxos.forEach { req.tx.addInput(it) }
@@ -122,15 +122,9 @@ class SlpTxBuilder {
 
         fun toRawAmount(amount: BigDecimal, slpToken: SlpToken): ULong {
             var amt = amount
-            if (amt > maxRawAmount) {
-                throw IllegalArgumentException("amount larger than 8 unsigned bytes")
-            } else if (amt.scale() > slpToken.decimals) {
-                if(slpToken.decimals == 0) {
-                    amt = amount.toInt().toBigDecimal()
-                } else {
-                    throw IllegalArgumentException("${slpToken.ticker} supports maximum ${slpToken.decimals} decimals but amount is $amount")
-                }
-            }
+            if (amt > maxRawAmount) { throw IllegalArgumentException("amount larger than 8 unsigned bytes") }
+            else if(slpToken.decimals == 0) { amt = amount.toInt().toBigDecimal() }
+            else if (amt.scale() - 1 > slpToken.decimals) { throw IllegalArgumentException("${slpToken.ticker} supports maximum ${slpToken.decimals} decimals but amount is $amount") }
             return amt.scaleByPowerOfTen(slpToken.decimals).toLong().toULong()
         }
 
