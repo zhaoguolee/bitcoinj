@@ -37,6 +37,7 @@ import org.bouncycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStoreException;
@@ -348,6 +349,21 @@ public class SlpPaymentSession {
         }
 
         return total;
+    }
+
+    public List<Long> getRawTokenAmounts() {
+        ArrayList<Long> rawAmounts = new ArrayList();
+        List<ScriptChunk> tokenAmountChunks = this.getRequiredTokenAmounts();
+        for(ScriptChunk tokenAmountChunk : tokenAmountChunks) {
+            byte[] chunkData = tokenAmountChunk.data;
+            if(chunkData != null) {
+                String tokenAmountHex = new String(Hex.encode(chunkData), StandardCharsets.UTF_8);
+                long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
+                rawAmounts.add(tokenAmountRaw);
+            }
+        }
+
+        return rawAmounts;
     }
 
     public SendRequest replaceOpReturn(Script newScript) {
