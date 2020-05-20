@@ -118,7 +118,6 @@ public class TransactionOutput extends ChildMessage {
     }
 
     @Nullable
-    @Deprecated
     public LegacyAddress getAddressFromP2PKHScript(NetworkParameters params) throws ScriptException {
         if (ScriptPattern.isP2PKH(getScriptPubKey()))
             return LegacyAddress.fromPubKeyHash(params,
@@ -127,7 +126,6 @@ public class TransactionOutput extends ChildMessage {
     }
 
     @Nullable
-    @Deprecated
     public LegacyAddress getAddressFromP2SH(NetworkParameters params) throws ScriptException {
         if (ScriptPattern.isP2SH(getScriptPubKey()))
             return LegacyAddress.fromScriptHash(params, ScriptPattern.extractHashFromP2SH(getScriptPubKey()));

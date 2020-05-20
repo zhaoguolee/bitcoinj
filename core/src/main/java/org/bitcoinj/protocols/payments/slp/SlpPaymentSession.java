@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.bitcoin.protocols.payments.Protos;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.slp.SlpAddress;
 import org.bitcoinj.crypto.TrustStoreLoader;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.protocols.payments.slp.SlpPaymentProtocol.PkiVerificationData;
@@ -364,6 +365,28 @@ public class SlpPaymentSession {
         }
 
         return rawAmounts;
+    }
+
+    public List<String> getSlpAddresses(NetworkParameters params) {
+        ArrayList<String> slpAddresses = new ArrayList();
+        List<TransactionOutput> txUtxos = this.getSendRequest().tx.getOutputs();
+        for(TransactionOutput utxo : txUtxos) {
+            if(!ScriptPattern.isOpReturn(utxo.getScriptPubKey())) {
+                LegacyAddress address = null;
+                address = utxo.getAddressFromP2PKHScript(params);
+                if(address == null) {
+                    address = utxo.getAddressFromP2SH(params);
+                }
+
+                if(address != null) {
+                    CashAddress cashAddress = CashAddress.fromBase58(params, address.toBase58());
+                    SlpAddress slpAddress = SlpAddress.fromCashAddr(params, cashAddress.toString());
+                    slpAddresses.add(slpAddress.toString());
+                }
+            }
+        }
+
+        return slpAddresses;
     }
 
     public SendRequest replaceOpReturn(Script newScript) {

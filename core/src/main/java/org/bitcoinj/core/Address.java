@@ -83,7 +83,6 @@ public abstract class Address extends PrefixedChecksummedBytes {
         }
     }
 
-    @Deprecated
     public static boolean isValidCashAddr(NetworkParameters params, String cashAddress)
     {
         try {
