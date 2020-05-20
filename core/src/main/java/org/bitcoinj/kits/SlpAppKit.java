@@ -18,6 +18,7 @@ import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.net.discovery.PeerDiscovery;
+import org.bitcoinj.protocols.payments.slp.SlpPaymentSession;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.store.BlockStoreException;
@@ -349,6 +350,10 @@ public class SlpAppKit extends AbstractIdleService {
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
         return SlpTxBuilder.buildTx(tokenId, numTokens, slpDestinationAddress, this, aesKey).blockingGet();
+    }
+
+    public Transaction createSlpTransactionBip70(String tokenId, @Nullable KeyParameter aesKey, List<Long> rawTokens, List<String> addresses, SlpPaymentSession paymentSession) throws InsufficientMoneyException {
+        return SlpTxBuilder.buildTxBip70(tokenId, this, aesKey, rawTokens, addresses, paymentSession).blockingGet();
     }
 
     public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
