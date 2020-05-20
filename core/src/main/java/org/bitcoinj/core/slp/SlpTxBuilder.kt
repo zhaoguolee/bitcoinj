@@ -64,7 +64,7 @@ class SlpTxBuilder {
             return sendTokenUtxoSelectionBip70(tokenId, rawTokens, slpAppKit)
                     .map {
                         // Add OP RETURN and receiver output
-                        val req = paymentSession.sendRequest
+                        val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
                         req.aesKey = aesKey
                         req.shuffleOutputs = false
                         req.utxos = null
