@@ -91,8 +91,8 @@ class SlpTxBuilder {
 
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
-                        for (x in 0..addresses.size) {
-                            val cashAddr = SlpAddress(slpAppKit.wallet.params, addresses.get(x)).toCashAddress()
+                        for(x in addresses.indices) {
+                            val cashAddr = SlpAddress(slpAppKit.wallet.params, addresses[x]).toCashAddress()
                             val addrTo = CashAddress.fromCashAddress(slpAppKit.wallet.params, cashAddr)
                             req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, addrTo)
                         }
