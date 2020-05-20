@@ -190,7 +190,7 @@ class SlpTxBuilder {
                 for(x in tokensRaw.indices) {
                     numTokens += tokensRaw[x];
                 }
-                val sendTokensRaw =  toRawAmount(numTokens.toBigDecimal(), tokenDetails)
+                val sendTokensRaw =  numTokens.toULong()
                 var sendSatoshi = DUST_LIMIT // At least one dust limit output to the token receiver
 
                 val utxos = slpAppKit.wallet.utxos
