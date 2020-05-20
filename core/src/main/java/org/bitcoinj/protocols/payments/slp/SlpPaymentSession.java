@@ -326,7 +326,7 @@ public class SlpPaymentSession {
         ArrayList<ScriptChunk> tokenChunks = new ArrayList<>();
         Script opReturn = this.getSlpOpReturn();
         int tokenChunkStartIndex = 5;
-        for(int x = tokenChunkStartIndex; x <= opReturn.getChunks().size(); x++) {
+        for(int x = tokenChunkStartIndex; x < opReturn.getChunks().size(); x++) {
             ScriptChunk tokenAmountChunk = opReturn.getChunks().get(x);
             if(tokenAmountChunk != null) {
                 tokenChunks.add(tokenAmountChunk);
