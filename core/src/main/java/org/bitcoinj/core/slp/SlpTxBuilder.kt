@@ -219,8 +219,8 @@ class SlpTxBuilder {
                 }
 
                 val propagationExtraFee = 50 // When too close 1sat/byte tx's don't propagate well
-                val numOutputs = 3 // Assume three outputs in addition to the op return.
-                val numQuanitites = 2 // Assume one token receiver and the token receiver
+                val numOutputs = tokensRaw.size + 1 // Assume outputs = tokens raw array + change, in addition to the OP_RETURN
+                val numQuanitites = tokensRaw.size // Assume tokens amount = tokens raw array
                 val fee = outputFee(numOutputs) + sizeInBytes(numQuanitites) + propagationExtraFee
 
                 // If we can not yet afford the fee + dust limit to send, use pure BCH utxo's
