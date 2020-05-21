@@ -220,7 +220,7 @@ class SlpTxBuilder {
                     sendSatoshi += DUST_LIMIT
                 }
 
-                val propagationExtraFee = 100 // When too close 1sat/byte tx's don't propagate well
+                val propagationExtraFee = 200 // When too close 1sat/byte tx's don't propagate well
                 val numOutputs = tokensRaw.size + 1 // Assume outputs = tokens raw array + change, in addition to the OP_RETURN
                 val numQuanitites = tokensRaw.size // Assume tokens amount = tokens raw array
                 val fee = outputFee(numOutputs) + sizeInBytes(numQuanitites) + propagationExtraFee
