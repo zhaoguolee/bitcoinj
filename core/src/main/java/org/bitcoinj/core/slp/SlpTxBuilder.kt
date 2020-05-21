@@ -71,23 +71,24 @@ class SlpTxBuilder {
                         req.feePerKb = Coin.valueOf(1000L)
 
                         var opReturnScript: Script = paymentSession.slpOpReturn
+                        val lokad = byteArrayOf(83, 76, 80, 0)
+                        val type = byteArrayOf(1)
+                        val PUSHDATA_BYTES = 8
+                        var scriptBuilder = ScriptBuilder()
+                                .op(ScriptOpCodes.OP_RETURN)
+                                .data(lokad)
+                                .addChunk(ScriptChunk(type.size, type))
+                                .data("SEND".toByteArray())
+                                .data(Hex.decode(tokenId))
+                                for(x in rawTokens.indices) {
+                                    scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(rawTokens[x]).array())
+                                }
 
                         if (it.quantities.size == 2) {
-                            val lokad = byteArrayOf(83, 76, 80, 0)
-                            val type = byteArrayOf(1)
-                            val PUSHDATA_BYTES = 8
-                            var scriptBuilder = ScriptBuilder()
-                                    .op(ScriptOpCodes.OP_RETURN)
-                                    .data(lokad)
-                                    .addChunk(ScriptChunk(type.size, type))
-                                    .data("SEND".toByteArray())
-                                    .data(Hex.decode(tokenId))
-                                    for(x in rawTokens.indices) {
-                                        scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(rawTokens[x]).array())
-                                    }
-                                    scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(it.quantities[1].toLong()).array())
-                            opReturnScript = scriptBuilder.build()
+                            scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(it.quantities[1].toLong()).array())
                         }
+
+                        opReturnScript = scriptBuilder.build()
 
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
@@ -191,7 +192,10 @@ class SlpTxBuilder {
                     numTokens += tokensRaw[x];
                 }
                 val sendTokensRaw =  numTokens.toULong()
-                var sendSatoshi = DUST_LIMIT // At least one dust limit output to the token receiver
+                var sendSatoshi = 0L
+                for(x in tokensRaw.indices) {
+                    sendSatoshi += DUST_LIMIT
+                }
 
                 val utxos = slpAppKit.wallet.utxos
 
