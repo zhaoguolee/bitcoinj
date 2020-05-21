@@ -20,13 +20,17 @@ import java.nio.ByteBuffer
 class SlpTxBuilder {
     companion object {
         @JvmStatic
-        fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?): Single<Transaction> {
+        fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?, allowUnconfirmed: Boolean): Single<Transaction> {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
                         val cashAddr = SlpAddress(slpAppKit.wallet.params, toAddress).toCashAddress()
                         val addrTo = CashAddress.fromCashAddress(slpAppKit.wallet.params, cashAddr)
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
+
+                        if(allowUnconfirmed)
+                            req.allowUnconfirmed()
+
                         req.aesKey = aesKey
                         req.shuffleOutputs = false
                         req.utxos = null
@@ -60,11 +64,15 @@ class SlpTxBuilder {
         }
 
         @JvmStatic
-        fun buildTxBip70(tokenId: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?, rawTokens: List<Long>, addresses: List<String>, paymentSession: SlpPaymentSession): Single<Transaction> {
+        fun buildTxBip70(tokenId: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?, rawTokens: List<Long>, addresses: List<String>, paymentSession: SlpPaymentSession, allowUnconfirmed: Boolean): Single<Transaction> {
             return sendTokenUtxoSelectionBip70(tokenId, rawTokens, slpAppKit)
                     .map {
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
+
+                        if(allowUnconfirmed)
+                            req.allowUnconfirmed()
+
                         req.aesKey = aesKey
                         req.shuffleOutputs = false
                         req.utxos = null
