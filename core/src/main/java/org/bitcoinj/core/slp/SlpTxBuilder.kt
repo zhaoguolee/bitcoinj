@@ -188,15 +188,13 @@ class SlpTxBuilder {
             return Single.fromCallable { // Wrap for now to protect against blocking non reactive calls
                 val tokenDetails: SlpToken = slpAppKit.getSlpToken(tokenId)
                 var numTokens: Long = 0
+                var sendSatoshi: Long = 0
                 for(x in tokensRaw.indices) {
-                    numTokens += tokensRaw[x];
+                    numTokens += tokensRaw[x]
+                    sendSatoshi += DUST_LIMIT
+
                 }
                 val sendTokensRaw =  numTokens.toULong()
-                var sendSatoshi = 0L
-                for(x in tokensRaw.indices) {
-                    sendSatoshi += DUST_LIMIT
-                }
-
                 val utxos = slpAppKit.wallet.utxos
 
                 // First select enough token utxo's and just take what we get in terms of BCH
@@ -222,7 +220,7 @@ class SlpTxBuilder {
                     sendSatoshi += DUST_LIMIT
                 }
 
-                val propagationExtraFee = 50 // When too close 1sat/byte tx's don't propagate well
+                val propagationExtraFee = 100 // When too close 1sat/byte tx's don't propagate well
                 val numOutputs = tokensRaw.size + 1 // Assume outputs = tokens raw array + change, in addition to the OP_RETURN
                 val numQuanitites = tokensRaw.size // Assume tokens amount = tokens raw array
                 val fee = outputFee(numOutputs) + sizeInBytes(numQuanitites) + propagationExtraFee
