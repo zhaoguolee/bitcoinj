@@ -58,6 +58,15 @@ public class ScriptReverseBytesTest {
 
         LinkedList<byte[]> stack = new LinkedList<>();
         Script.executeScript(null, 0, opReverseBytesTestScript, stack, Script.ALL_VERIFY_FLAGS);
-        assertEquals("01", new String(Hex.encode(stack.get(0)), StandardCharsets.UTF_8));
+        byte[] success = new byte[] {1};
+        assertEquals(success[0], stack.get(0)[0]);
+
+        byte[] opReverseBytesInvalid = HEX.decode("116173616e74616c69766564617361646576696c61746e617361");
+        ScriptBuilder opReverseBytesTestScriptInvalidBuilder = new ScriptBuilder().data(opReverseBytesInvalid).op(ScriptOpCodes.OP_DUP).op(ScriptOpCodes.OP_REVERSEBYTES).op(ScriptOpCodes.OP_EQUAL);
+        Script opReverseBytesTestScriptInvalid = opReverseBytesTestScriptInvalidBuilder.build();
+
+        LinkedList<byte[]> stackInvalid = new LinkedList<>();
+        Script.executeScript(null, 0, opReverseBytesTestScriptInvalid, stackInvalid, Script.ALL_VERIFY_FLAGS);
+        assertEquals(0, stackInvalid.get(0).length);
     }
 }

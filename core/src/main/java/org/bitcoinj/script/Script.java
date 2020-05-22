@@ -1266,15 +1266,9 @@ public class Script {
                         executeCheckDataSig(txContainingThis, (int) index, script, stack, lastCodeSepLocation, opcode, verifyFlags);
                         break;
                     case OP_REVERSEBYTES:
-                        for(int x = 0; x < stack.size(); x++) {
-                            System.out.println(new String(Hex.encode(stack.get(x)), StandardCharsets.UTF_8));
-                        }
                         if (stack.size() < 1)
                             throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_STACK_OPERATION, "Attempted OP_REVERSEBYTES on an empty stack");
                         stack.add(Utils.reverseBytes(stack.pollLast()));
-                        for(int x = 0; x < stack.size(); x++) {
-                            System.out.println(new String(Hex.encode(stack.get(x)), StandardCharsets.UTF_8));
-                        }
                         break;
                     case OP_NOP1:
                     case OP_NOP4:
