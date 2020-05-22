@@ -82,12 +82,14 @@ public class Script {
         CHECKLOCKTIMEVERIFY, // Enable CHECKLOCKTIMEVERIFY operation
         CHECKSEQUENCEVERIFY, // Enable CHECKSEQUENCEVERIFY operation
         ENABLESIGHASHFORKID,
-        MONOLITH_OPCODES // May 15, 2018 Hard fork
+        MONOLITH_OPCODES, // May 15, 2018 Hard fork
+        CHECKDATASIG // November 2018 Upgrade
     }
     public static final EnumSet<VerifyFlag> ALL_VERIFY_FLAGS = EnumSet.allOf(VerifyFlag.class);
 
     private static final Logger log = LoggerFactory.getLogger(Script.class);
     public static final long MAX_SCRIPT_ELEMENT_SIZE = 520;  // bytes
+    public static final int DEFAULT_MAX_NUM_ELEMENT_SIZE = 4;
     private static final int MAX_OPS_PER_SCRIPT = 201;
     private static final int MAX_STACK_SIZE = 1000;
     private static final int MAX_PUBKEYS_PER_MULTISIG = 20;
@@ -501,6 +503,10 @@ public class Script {
                     else
                         sigOps += 20;
                     break;
+                case OP_CHECKDATASIG:
+                case OP_CHECKDATASIGVERIFY:
+                    sigOps++;
+                    break;
                 default:
                     break;
                 }
@@ -735,8 +741,7 @@ public class Script {
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link TransactionInput#verify(TransactionOutput)} or
-     * {@link Script#correctlySpends(Transaction, int, TransactionWitness, Coin, Script, Set)}. This method
-     * is useful if you need more precise control or access to the final state of the stack. This interface is very
+     * This method is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      *
      * @deprecated Use {@link #executeScript(Transaction, long, Script, LinkedList, Set)}
@@ -761,8 +766,7 @@ public class Script {
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link TransactionInput#verify(TransactionOutput)} or
-     * {@link Script#correctlySpends(Transaction, int, TransactionWitness, Coin, Script, Set)}. This method
-     * is useful if you need more precise control or access to the final state of the stack. This interface is very
+     * This method is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      */
     public static void executeScript(@Nullable Transaction txContainingThis, long index,
@@ -1249,6 +1253,15 @@ public class Script {
                     }
                     executeCheckSequenceVerify(txContainingThis, (int) index, stack, verifyFlags);
                     break;
+                case OP_CHECKDATASIG:
+                case OP_CHECKDATASIGVERIFY:
+                    if (!verifyFlags.contains(VerifyFlag.CHECKDATASIG))
+                        throw new ScriptException(ScriptError.SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS, "Script used a reserved opcode " + opcode);
+                    if (txContainingThis == null)
+                        throw new IllegalStateException("Script attempted signature check but no tx was provided");
+
+                    executeCheckDataSig(txContainingThis, (int) index, script, stack, lastCodeSepLocation, opcode, verifyFlags);
+                    break;
                 case OP_NOP1:
                 case OP_NOP4:
                 case OP_NOP5:
@@ -1383,6 +1396,45 @@ public class Script {
         // comparison is a simple numeric one.
         if (nSequenceMasked > txToSequenceMasked)
             throw new ScriptException(ScriptError.SCRIPT_ERR_UNSATISFIED_LOCKTIME, "Relative locktime requirement not satisfied");
+    }
+
+    // https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/op_checkdatasig.md
+    private static void executeCheckDataSig(Transaction txContainingThis, int index, Script script, LinkedList<byte[]> stack,
+                                            int lastCodeSepLocation, int opcode,
+                                            Set<VerifyFlag> verifyFlags) throws ScriptException {
+        final boolean requireCanonical = verifyFlags.contains(VerifyFlag.STRICTENC)
+                || verifyFlags.contains(VerifyFlag.DERSIG)
+                || verifyFlags.contains(VerifyFlag.LOW_S);
+        if (stack.size() < 3)
+            throw new ScriptException(ScriptError.SCRIPT_ERR_STACK_SIZE, "Attempted OP_DATACHECKSIG(VERIFY) on a stack with size < 3");
+        byte[] pubKey = stack.pollLast();
+        byte[] messageByte = stack.pollLast();
+        byte[] sigBytes = stack.pollLast();
+
+        boolean sigValid = false;
+
+        try {
+            TransactionSignature sig = TransactionSignature.decodeFromBitcoin(sigBytes, requireCanonical,
+                    verifyFlags.contains(VerifyFlag.LOW_S));
+
+            Sha256Hash hash = Sha256Hash.of(messageByte);
+
+            sigValid = ECKey.verify(hash.getBytes(), sig, pubKey);
+        } catch (Exception e1) {
+            // There is (at least) one exception that could be hit here (EOFException, if the sig is too short)
+            // Because I can't verify there aren't more, we use a very generic Exception catch
+
+            // This RuntimeException occurs when signing as we run partial/invalid scripts to see if they need more
+            // signing work to be done inside LocalTransactionSigner.signInputs.
+            if (!e1.getMessage().contains("Reached past end of ASN.1 stream"))
+                log.warn("Signature checking failed!", e1);
+        }
+
+        if (opcode == OP_CHECKDATASIG)
+            stack.add(sigValid ? new byte[] {1} : new byte[] {});
+        else if (opcode == OP_CHECKDATASIGVERIFY)
+            if (!sigValid)
+                throw new ScriptException(ScriptError.SCRIPT_ERR_CHECKSIGVERIFY, "Script failed OP_CHECKSIGVERIFY");
     }
 
     private static void executeCheckSig(Transaction txContainingThis, int index, Script script, LinkedList<byte[]> stack,

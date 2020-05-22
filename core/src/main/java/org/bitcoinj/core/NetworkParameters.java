@@ -93,6 +93,8 @@ public abstract class NetworkParameters {
     protected int daaUpdateHeight;
     // May, 15 2018 hard fork
     protected long monolithActivationTime = 1526400000L;
+    // Nov, 15 2018 hard fork
+    protected static long november2018ActivationTime = 1542300000L;
 
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
@@ -497,6 +499,11 @@ public abstract class NetworkParameters {
         if (block.getVersion() >= Block.BLOCK_VERSION_BIP65 &&
             tally.getCountAtOrAbove(Block.BLOCK_VERSION_BIP65) > this.getMajorityEnforceBlockUpgrade()) {
             verifyFlags.add(Script.VerifyFlag.CHECKLOCKTIMEVERIFY);
+        }
+
+        // Start enforcing CHECKDATASIG, if November 15 2018 hardfork reached
+        if (block.getTimeSeconds() >= NetworkParameters.november2018ActivationTime) {
+            verifyFlags.add(Script.VerifyFlag.CHECKDATASIG);
         }
 
         return verifyFlags;
