@@ -155,6 +155,8 @@ public class ScriptOpCodes {
     /** Check whether a signature is valid with respect to a message hash and and a public key. */
     public static final int OP_CHECKDATASIG = 0xba;
     public static final int OP_CHECKDATASIGVERIFY = 0xbb;
+    /** Reverse the bytes  */
+    public static final int OP_REVERSEBYTES = 0xbc;
     // multi-byte opcodes
     /**
      * Reserved range for multi-byte opcodes
@@ -298,7 +300,8 @@ public class ScriptOpCodes {
         .put(OP_NOP9, "NOP9")
         .put(OP_NOP10, "NOP10")
         .put(OP_CHECKDATASIG, "CHECKDATASIG")
-        .put(OP_CHECKDATASIGVERIFY, "CHECKDATASIGVERIFY").build();
+        .put(OP_CHECKDATASIGVERIFY, "CHECKDATASIGVERIFY")
+        .put(OP_REVERSEBYTES, "REVERSEBYTES").build();
 
     private static final Map<String, Integer> opCodeNameMap = ImmutableMap.<String, Integer>builder()
             .putAll(opCodeMap.inverse())
