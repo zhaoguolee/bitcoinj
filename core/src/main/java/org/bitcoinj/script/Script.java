@@ -21,6 +21,7 @@ package org.bitcoinj.script;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.TransactionSignature;
+import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
@@ -31,6 +32,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -1263,11 +1266,15 @@ public class Script {
                         executeCheckDataSig(txContainingThis, (int) index, script, stack, lastCodeSepLocation, opcode, verifyFlags);
                         break;
                     case OP_REVERSEBYTES:
+                        for(int x = 0; x < stack.size(); x++) {
+                            System.out.println(new String(Hex.encode(stack.get(x)), StandardCharsets.UTF_8));
+                        }
                         if (stack.size() < 1)
                             throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_STACK_OPERATION, "Attempted OP_REVERSEBYTES on an empty stack");
-                        byte[] bytes = stack.pollLast();
-                        reverse(bytes);
-                        stack.add(bytes);
+                        stack.add(Utils.reverseBytes(stack.pollLast()));
+                        for(int x = 0; x < stack.size(); x++) {
+                            System.out.println(new String(Hex.encode(stack.get(x)), StandardCharsets.UTF_8));
+                        }
                         break;
                     case OP_NOP1:
                     case OP_NOP4:
@@ -1554,7 +1561,7 @@ public class Script {
             try {
                 TransactionSignature sig = TransactionSignature.decodeFromBitcoin(sigs.getFirst(), requireCanonical, false);
                 Sha256Hash hash = sig.useForkId() ?
-                        txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()):
+                        txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
                         txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
                 if (ECKey.verify(hash.getBytes(), sig, pubKey))
                     sigs.pollFirst();
@@ -1575,28 +1582,12 @@ public class Script {
             throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_NULLFAIL, "OP_CHECKMULTISIG(VERIFY) with non-null nulldummy: " + Arrays.toString(nullDummy));
 
         if (opcode == OP_CHECKMULTISIG) {
-            stack.add(valid ? new byte[] {1} : new byte[] {});
+            stack.add(valid ? new byte[]{1} : new byte[]{});
         } else if (opcode == OP_CHECKMULTISIGVERIFY) {
             if (!valid)
                 throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_NULLFAIL, "Script failed OP_CHECKMULTISIGVERIFY");
         }
         return opCount;
-    }
-
-    public static void reverse(byte[] array) {
-        if (array == null) {
-            return;
-        }
-        int i = 0;
-        int j = array.length - 1;
-        byte tmp;
-        while (j > i) {
-            tmp = array[j];
-            array[j] = array[i];
-            array[i] = tmp;
-            j--;
-            i++;
-        }
     }
 
     /**

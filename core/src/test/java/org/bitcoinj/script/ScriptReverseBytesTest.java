@@ -52,12 +52,12 @@ import static org.junit.Assert.*;
 public class ScriptReverseBytesTest {
     @Test
     public void testReverseBytes() throws Exception {
-        byte[] opReverseBytes = HEX.decode("196173616e74616c69766564617361646576696c61746e61736103");
+        byte[] opReverseBytes = HEX.decode("6173616e74616c69766564617361646576696c61746e617361");
         ScriptBuilder opReverseBytesTestScriptBuilder = new ScriptBuilder().data(opReverseBytes).op(ScriptOpCodes.OP_DUP).op(ScriptOpCodes.OP_REVERSEBYTES).op(ScriptOpCodes.OP_EQUAL);
         Script opReverseBytesTestScript = opReverseBytesTestScriptBuilder.build();
 
         LinkedList<byte[]> stack = new LinkedList<>();
         Script.executeScript(null, 0, opReverseBytesTestScript, stack, Script.ALL_VERIFY_FLAGS);
-        assertEquals(new String(Hex.encode(stack.get(0)), StandardCharsets.UTF_8), "01");
+        assertEquals("01", new String(Hex.encode(stack.get(0)), StandardCharsets.UTF_8));
     }
 }
