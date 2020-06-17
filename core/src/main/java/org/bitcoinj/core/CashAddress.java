@@ -1,18 +1,29 @@
 package org.bitcoinj.core;
 
 import com.github.kiulian.converter.AddressConverter;
+import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script;
+
+import java.util.Arrays;
 
 public class CashAddress extends Address {
     private byte[] hash160;
     private String cashAddress;
     private LegacyAddress legacyAddress;
+    private Script.ScriptType addressType;
 
     private CashAddress(NetworkParameters params, byte[] hash160, String cashAddress, LegacyAddress legacyAddress) {
         super(params, hash160);
         this.hash160 = hash160;
         this.cashAddress = cashAddress;
         this.legacyAddress = legacyAddress;
+        byte[] versionAndDataBytes = Base58.decodeChecked(legacyAddress.toBase58());
+        int version = versionAndDataBytes[0] & 0xFF;
+        if (version == params.getAddressHeader()) {
+            this.addressType = Script.ScriptType.P2PKH;
+        } else if (version == params.getP2SHHeader()) {
+            this.addressType = Script.ScriptType.P2SH;
+        }
     }
 
     public static CashAddress fromCashAddress(NetworkParameters params, String cashAddr) {
@@ -55,6 +66,6 @@ public class CashAddress extends Address {
 
     @Override
     public Script.ScriptType getOutputScriptType() {
-        return Script.ScriptType.P2PKH;
+        return addressType;
     }
 }
