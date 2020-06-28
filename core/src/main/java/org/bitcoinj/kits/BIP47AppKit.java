@@ -183,8 +183,8 @@ public class BIP47AppKit extends AbstractIdleService {
         this.grabNotificationAddressUtxos(notifAsCashAddr);
     }
 
-    private String[] apiServersAddress = new String[] {"https://insomnia.fountainhead.cash/v1/address/utxos/", "http://rest.bitcoin.com/v2/address/utxo/"};
-    private String[] apiServersTx = new String[] {"https://insomnia.fountainhead.cash/v1/tx/data/", "http://rest.bitcoin.com/v2/rawtransactions/getRawTransaction/"};
+    private String[] apiServersAddress = new String[] {"http://rest.bitcoin.com/v2/address/utxo/"};
+    private String[] apiServersTx = new String[] {"http://rest.bitcoin.com/v2/rawtransactions/getRawTransaction/"};
 
     private void grabNotificationAddressUtxos(final String cashAddr) {
         new Thread() {
@@ -219,7 +219,12 @@ public class BIP47AppKit extends AbstractIdleService {
 
     private void grabTransactionAndProcessNotificationTransaction(String txid) {
         String randApiServer = apiServersTx[new Random().nextInt(apiServersTx.length)];
-        JSONObject txJson = getJSONObject(randApiServer + txid);
+        String url = randApiServer + txid;
+
+        if(randApiServer.contains("rest.bitcoin.com")) {
+            url += "?verbose=true";
+        }
+        JSONObject txJson = getJSONObject(url);
         if(txJson != null) {
             try {
                 String txHexVariable = "";
@@ -443,8 +448,6 @@ public class BIP47AppKit extends AbstractIdleService {
             return false;
         }
 
-        System.out.println("loadBip47MetaData: " + jsonString);
-
         return importBip47MetaData(jsonString);
     }
 
@@ -470,8 +473,6 @@ public class BIP47AppKit extends AbstractIdleService {
      * <p>Load channels from json. Return true if any payment code was loaded. </p>
      */
     public boolean importBip47MetaData(String jsonString) {
-        System.out.println("loadBip47MetaData: " + jsonString);
-
         Gson gson = new Gson();
         Type collectionType = new TypeToken<Collection<BIP47Channel>>() {
         }.getType();
@@ -501,13 +502,10 @@ public class BIP47AppKit extends AbstractIdleService {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(bip47MetaData.values());
 
-        System.out.println("saveBip47MetaData: " + json);
-
         File file = new File(directory, this.vWalletFileName.concat(".bip47"));
 
         try {
             FileUtils.writeStringToFile(file, json, Charset.defaultCharset(), false);
-            System.out.println("saveBip47MetaData: saved");
         } catch (IOException e) {
             e.printStackTrace();
         }
