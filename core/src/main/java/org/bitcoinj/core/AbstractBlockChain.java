@@ -470,7 +470,7 @@ public abstract class AbstractBlockChain {
             } else {
                 checkState(lock.isHeldByCurrentThread());
                 // It connects to somewhere on the chain. Not necessarily the top of the best known chain.
-                AbstractPowRulesChecker rulesChecker = ruleCheckerFactory.getRuleChecker(storedPrev, block);
+                AbstractPowRulesChecker rulesChecker = ruleCheckerFactory.getRuleChecker(storedPrev, block, blockStore);
                 rulesChecker.checkRules(storedPrev, block, blockStore, this);
                 connectBlock(block, storedPrev, shouldVerifyTransactions(), filteredTxHashList, filteredTxn);
             }

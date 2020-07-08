@@ -95,7 +95,8 @@ public abstract class NetworkParameters {
     protected long monolithActivationTime = 1526400000L;
     // Nov, 15 2018 hard fork
     protected static long november2018ActivationTime = 1542300000L;
-
+    // Nov, 15 2020 hard fork
+    protected long oscillationFixUpdateTime = 2526400000L;
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
      * by looking at the port number.
@@ -368,6 +369,10 @@ public abstract class NetworkParameters {
 
     public int getDAAUpdateHeight(){
         return daaUpdateHeight;
+    }
+
+    public long getOscillationFixUpdateTime(){
+        return oscillationFixUpdateTime;
     }
 
     /** MTP activation time for May 15th, 2018 upgrade **/

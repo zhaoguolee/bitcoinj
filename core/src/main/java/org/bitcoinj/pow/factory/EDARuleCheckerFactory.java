@@ -28,6 +28,7 @@ import org.bitcoinj.pow.rule.DifficultyTransitionPointRuleChecker;
 import org.bitcoinj.pow.rule.EmergencyDifficultyAdjustmentRuleChecker;
 import org.bitcoinj.pow.rule.LastNonMinimalDifficultyRuleChecker;
 import org.bitcoinj.pow.rule.MinimalDifficultyNoChangedRuleChecker;
+import org.bitcoinj.store.BlockStore;
 
 public class EDARuleCheckerFactory extends AbstractRuleCheckerFactory {
 
@@ -36,7 +37,7 @@ public class EDARuleCheckerFactory extends AbstractRuleCheckerFactory {
     }
 
     @Override
-    public RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock) {
+    public RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         if (AbstractBitcoinNetParams.isDifficultyTransitionPoint(storedPrev, networkParameters)) {
             return getTransitionPointRulesChecker();
         } else {
