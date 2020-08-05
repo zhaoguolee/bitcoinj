@@ -35,11 +35,11 @@ import java.math.BigInteger;
  * <p>
  * https://www.bitcoinabc.org/november
  */
-public class OscillationFixDifficultyRuleChecker extends AbstractPowRulesChecker {
+public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
 
     private static final int AVERAGE_BLOCKS_PER_DAY = 144;
 
-    public OscillationFixDifficultyRuleChecker(NetworkParameters networkParameters) {
+    public AsertDifficultyRuleChecker(NetworkParameters networkParameters) {
         super(networkParameters);
     }
 

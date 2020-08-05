@@ -17,14 +17,9 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.net.discovery.*;
 import org.bitcoinj.params.*;
 import org.bitcoinj.script.*;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
 
 import org.bitcoinj.utils.MonetaryFormat;
 
@@ -96,7 +91,7 @@ public abstract class NetworkParameters {
     // Nov, 15 2018 hard fork
     protected static long november2018ActivationTime = 1542300000L;
     // Nov, 15 2020 hard fork
-    protected long oscillationFixUpdateTime = 2526400000L;
+    protected long asertUpdateTime = 2526400000L;
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
      * by looking at the port number.
@@ -371,8 +366,8 @@ public abstract class NetworkParameters {
         return daaUpdateHeight;
     }
 
-    public long getOscillationFixUpdateTime(){
-        return oscillationFixUpdateTime;
+    public long getAsertUpdateTime(){
+        return asertUpdateTime;
     }
 
     /** MTP activation time for May 15th, 2018 upgrade **/

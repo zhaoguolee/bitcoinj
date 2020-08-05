@@ -31,7 +31,7 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
     private RulesPoolChecker regtestChecker;
     private AbstractRuleCheckerFactory daaRulesFactory;
     private AbstractRuleCheckerFactory edaRulesFactory;
-    private AbstractRuleCheckerFactory oscillationFixRulesFactory;
+    private AbstractRuleCheckerFactory asertRulesFactory;
 
     public static RuleCheckerFactory create(NetworkParameters parameters) {
         return new RuleCheckerFactory(parameters);
@@ -43,7 +43,7 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
             this.regtestChecker = new RulesPoolChecker(networkParameters);
             this.regtestChecker.addRule(new RegTestRuleChecker(networkParameters));
         } else {
-            this.oscillationFixRulesFactory = new OscillationFixRuleCheckerFactory(parameters);
+            this.asertRulesFactory = new AsertRuleCheckerFactory(parameters);
             this.daaRulesFactory = new DAARuleCheckerFactory(parameters);
             this.edaRulesFactory = new EDARuleCheckerFactory(parameters);
         }
@@ -53,8 +53,8 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
     public RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         if (NetworkParameters.ID_REGTEST.equals(networkParameters.getId())) {
             return this.regtestChecker;
-        } else if(isOscillationFixActivated(storedPrev, blockStore, networkParameters)) {
-            return oscillationFixRulesFactory.getRuleChecker(storedPrev, nextBlock, blockStore);
+        } else if(isAsertActivated(storedPrev, blockStore, networkParameters)) {
+            return asertRulesFactory.getRuleChecker(storedPrev, nextBlock, blockStore);
         } else if (isNewDaaActivated(storedPrev, networkParameters)) {
             return daaRulesFactory.getRuleChecker(storedPrev, nextBlock, blockStore);
         } else {
@@ -66,10 +66,10 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
         return storedPrev.getHeight() >= parameters.getDAAUpdateHeight();
     }
 
-    private boolean isOscillationFixActivated(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
+    private boolean isAsertActivated(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
         try {
             long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
-            return mtp >= parameters.getOscillationFixUpdateTime();
+            return mtp >= parameters.getAsertUpdateTime();
         } catch (BlockStoreException e) {
             e.printStackTrace();
         }
