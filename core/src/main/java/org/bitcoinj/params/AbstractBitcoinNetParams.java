@@ -42,6 +42,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
      */
     public static final String BITCOIN_SCHEME = "bitcoincash";
     public static final int REWARD_HALVING_INTERVAL = 210000;
+    public static final int MAX_BITS = 0x1d00ffff;
+    public static final String MAX_BITS_STRING = "1d00ffff";
+    public static final BigInteger MAX_TARGET = bitsToTarget(MAX_BITS);
 
     /**
      * The number that is one greater than the largest representable SHA-256
@@ -133,33 +136,109 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     /**
      * Compute aserti-2d DAA target
      */
-    public static BigInteger computeAsertTarget(StoredBlock pindexFirst,
-                                           StoredBlock pindexLast) {
+    public static BigInteger computeAsertTarget(int referenceBlockBits, long referenceBlockTime, int referenceBlockHeight,
+                                           long evalBlockTime, int evalBlockHeight) {
 
-        Preconditions.checkState(pindexLast.getHeight() > pindexFirst.getHeight());
-
-        /*
-         * From the total work done and the time it took to produce that much work,
-         * we can deduce how much work we expect to be produced in the targeted time
-         * between blocks.
-         */
+        Preconditions.checkState(evalBlockHeight > referenceBlockHeight);
+        int heightDiff = evalBlockHeight - referenceBlockHeight;
+        long timeDiff = evalBlockTime - referenceBlockTime;
+        //used by asert. two days in seconds.
+        int tau = 172800;
+        int radix = 65536;
         //todo
-        BigInteger target = BigInteger.valueOf(0);
+        BigInteger target = bitsToTarget(referenceBlockBits);
 
         //todo
-        long exponent = 0;
+        long exponent = ((timeDiff - TARGET_SPACING*heightDiff) * radix) / tau;
+        int numShifts = (int) (exponent >> 16);
+        System.out.println("Num shifts: " + numShifts);
+        if(numShifts < 0) {
+            target = target.shiftRight(-numShifts);
+        } else {
+            target = target.shiftLeft(numShifts);
+        }
+
+        exponent -= (numShifts * radix);
+        System.out.println(target.toString(16));
+        if(target.equals(BigInteger.ZERO) || target.intValue() > MAX_BITS) {
+            if(numShifts < 0) {
+                return BigInteger.valueOf(targetToBits(BigInteger.ONE));
+            } else {
+                System.out.println("MAX WORK");
+                return new BigInteger(MAX_BITS_STRING, 16);
+            }
+        }
+
         // 2^x ~= (1 + 0.695502049*x + 0.2262698*x**2 + 0.0782318*x**3) for 0 <= x < 1
         // factor = (195766423245049*exponent + 971821376*exponent**2 + 5127*exponent**3 + 2**47)>>48
         BigInteger bigExponent = BigInteger.valueOf(exponent);
         BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(bigExponent);
-        factor = factor.add(BigInteger.valueOf(971821376L).multiply(bigExponent).pow(2));
-        factor = factor.add(BigInteger.valueOf(5127).multiply(bigExponent).pow(3));
-        factor = factor.add(BigInteger.valueOf(2).pow(47));
+        factor = factor.add(BigInteger.valueOf(971821376L).multiply(bigExponent.pow(2)));
+        factor = factor.add(BigInteger.valueOf(5127L).multiply(bigExponent.pow(3)));
+        factor = factor.add(BigInteger.valueOf(2L).pow(47));
         factor = factor.shiftRight(48);
         // target += (target * factor) >> 16
-        target = target.add((target.multiply(factor)).shiftRight(16));
-        //TODO actually set target variable from above, and return here
-        return factor;//target.add(BigInteger.ONE))
+        target = target.add(target.multiply(factor)).shiftRight(16);
+        if(target.compareTo(MAX_TARGET) > 0){
+            System.out.println("MAX WORK 2");
+            return new BigInteger(MAX_BITS_STRING, 16);
+        }
+
+        return target;
+    }
+
+    private static BigInteger bitsToTarget(int bits) {
+        int mantissa = bits & 0x007fffff;
+        boolean isNegative = (bits & 0x00800000) != 0;
+        int exponent = bits>>24;
+        assert exponent <= 0x1d;
+        BigInteger bn;
+
+        if(exponent <= 3) {
+            mantissa >>= 8 * (3 - exponent);
+            bn = BigInteger.valueOf((long) mantissa);
+            System.out.println("exponent <= 3");
+        }
+        else {
+            bn = BigInteger.valueOf((long) mantissa);
+            System.out.println("exponent > 3");
+        }
+
+        if(isNegative) {
+            bn = bn.negate();
+        }
+
+        return bn;
+    }
+
+    private static int targetToBits(BigInteger target) {
+        assert target.compareTo(BigInteger.ZERO) > 0;
+        if(target.compareTo(MAX_TARGET) > 0) {
+            System.out.println("Warning: target went above maximum (" + target + " > " + MAX_TARGET + ")");
+            target = MAX_TARGET;
+        }
+
+        int exponent = target.bitLength();
+        int mantissa;
+        if(exponent <= 3) {
+            System.out.println("exponent <= 3");
+            mantissa = target.toByteArray()[0];
+            mantissa <<= (8 * (3 - exponent));
+        } else {
+            System.out.println("exponent > 3");
+            mantissa = target.shiftRight(8*(exponent-3)).toByteArray()[0];
+        }
+
+        if((mantissa & 0x00800000) != 0) {
+            mantissa >>= 8;
+            exponent += 1;
+        }
+
+        int compact = (exponent<<24) | mantissa;
+        if(target.signum() < 0) {
+            compact |= 0x00800000;
+        }
+        return compact;
     }
 
     /**
