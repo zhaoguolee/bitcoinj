@@ -131,6 +131,38 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     }
 
     /**
+     * Compute aserti-2d DAA target
+     */
+    public static BigInteger computeAsertTarget(StoredBlock pindexFirst,
+                                           StoredBlock pindexLast) {
+
+        Preconditions.checkState(pindexLast.getHeight() > pindexFirst.getHeight());
+
+        /*
+         * From the total work done and the time it took to produce that much work,
+         * we can deduce how much work we expect to be produced in the targeted time
+         * between blocks.
+         */
+        //todo
+        BigInteger target = BigInteger.valueOf(0);
+
+        //todo
+        long exponent = 0;
+        // 2^x ~= (1 + 0.695502049*x + 0.2262698*x**2 + 0.0782318*x**3) for 0 <= x < 1
+        // factor = (195766423245049*exponent + 971821376*exponent**2 + 5127*exponent**3 + 2**47)>>48
+        BigInteger bigExponent = BigInteger.valueOf(exponent);
+        BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(bigExponent);
+        factor = factor.add(BigInteger.valueOf(971821376L).multiply(bigExponent).pow(2));
+        factor = factor.add(BigInteger.valueOf(5127).multiply(bigExponent).pow(3));
+        factor = factor.add(BigInteger.valueOf(2).pow(47));
+        factor = factor.shiftRight(48);
+        // target += (target * factor) >> 16
+        target = target.add((target.multiply(factor)).shiftRight(16));
+        //TODO actually set target variable from above, and return here
+        return factor;//target.add(BigInteger.ONE))
+    }
+
+    /**
      * determines whether monolith upgrade is activated based on the given MTP.  Useful for overriding MTP for testing.
      * @param medianTimePast
      * @param parameters The network parameters

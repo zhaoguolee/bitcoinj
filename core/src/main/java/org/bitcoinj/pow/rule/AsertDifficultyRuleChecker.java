@@ -65,7 +65,7 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
             StoredBlock last = GetMostSuitableBlock(storedPrev, blockStore);
             StoredBlock first = getFirst(storedPrev, blockStore);
 
-            BigInteger nextTarget = AbstractBitcoinNetParams.ComputeTarget(first, last);
+            BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(first, last);
             networkParameters.verifyDifficulty(nextTarget, nextBlock);
         } catch (BlockStoreException x) {
             // We don't have enough blocks, yet
