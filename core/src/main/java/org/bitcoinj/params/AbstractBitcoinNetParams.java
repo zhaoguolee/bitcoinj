@@ -188,27 +188,19 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     }
 
     private static BigInteger bitsToTarget(int bits) {
-        int mantissa = bits & 0x007fffff;
-        boolean isNegative = (bits & 0x00800000) != 0;
-        int exponent = bits>>24;
-        assert exponent <= 0x1d;
-        BigInteger bn;
+        int size = bits >> 24;
+        assert size <= 0x1d;
 
-        if(exponent <= 3) {
-            mantissa >>= 8 * (3 - exponent);
-            bn = BigInteger.valueOf((long) mantissa);
-            System.out.println("exponent <= 3");
+        int word = bits & 0x00ffffff;
+        assert 0x8000 <= word;
+        assert word <= 0x7fffff;
+
+        if (size <= 3) {
+            return BigInteger.valueOf(word >> (8 * (3 - size)));
         }
         else {
-            bn = BigInteger.valueOf((long) mantissa);
-            System.out.println("exponent > 3");
+            return BigInteger.valueOf(word << (8 * (size - 3)));
         }
-
-        if(isNegative) {
-            bn = bn.negate();
-        }
-
-        return bn;
     }
 
     private static int targetToBits(BigInteger target) {
