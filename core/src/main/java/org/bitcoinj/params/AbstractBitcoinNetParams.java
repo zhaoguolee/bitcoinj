@@ -143,14 +143,15 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         int heightDiff = evalBlockHeight - referenceBlockHeight;
         long timeDiff = evalBlockTime - referenceBlockTime;
         //used by asert. two days in seconds.
-        int tau = 172800;
-        int radix = 65536;
+        int halfLife = 2 * 24 * 60 * 60;
+        int rbits = 16;
+
         //todo
         BigInteger target = bitsToTarget(referenceBlockBits);
 
         //todo
-        long exponent = ((timeDiff - TARGET_SPACING*heightDiff) * radix) / tau;
-        int numShifts = (int) (exponent >> 16);
+        int exponent = (int)((timeDiff - TARGET_SPACING * (heightDiff + 1)) << rbits) / halfLife;
+        int numShifts = exponent >> rbits;
         System.out.println("Num shifts: " + numShifts);
         if(numShifts < 0) {
             target = target.shiftRight(-numShifts);
@@ -158,9 +159,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
             target = target.shiftLeft(numShifts);
         }
 
-        exponent -= (numShifts * radix);
+        exponent -= (numShifts << rbits);
         System.out.println(target.toString(16));
-        if(target.equals(BigInteger.ZERO) || target.intValue() > MAX_BITS) {
+        if(target.equals(BigInteger.ZERO) || target.compareTo(MAX_TARGET) > 0) {
             if(numShifts < 0) {
                 return BigInteger.valueOf(targetToBits(BigInteger.ONE));
             } else {
@@ -171,36 +172,40 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
         // 2^x ~= (1 + 0.695502049*x + 0.2262698*x**2 + 0.0782318*x**3) for 0 <= x < 1
         // factor = (195766423245049*exponent + 971821376*exponent**2 + 5127*exponent**3 + 2**47)>>48
-        BigInteger bigExponent = BigInteger.valueOf(exponent);
-        BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(bigExponent);
-        factor = factor.add(BigInteger.valueOf(971821376L).multiply(bigExponent.pow(2)));
-        factor = factor.add(BigInteger.valueOf(5127L).multiply(bigExponent.pow(3)));
-        factor = factor.add(BigInteger.valueOf(2L).pow(47));
-        factor = factor.shiftRight(48);
+        long factor = (195766423245049L*exponent + 971821376L*exponent^2 + 5127L*exponent^3 + 2L^47)>> (rbits*3);
+        BigInteger factorBn = BigInteger.valueOf(factor);
+        long targetAddition = (target.longValue() * factor) >> 16;
+        BigInteger targetAdditionBn = BigInteger.valueOf(targetAddition);
         // target += (target * factor) >> 16
-        target = target.add(target.multiply(factor)).shiftRight(16);
+        target = target.add(targetAdditionBn);
         if(target.compareTo(MAX_TARGET) > 0){
             System.out.println("MAX WORK 2");
             return new BigInteger(MAX_BITS_STRING, 16);
         }
 
-        return target;
+        return BigInteger.valueOf(targetToBits(target));
     }
 
     private static BigInteger bitsToTarget(int bits) {
         int size = bits >> 24;
+        boolean isNegative = (bits&0x00800000) != 0;
         assert size <= 0x1d;
 
-        int word = bits & 0x00ffffff;
-        assert 0x8000 <= word;
-        assert word <= 0x7fffff;
-
+        int word = bits & 0x007fffff;
+        BigInteger bn;
         if (size <= 3) {
-            return BigInteger.valueOf(word >> (8 * (3 - size)));
+            word >>= 8 * (3 - size);
+            bn = BigInteger.valueOf(word);
+        } else {
+            bn = BigInteger.valueOf(word);
+            bn = bn.shiftLeft(8 * (size - 3));
         }
-        else {
-            return BigInteger.valueOf(word << (8 * (size - 3)));
+
+        if(isNegative) {
+            bn = bn.negate();
         }
+
+        return bn;
     }
 
     private static int targetToBits(BigInteger target) {
@@ -210,27 +215,25 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
             target = MAX_TARGET;
         }
 
-        int exponent = target.bitLength();
-        int mantissa;
-        if(exponent <= 3) {
-            System.out.println("exponent <= 3");
-            mantissa = target.toByteArray()[0];
-            mantissa <<= (8 * (3 - exponent));
+        int size = target.toByteArray().length;
+        BigInteger mask64 = new BigInteger("ffffffffffffffff", 16);
+        int compact;
+        if(size <= 3) {
+            System.out.println("targetToBits exponent <= 3");
+            compact = (target.and(mask64)).shiftLeft(8 * (3 - size)).intValue();
         } else {
-            System.out.println("exponent > 3");
-            mantissa = target.shiftRight(8*(exponent-3)).toByteArray()[0];
+            System.out.println("targetToBits exponent > 3");
+            compact = (target.shiftRight(8 * (size - 3))).and(mask64).intValue();
         }
 
-        if((mantissa & 0x00800000) != 0) {
-            mantissa >>= 8;
-            exponent += 1;
+        if((compact & 0x00800000) != 0) {
+            compact >>= 8;
+            size += 1;
         }
 
-        int compact = (exponent<<24) | mantissa;
-        if(target.signum() < 0) {
-            compact |= 0x00800000;
-        }
-        return compact;
+        assert compact == (compact & 0x007fffff);
+        assert size < 256;
+        return compact | size << 24;
     }
 
     /**
