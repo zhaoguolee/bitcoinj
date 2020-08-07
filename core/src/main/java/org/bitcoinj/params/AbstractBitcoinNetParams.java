@@ -164,6 +164,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         System.out.println(target.toString(16));
         if(target.equals(BigInteger.ZERO) || target.compareTo(MAX_TARGET) > 0) {
             if(numShifts < 0) {
+                System.out.println("MIN WORK");
                 return BigInteger.valueOf(targetToBits(BigInteger.ONE));
             } else {
                 System.out.println("MAX WORK");

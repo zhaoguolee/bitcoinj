@@ -20,7 +20,8 @@ public class AsertTests {
 
     private enum TimediffIncrType {
         INCR_BY_600S,
-        INCR_BY_EXTRA_HALFLIFE
+        INCR_BY_EXTRA_HALFLIFE,
+        NONE
     }
 
     public long anchorHeight = 1;
@@ -62,18 +63,18 @@ public class AsertTests {
             System.out.println(i + " " + h + " " + t + " " + nextTarget.toString(16));
             switch(this.heightIncrFunction) {
                 case INCR_BY_ONE:
-                    h += heightIncrByOne(h);
+                    h += heightIncrByOne();
                     break;
                 case INCR_BY_288:
-                    h += heightIncrBy288(h);
+                    h += heightIncrBy288();
                     break;
             }
             switch(this.timeDiffFunction) {
                 case INCR_BY_600S:
-                    t += timeIncrBy600s(t);
+                    t += timeIncrBy600s();
                     break;
                 case INCR_BY_EXTRA_HALFLIFE:
-                    t += timeIncrByExtraHalflife(t);
+                    t += timeIncrByExtraHalflife();
                     break;
             }
         }
@@ -90,19 +91,19 @@ public class AsertTests {
         this.timeDiffFunction = timeDiffFunction;
     }
 
-    long heightIncrByOne(long prev_height) {
+    long heightIncrByOne() {
         return 1;
     };
 
-    long heightIncrBy288(long prev_height) {
+    long heightIncrBy288() {
         return 288;
     };
 
-    long timeIncrBy600s(long iteration) {
+    long timeIncrBy600s() {
         return 600;
     }
 
-    long timeIncrByExtraHalflife(long iteration) {
+    long timeIncrByExtraHalflife() {
         return 600 + 2*24*3600;
     }
 
