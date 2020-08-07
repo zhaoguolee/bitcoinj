@@ -28,14 +28,14 @@ public class AsertTests {
     public long anchorTime = 0;
     public int anchorBits = 0;
     public long startHeight = 2;
-    public long startTime = 1200;
+    public long startTime = 0;
     public int iterations = 225;
     public HeightIncrType heightIncrFunction;
     public TimediffIncrType timeDiffFunction;
 
     @Test
     public void run() throws Exception {
-        this.initVariables(1, 0, 0x01010000, 2, 173400, 225, HeightIncrType.INCR_BY_ONE, TimediffIncrType.INCR_BY_EXTRA_HALFLIFE);
+        this.initVariables(1, 0, 0x01010000, 2, 1200 + timeIncrByExtraHalflife(), 225, HeightIncrType.INCR_BY_ONE, TimediffIncrType.INCR_BY_EXTRA_HALFLIFE);
         /**
          * ##   anchor height: 1
          * ##   anchor ancestor time: 0
@@ -58,6 +58,7 @@ public class AsertTests {
         long h = this.startHeight;
         long t = this.startTime;
         for (int i = 1; i <= iterations; ++i) {
+            System.out.println("iteration: " + i);
             BigInteger nextTarget;
             nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, t, h);
             System.out.println(i + " " + h + " " + t + " " + nextTarget.toString(16));
@@ -80,7 +81,7 @@ public class AsertTests {
         }
     }
 
-    private void initVariables(int anchorHeight, long anchorTime, int anchorBits, int startHeight, long startTime, int iterations, HeightIncrType heightIncrFunction, TimediffIncrType timeDiffFunction) {
+    private void initVariables(long anchorHeight, long anchorTime, int anchorBits, long startHeight, long startTime, int iterations, HeightIncrType heightIncrFunction, TimediffIncrType timeDiffFunction) {
         this.anchorHeight = anchorHeight;
         this.anchorTime = anchorTime;
         this.anchorBits = anchorBits;
@@ -104,7 +105,7 @@ public class AsertTests {
     }
 
     long timeIncrByExtraHalflife() {
-        return 600 + 2*24*3600;
+        return 2*24*3600;
     }
 
 }

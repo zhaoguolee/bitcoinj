@@ -142,26 +142,39 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         Preconditions.checkState(evalBlockHeight > referenceBlockHeight);
         long heightDiff = evalBlockHeight - referenceBlockHeight;
         long timeDiff = evalBlockTime - referenceBlockTime;
+        System.out.println("heightDiff: " + heightDiff);
+        System.out.println("timeDiff: " + timeDiff);
         //used by asert. two days in seconds.
-        int halfLife = 2 * 24 * 60 * 60;
-        int rbits = 16;
+        long halfLife = 2L * 24L * 60L * 60L;
+        long rbits = 16L;
 
         //todo
         BigInteger target = bitsToTarget(referenceBlockBits);
 
         //todo
-        int exponent = (int)((timeDiff - TARGET_SPACING * (heightDiff + 1)) << rbits) / halfLife;
+        System.out.println("---exponent calc variables---");
+        System.out.println("timeDiff: " + timeDiff);
+        System.out.println("TARGET_SPACING: " + TARGET_SPACING_LONG);
+        System.out.println("heightDiff: " + heightDiff);
+        System.out.println("rbits: " + rbits);
+        System.out.println("halfLife: " + halfLife);
+        System.out.println("---exponent calc variables---");
+        long exponent = ((timeDiff - TARGET_SPACING_LONG * (heightDiff + 1L)) << rbits) / halfLife;
         System.out.println("exponent: " + exponent);
-        int numShifts = (exponent >> rbits);
+        long numShifts = (exponent >> rbits);
         System.out.println("numShifts: " + numShifts);
         if(numShifts < 0) {
-            target = target.shiftRight(-numShifts);
+            long targetAsLong = target.longValue();
+            long shifted = targetAsLong >> -numShifts;
+            target = BigInteger.valueOf(shifted);
         } else {
-            target = target.shiftLeft(numShifts);
+            long targetAsLong = target.longValue();
+            long shifted = targetAsLong << numShifts;
+            target = BigInteger.valueOf(shifted);
         }
 
         exponent -= (numShifts << rbits);
-        System.out.println(target.toString(16));
+        System.out.println("target: " + target.toString(16));
         if(target.equals(BigInteger.ZERO) || target.compareTo(MAX_TARGET) > 0) {
             if(numShifts < 0) {
                 System.out.println("MIN WORK");
@@ -191,12 +204,14 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         boolean isNegative = (bits&0x00800000) != 0;
         assert size <= 0x1d;
 
-        int word = bits & 0x007fffff;
+        int word = bits & 0x00ffffff;
         BigInteger bn;
         if (size <= 3) {
+            System.out.println("bitsToTarget exponent <= 3");
             word >>= 8 * (3 - size);
             bn = BigInteger.valueOf(word);
         } else {
+            System.out.println("bitsToTarget exponent > 3");
             bn = BigInteger.valueOf(word);
             bn = bn.shiftLeft(8 * (size - 3));
         }
