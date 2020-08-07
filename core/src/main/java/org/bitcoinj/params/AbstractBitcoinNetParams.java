@@ -161,16 +161,12 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         System.out.println("---exponent calc variables---");
         long exponent = ((timeDiff - TARGET_SPACING_LONG * (heightDiff + 1L)) << rbits) / halfLife;
         System.out.println("exponent: " + exponent);
-        long numShifts = (exponent >> rbits);
+        int numShifts = (int)(exponent >> rbits);
         System.out.println("numShifts: " + numShifts);
         if(numShifts < 0) {
-            long targetAsLong = target.longValue();
-            long shifted = targetAsLong >> -numShifts;
-            target = BigInteger.valueOf(shifted);
+            target = target.shiftRight(-numShifts);
         } else {
-            long targetAsLong = target.longValue();
-            long shifted = targetAsLong << numShifts;
-            target = BigInteger.valueOf(shifted);
+            target = target.shiftLeft(numShifts);
         }
 
         exponent -= (numShifts << rbits);
