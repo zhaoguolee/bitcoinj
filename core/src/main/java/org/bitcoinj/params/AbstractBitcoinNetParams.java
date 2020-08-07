@@ -136,11 +136,11 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     /**
      * Compute aserti-2d DAA target
      */
-    public static BigInteger computeAsertTarget(int referenceBlockBits, long referenceBlockTime, int referenceBlockHeight,
-                                           long evalBlockTime, int evalBlockHeight) {
+    public static BigInteger computeAsertTarget(int referenceBlockBits, long referenceBlockTime, long referenceBlockHeight,
+                                           long evalBlockTime, long evalBlockHeight) {
 
         Preconditions.checkState(evalBlockHeight > referenceBlockHeight);
-        int heightDiff = evalBlockHeight - referenceBlockHeight;
+        long heightDiff = evalBlockHeight - referenceBlockHeight;
         long timeDiff = evalBlockTime - referenceBlockTime;
         //used by asert. two days in seconds.
         int halfLife = 2 * 24 * 60 * 60;
@@ -151,8 +151,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
         //todo
         int exponent = (int)((timeDiff - TARGET_SPACING * (heightDiff + 1)) << rbits) / halfLife;
-        int numShifts = exponent >> rbits;
-        System.out.println("Num shifts: " + numShifts);
+        System.out.println("exponent: " + exponent);
+        int numShifts = (exponent >> rbits);
+        System.out.println("numShifts: " + numShifts);
         if(numShifts < 0) {
             target = target.shiftRight(-numShifts);
         } else {
@@ -172,12 +173,10 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
         // 2^x ~= (1 + 0.695502049*x + 0.2262698*x**2 + 0.0782318*x**3) for 0 <= x < 1
         // factor = (195766423245049*exponent + 971821376*exponent**2 + 5127*exponent**3 + 2**47)>>48
-        long factor = (195766423245049L*exponent + 971821376L*exponent^2 + 5127L*exponent^3 + 2L^47)>> (rbits*3);
+        long factor = (195766423245049L*exponent + 971821376L*exponent^2 + 5127L*exponent^3 + 2L^47) >> (rbits*3);
         BigInteger factorBn = BigInteger.valueOf(factor);
-        long targetAddition = (target.longValue() * factor) >> 16;
-        BigInteger targetAdditionBn = BigInteger.valueOf(targetAddition);
         // target += (target * factor) >> 16
-        target = target.add(targetAdditionBn);
+        target = target.add(target.multiply(factorBn).shiftRight(16));
         if(target.compareTo(MAX_TARGET) > 0){
             System.out.println("MAX WORK 2");
             return new BigInteger(MAX_BITS_STRING, 16);
