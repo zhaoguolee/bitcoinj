@@ -111,6 +111,9 @@ public abstract class NetworkParameters {
     protected volatile transient MessageSerializer defaultSerializer = null;
     protected String cashAddrPrefix;
     protected String simpleledgerPrefix;
+    protected int asertReferenceBlockBits;
+    protected BigInteger asertReferenceBlockTime;
+    protected BigInteger asertReferenceBlockHeight;
 
     protected NetworkParameters() {
         alertSigningKey = SATOSHI_KEY;
@@ -365,6 +368,16 @@ public abstract class NetworkParameters {
 
     public int getDAAUpdateHeight(){
         return daaUpdateHeight;
+    }
+
+    public int getAsertReferenceBlockBits(){
+        return asertReferenceBlockBits;
+    }
+    public BigInteger getAsertReferenceBlockTime(){
+        return asertReferenceBlockTime;
+    }
+    public BigInteger getAsertReferenceBlockHeight(){
+        return asertReferenceBlockHeight;
     }
 
     public long getAsertUpdateTime(){

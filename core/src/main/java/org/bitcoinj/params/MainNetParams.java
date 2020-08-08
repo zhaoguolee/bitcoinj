@@ -24,6 +24,8 @@ package org.bitcoinj.params;
         import org.bitcoinj.core.Sha256Hash;
         import org.bitcoinj.core.Utils;
 
+        import java.math.BigInteger;
+
         import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -88,6 +90,9 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         daaUpdateHeight = 504031;
         cashAddrPrefix = "bitcoincash";
         simpleledgerPrefix = "simpleledger";
+        asertReferenceBlockBits = 0x00000000;
+        asertReferenceBlockHeight = BigInteger.ZERO;
+        asertReferenceBlockTime = BigInteger.ZERO;
     }
 
     private static MainNetParams instance;

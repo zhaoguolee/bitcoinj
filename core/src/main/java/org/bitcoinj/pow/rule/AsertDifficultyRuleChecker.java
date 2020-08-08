@@ -48,28 +48,18 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
         checkNextCashWorkRequired(storedPrev, nextBlock, blockStore);
     }
 
-    /**
-     * Compute the next required proof of work using a weighted average of the
-     * estimated hashrate per block.
-     * <p>
-     * Using a weighted average ensure that the timestamp parameter cancels out in
-     * most of the calculation - except for the timestamp of the first and last
-     * block. Because timestamps are the least trustworthy information we have as
-     * input, this ensures the algorithm is more resistant to malicious inputs.
-     */
     private void checkNextCashWorkRequired(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         int prevHeight = storedPrev.getHeight();
         Preconditions.checkState(prevHeight >= networkParameters.getInterval());
 
         try {
             StoredBlock last = GetMostSuitableBlock(storedPrev, blockStore);
-            StoredBlock first = getFirst(storedPrev, blockStore);
-            long evalBlockTime = last.getHeader().getTimeSeconds();
-            long evalBlockHeight = last.getHeight();
-            int referenceBlockBits = first.getHeader().getDifficultyTargetAsInteger().intValue();
-            long referenceBlockTime = first.getHeader().getTimeSeconds();
-            long referenceBlockHeight = first.getHeight();
-            BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(referenceBlockBits, BigInteger.valueOf(referenceBlockTime), BigInteger.valueOf(referenceBlockHeight), BigInteger.valueOf(evalBlockTime), BigInteger.valueOf(evalBlockHeight));
+            BigInteger evalBlockTime = BigInteger.valueOf(last.getHeader().getTimeSeconds());
+            BigInteger evalBlockHeight = BigInteger.valueOf(last.getHeight());
+            int referenceBlockBits = networkParameters.getAsertReferenceBlockBits();
+            BigInteger referenceBlockTime = networkParameters.getAsertReferenceBlockTime();
+            BigInteger referenceBlockHeight = networkParameters.getAsertReferenceBlockHeight();
+            BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(referenceBlockBits, referenceBlockTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
             networkParameters.verifyDifficulty(nextTarget, nextBlock);
         } catch (BlockStoreException x) {
             // We don't have enough blocks, yet
