@@ -91,7 +91,7 @@ public abstract class NetworkParameters {
     // Nov, 15 2018 hard fork
     protected static long november2018ActivationTime = 1542300000L;
     // Nov, 15 2020 hard fork
-    protected long asertUpdateTime = 2526400000L;
+    protected long asertUpdateTime = 1605441600L;
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
      * by looking at the port number.
