@@ -44,7 +44,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     public static final int REWARD_HALVING_INTERVAL = 210000;
     public static final int MAX_BITS = 0x1d00ffff;
     public static final String MAX_BITS_STRING = "1d00ffff";
-    public static final BigInteger MAX_TARGET = bitsToTarget(MAX_BITS);
+    public static final BigInteger MAX_TARGET = Utils.decodeCompactBits(MAX_BITS);
 
     /**
      * The number that is one greater than the largest representable SHA-256
@@ -162,7 +162,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         exponent = exponent.subtract(numShifts.shiftLeft(rbits.intValue()));
         if(target.equals(BigInteger.ZERO) || target.compareTo(MAX_TARGET) > 0) {
             if(numShifts.compareTo(BigInteger.ZERO) < 0) {
-                return BigInteger.valueOf(targetToBits(BigInteger.ONE));
+                return BigInteger.valueOf(Utils.encodeCompactBits(BigInteger.ONE));
             } else {
                 return new BigInteger(MAX_BITS_STRING, 16);
             }
@@ -181,60 +181,13 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
             return new BigInteger(MAX_BITS_STRING, 16);
         }
 
-        return BigInteger.valueOf(targetToBits(target));
+        return BigInteger.valueOf(Utils.encodeCompactBits(target));
     }
 
     public static BigInteger computeAsertTarget(int referenceBlockBits, BigInteger referenceBlockTime, BigInteger referenceBlockHeight,
                                                 BigInteger evalBlockTime, BigInteger evalBlockHeight) {
-        BigInteger refTarget = bitsToTarget(referenceBlockBits);
+        BigInteger refTarget = Utils.decodeCompactBits(referenceBlockBits);
         return computeAsertTarget(refTarget, referenceBlockTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
-    }
-
-    private static BigInteger bitsToTarget(int bits) {
-        int size = bits >> 24;
-        boolean isNegative = (bits&0x00800000) != 0;
-        assert size <= 0x1d;
-
-        int word = bits & 0x00ffffff;
-        BigInteger bn;
-        if (size <= 3) {
-            word >>= 8 * (3 - size);
-            bn = BigInteger.valueOf(word);
-        } else {
-            bn = BigInteger.valueOf(word);
-            bn = bn.shiftLeft(8 * (size - 3));
-        }
-
-        if(isNegative) {
-            bn = bn.negate();
-        }
-
-        return bn;
-    }
-
-    private static int targetToBits(BigInteger target) {
-        assert target.compareTo(BigInteger.ZERO) > 0;
-        if(target.compareTo(MAX_TARGET) > 0) {
-            target = MAX_TARGET;
-        }
-
-        int size = target.toByteArray().length;
-        BigInteger mask64 = new BigInteger("ffffffffffffffff", 16);
-        int compact;
-        if(size <= 3) {
-            compact = (target.and(mask64)).shiftLeft(8 * (3 - size)).intValue();
-        } else {
-            compact = (target.shiftRight(8 * (size - 3))).and(mask64).intValue();
-        }
-
-        if((compact & 0x00800000) != 0) {
-            compact >>= 8;
-            size += 1;
-        }
-
-        assert compact == (compact & 0x007fffff);
-        assert size < 256;
-        return compact | size << 24;
     }
 
     /**
