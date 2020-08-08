@@ -241,6 +241,18 @@ public abstract class NetworkParameters {
                     Long.toHexString(newTargetCompact) + " vs " + Long.toHexString(receivedTargetCompact));
     }
 
+    public void verifyAsertDifficulty(BigInteger newTarget, Block nextBlock)
+    {
+        if (newTarget.compareTo(this.getMaxTarget()) > 0) {
+            newTarget = this.getMaxTarget();
+        }
+
+        BigInteger receivedTarget = Utils.decodeCompactBits(nextBlock.getDifficultyTarget());
+        if (!newTarget.equals(receivedTarget))
+            throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
+                    receivedTarget.toString(16) + " vs " + receivedTarget.toString(16));
+    }
+
     /**
      * Returns true if the block height is either not a checkpoint, or is a checkpoint and the hash matches.
      */

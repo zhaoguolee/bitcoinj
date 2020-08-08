@@ -60,7 +60,7 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
             BigInteger referenceBlockTime = networkParameters.getAsertReferenceBlockTime();
             BigInteger referenceBlockHeight = networkParameters.getAsertReferenceBlockHeight();
             BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(referenceBlockBits, referenceBlockTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
-            networkParameters.verifyDifficulty(nextTarget, nextBlock);
+            networkParameters.verifyAsertDifficulty(nextTarget, nextBlock);
         } catch (BlockStoreException x) {
             // We don't have enough blocks, yet
         }
