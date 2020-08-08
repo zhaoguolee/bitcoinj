@@ -986,7 +986,6 @@ public class Transaction extends ChildMessage {
     }
 
 
-
     /**
      * Calculates a signature that is valid for being inserted into the input at the given position. This is simply
      * a wrapper around calling {@link Transaction#hashForSignature(int, byte[], Transaction.SigHash, boolean)}
