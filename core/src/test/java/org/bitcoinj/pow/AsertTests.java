@@ -26,51 +26,50 @@ public class AsertTests {
         NONE
     }
 
-    public long anchorHeight = 1;
-    public long anchorTime = 0;
+    public BigInteger anchorHeight = BigInteger.ZERO;
+    public BigInteger anchorTime = BigInteger.ZERO;
     public int anchorBits = 0;
-    public long startHeight = 2;
-    public long startTime = 0;
+    public BigInteger startHeight = BigInteger.ZERO;
+    public BigInteger startTime = BigInteger.ZERO;
     public int iterations = 225;
     public HeightIncrType heightIncrFunction;
     public TimediffIncrType timeDiffFunction;
 
     @Test
     public void run() throws Exception {
-        //todo convert all longs into bigintegers. this run is run10, which fails.
-        this.initVariables(9223372036854775802L, 2147483047L, 0x1802aee8, 9223372036854775803L, 2147484547L, 10, HeightIncrType.INCR_BY_ONE, TimediffIncrType.INCR_BY_900S);
-        long h = this.startHeight;
-        long t = this.startTime;
+        this.initVariables(BigInteger.valueOf(1), BigInteger.valueOf(0), 0x01010000, BigInteger.valueOf(2), BigInteger.valueOf(174000), 225, HeightIncrType.INCR_BY_ONE, TimediffIncrType.INCR_BY_EXTRA_HALFLIFE);
+        BigInteger h = this.startHeight;
+        BigInteger t = this.startTime;
         for (int i = 1; i <= iterations; ++i) {
             BigInteger nextTarget;
             nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, t, h);
             System.out.println(i + " " + h + " " + t + " " + nextTarget.toString(16));
             switch(this.heightIncrFunction) {
                 case INCR_BY_ONE:
-                    h += heightIncrByOne();
+                    h = h.add(BigInteger.ONE);
                     break;
                 case INCR_BY_288:
-                    h += heightIncrBy288();
+                    h = h.add(BigInteger.valueOf(288));
                     break;
             }
             switch(this.timeDiffFunction) {
                 case INCR_BY_300S:
-                    t += timeIncrBy300s();
+                    t = t.add(BigInteger.valueOf(300));
                     break;
                 case INCR_BY_600S:
-                    t += timeIncrBy600s();
+                    t = t.add(BigInteger.valueOf(600));
                     break;
                 case INCR_BY_900S:
-                    t += timeIncrBy900s();
+                    t = t.add(BigInteger.valueOf(900));
                     break;
                 case INCR_BY_EXTRA_HALFLIFE:
-                    t += timeIncrByExtraHalflife();
+                    t = t.add(timeIncrByExtraHalflife());
                     break;
             }
         }
     }
 
-    private void initVariables(long anchorHeight, long anchorTime, int anchorBits, long startHeight, long startTime, int iterations, HeightIncrType heightIncrFunction, TimediffIncrType timeDiffFunction) {
+    private void initVariables(BigInteger anchorHeight, BigInteger anchorTime, int anchorBits, BigInteger startHeight, BigInteger startTime, int iterations, HeightIncrType heightIncrFunction, TimediffIncrType timeDiffFunction) {
         this.anchorHeight = anchorHeight;
         this.anchorTime = anchorTime;
         this.anchorBits = anchorBits;
@@ -81,28 +80,8 @@ public class AsertTests {
         this.timeDiffFunction = timeDiffFunction;
     }
 
-    long heightIncrByOne() {
-        return 1;
-    };
-
-    long heightIncrBy288() {
-        return 288;
-    };
-
-    long timeIncrBy300s() {
-        return 300;
-    }
-
-    long timeIncrBy600s() {
-        return 600;
-    }
-
-    long timeIncrBy900s() {
-        return 900;
-    }
-
-    long timeIncrByExtraHalflife() {
-        return 600 + 2*24*3600;
+    private BigInteger timeIncrByExtraHalflife() {
+        return BigInteger.valueOf(600 + 2*24*3600);
     }
 
 }

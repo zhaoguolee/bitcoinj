@@ -136,29 +136,32 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     /**
      * Compute aserti-2d DAA target
      */
-    public static BigInteger computeAsertTarget(int referenceBlockBits, long referenceBlockTime, long referenceBlockHeight,
-                                           long evalBlockTime, long evalBlockHeight) {
-        //todo convert all longs into BigIntegers
-        Preconditions.checkState(evalBlockHeight > referenceBlockHeight);
-        long heightDiff = evalBlockHeight - referenceBlockHeight;
-        long timeDiff = evalBlockTime - referenceBlockTime;
+    public static BigInteger computeAsertTarget(BigInteger refTarget, BigInteger referenceBlockTime, BigInteger referenceBlockHeight,
+                                                BigInteger evalBlockTime, BigInteger evalBlockHeight) {
+        Preconditions.checkState(evalBlockHeight.compareTo(referenceBlockHeight) > 0);
+        BigInteger heightDiff = evalBlockHeight.subtract(referenceBlockHeight);
+        BigInteger timeDiff = evalBlockTime.subtract(referenceBlockTime);
         //used by asert. two days in seconds.
-        long halfLife = 2L * 24L * 60L * 60L;
-        long rbits = 16L;
+        BigInteger halfLife = BigInteger.valueOf(2L * 24L * 60L * 60L);
+        BigInteger rbits = BigInteger.valueOf(16L);
 
-        BigInteger target = bitsToTarget(referenceBlockBits);
-
-        long exponent = ((timeDiff - TARGET_SPACING_LONG * (heightDiff + 1L)) << rbits) / halfLife;
-        int numShifts = (int)(exponent >> rbits);
-        if(numShifts < 0) {
-            target = target.shiftRight(-numShifts);
+        BigInteger target = refTarget;
+        BigInteger exponent;
+        BigInteger heightDiffWithOffset = heightDiff.add(BigInteger.ONE);
+        BigInteger targetHeightOffsetMultiple = TARGET_SPACING_BIGINT.multiply(heightDiffWithOffset);
+        exponent = timeDiff.subtract(targetHeightOffsetMultiple);
+        exponent = exponent.shiftLeft(rbits.intValue());
+        exponent = exponent.divide(halfLife);
+        BigInteger numShifts = exponent.shiftRight(rbits.intValue());
+        if(numShifts.compareTo(BigInteger.ZERO) < 0) {
+            target = target.shiftRight(-numShifts.intValue());
         } else {
-            target = target.shiftLeft(numShifts);
+            target = target.shiftLeft(numShifts.intValue());
         }
 
-        exponent -= (numShifts << rbits);
+        exponent = exponent.subtract(numShifts.shiftLeft(rbits.intValue()));
         if(target.equals(BigInteger.ZERO) || target.compareTo(MAX_TARGET) > 0) {
-            if(numShifts < 0) {
+            if(numShifts.compareTo(BigInteger.ZERO) < 0) {
                 return BigInteger.valueOf(targetToBits(BigInteger.ONE));
             } else {
                 return new BigInteger(MAX_BITS_STRING, 16);
@@ -167,10 +170,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
         // 2^x ~= (1 + 0.695502049*x + 0.2262698*x**2 + 0.0782318*x**3) for 0 <= x < 1
         // factor = (195766423245049*exponent + 971821376*exponent**2 + 5127*exponent**3 + 2**47)>>48
-        BigInteger bigExponent = BigInteger.valueOf(exponent);
-        BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(bigExponent);
-        factor = factor.add(BigInteger.valueOf(971821376L).multiply(bigExponent.pow(2)));
-        factor = factor.add(BigInteger.valueOf(5127L).multiply(bigExponent.pow(3)));
+        BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(exponent);
+        factor = factor.add(BigInteger.valueOf(971821376L).multiply(exponent.pow(2)));
+        factor = factor.add(BigInteger.valueOf(5127L).multiply(exponent.pow(3)));
         factor = factor.add(BigInteger.valueOf(2L).pow(47));
         factor = factor.shiftRight(48);
         // target += (target * factor) >> 16
@@ -180,6 +182,12 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         }
 
         return BigInteger.valueOf(targetToBits(target));
+    }
+
+    public static BigInteger computeAsertTarget(int referenceBlockBits, BigInteger referenceBlockTime, BigInteger referenceBlockHeight,
+                                                BigInteger evalBlockTime, BigInteger evalBlockHeight) {
+        BigInteger refTarget = bitsToTarget(referenceBlockBits);
+        return computeAsertTarget(refTarget, referenceBlockTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
     }
 
     private static BigInteger bitsToTarget(int bits) {
