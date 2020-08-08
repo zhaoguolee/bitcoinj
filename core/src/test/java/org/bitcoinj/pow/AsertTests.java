@@ -19,7 +19,9 @@ public class AsertTests {
     }
 
     private enum TimediffIncrType {
+        INCR_BY_300S,
         INCR_BY_600S,
+        INCR_BY_900S,
         INCR_BY_EXTRA_HALFLIFE,
         NONE
     }
@@ -35,30 +37,11 @@ public class AsertTests {
 
     @Test
     public void run() throws Exception {
-        this.initVariables(1, 0, 0x01010000, 2, 1200 + timeIncrByExtraHalflife(), 225, HeightIncrType.INCR_BY_ONE, TimediffIncrType.INCR_BY_EXTRA_HALFLIFE);
-        /**
-         * ##   anchor height: 1
-         * ##   anchor ancestor time: 0
-         * ##   anchor nBits: 0x1d00ffff
-         * ##   start height: 2
-         * ##   start time: 1200
-         * ##   iterations: 10
-         * # iteration,height,time,target
-         * 1 2 1200 0x1d00ffff
-         * 2 3 1800 0x1d00ffff
-         * 3 4 2400 0x1d00ffff
-         * 4 5 3000 0x1d00ffff
-         * 5 6 3600 0x1d00ffff
-         * 6 7 4200 0x1d00ffff
-         * 7 8 4800 0x1d00ffff
-         * 8 9 5400 0x1d00ffff
-         * 9 10 6000 0x1d00ffff
-         * 10 11 6600 0x1d00ffff
-         */
+        //todo convert all longs into bigintegers. this run is run10, which fails.
+        this.initVariables(9223372036854775802L, 2147483047L, 0x1802aee8, 9223372036854775803L, 2147484547L, 10, HeightIncrType.INCR_BY_ONE, TimediffIncrType.INCR_BY_900S);
         long h = this.startHeight;
         long t = this.startTime;
         for (int i = 1; i <= iterations; ++i) {
-            System.out.println("iteration: " + i);
             BigInteger nextTarget;
             nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, t, h);
             System.out.println(i + " " + h + " " + t + " " + nextTarget.toString(16));
@@ -71,8 +54,14 @@ public class AsertTests {
                     break;
             }
             switch(this.timeDiffFunction) {
+                case INCR_BY_300S:
+                    t += timeIncrBy300s();
+                    break;
                 case INCR_BY_600S:
                     t += timeIncrBy600s();
+                    break;
+                case INCR_BY_900S:
+                    t += timeIncrBy900s();
                     break;
                 case INCR_BY_EXTRA_HALFLIFE:
                     t += timeIncrByExtraHalflife();
@@ -100,12 +89,20 @@ public class AsertTests {
         return 288;
     };
 
+    long timeIncrBy300s() {
+        return 300;
+    }
+
     long timeIncrBy600s() {
         return 600;
     }
 
+    long timeIncrBy900s() {
+        return 900;
+    }
+
     long timeIncrByExtraHalflife() {
-        return 2*24*3600;
+        return 600 + 2*24*3600;
     }
 
 }
