@@ -247,7 +247,7 @@ public abstract class NetworkParameters {
             newTarget = this.getMaxTarget();
         }
 
-        BigInteger receivedTarget = Utils.decodeCompactBits(nextBlock.getDifficultyTarget());
+        BigInteger receivedTarget = nextBlock.getDifficultyTargetAsInteger();
         if (!newTarget.equals(receivedTarget))
             throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
                     receivedTarget.toString(16) + " vs " + receivedTarget.toString(16));
