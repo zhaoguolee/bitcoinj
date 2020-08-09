@@ -37,8 +37,6 @@ import java.math.BigInteger;
  */
 public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
 
-    private static final int AVERAGE_BLOCKS_PER_DAY = 144;
-
     public AsertDifficultyRuleChecker(NetworkParameters networkParameters) {
         super(networkParameters);
     }
@@ -69,18 +67,22 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
     }
 
     private StoredBlock getAsertReferenceBlock(StoredBlock storedPrev, BlockStore blockStore) throws BlockStoreException {
+        StoredBlock bestAsertCandidate = storedPrev;
+        StoredBlock prev = storedPrev;
         while(true) {
-            StoredBlock prev = storedPrev.getPrev(blockStore);
-            if(!isAsertActivated(prev, blockStore, networkParameters)) {
-                return prev;
+            if(isAsertMtp(prev, blockStore, networkParameters)) {
+                bestAsertCandidate = prev;
+                prev = prev.getPrev(blockStore);
+            } else if(!isAsertMtp(prev, blockStore, networkParameters)) {
+                return bestAsertCandidate;
             }
         }
     }
 
-    private boolean isAsertActivated(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
+    private boolean isAsertMtp(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
         try {
             long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
-            return mtp > parameters.getAsertUpdateTime();
+            return mtp >= parameters.getAsertUpdateTime();
         } catch (BlockStoreException e) {
             e.printStackTrace();
         }
