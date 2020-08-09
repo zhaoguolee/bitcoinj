@@ -93,6 +93,10 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         return ((storedPrev.getHeight() + 1) % parameters.getInterval()) == 0;
     }
 
+    public static boolean isDifficultyTransitionPoint(int height, NetworkParameters parameters) {
+        return ((height + 1) % parameters.getInterval()) == 0;
+    }
+
     /**
      * determines whether monolith upgrade is activated based on MTP
      * @param storedPrev The previous stored block
@@ -160,6 +164,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         //used by asert. two days in seconds.
         BigInteger halfLife = BigInteger.valueOf(2L * 24L * 60L * 60L);
         BigInteger rbits = BigInteger.valueOf(16L);
+        BigInteger radix = BigInteger.ONE.shiftLeft(rbits.intValue());
 
         BigInteger target = refTarget;
         BigInteger exponent;
@@ -169,31 +174,27 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         exponent = exponent.shiftLeft(rbits.intValue());
         exponent = exponent.divide(halfLife);
         BigInteger numShifts = exponent.shiftRight(rbits.intValue());
+        exponent = exponent.subtract(numShifts.shiftLeft(rbits.intValue()));
+
+        BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(exponent);
+        factor = factor.add(BigInteger.valueOf(971821376L).multiply(exponent.pow(2)));
+        factor = factor.add(BigInteger.valueOf(5127L).multiply(exponent.pow(3)));
+        factor = factor.add(BigInteger.valueOf(2L).pow(47));
+        factor = factor.shiftRight(48);
+        target = target.multiply(radix.add(factor));
+
         if(numShifts.compareTo(BigInteger.ZERO) < 0) {
             target = target.shiftRight(-numShifts.intValue());
         } else {
             target = target.shiftLeft(numShifts.intValue());
         }
 
-        exponent = exponent.subtract(numShifts.shiftLeft(rbits.intValue()));
-        if(target.equals(BigInteger.ZERO) || target.compareTo(MAX_TARGET) > 0) {
-            if(numShifts.compareTo(BigInteger.ZERO) < 0) {
-                return BigInteger.valueOf(Utils.encodeCompactBits(BigInteger.ONE));
-            } else {
-                return new BigInteger(MAX_BITS_STRING, 16);
-            }
-        }
+        target = target.shiftRight(16);
 
-        // 2^x ~= (1 + 0.695502049*x + 0.2262698*x**2 + 0.0782318*x**3) for 0 <= x < 1
-        // factor = (195766423245049*exponent + 971821376*exponent**2 + 5127*exponent**3 + 2**47)>>48
-        BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(exponent);
-        factor = factor.add(BigInteger.valueOf(971821376L).multiply(exponent.pow(2)));
-        factor = factor.add(BigInteger.valueOf(5127L).multiply(exponent.pow(3)));
-        factor = factor.add(BigInteger.valueOf(2L).pow(47));
-        factor = factor.shiftRight(48);
-        // target += (target * factor) >> 16
-        target = target.add(target.multiply(factor).shiftRight(16));
-        if(target.compareTo(MAX_TARGET) > 0){
+        if(target.equals(BigInteger.ZERO)) {
+            return BigInteger.valueOf(Utils.encodeCompactBits(BigInteger.ONE));
+        }
+        if(target.compareTo(MAX_TARGET) > 0) {
             return new BigInteger(MAX_BITS_STRING, 16);
         }
 

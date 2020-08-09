@@ -37,13 +37,13 @@ public class AsertTests {
 
     @Test
     public void run() throws Exception {
-        this.initVariables(BigInteger.valueOf(1), BigInteger.valueOf(0), 0x01010000, BigInteger.valueOf(2), BigInteger.valueOf(174000), 225, HeightIncrType.INCR_BY_ONE, TimediffIncrType.INCR_BY_EXTRA_HALFLIFE);
+        this.initVariables(BigInteger.valueOf(1), BigInteger.valueOf(0), 0x1d00ffff, BigInteger.valueOf(2), BigInteger.valueOf(0), 225, HeightIncrType.INCR_BY_288, TimediffIncrType.NONE);
         BigInteger h = this.startHeight;
         BigInteger t = this.startTime;
         for (int i = 1; i <= iterations; ++i) {
             BigInteger nextTarget;
             nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, t, h);
-            System.out.println(i + " " + h + " " + t + " " + nextTarget.toString(16));
+            System.out.println(i + " " + h + " " + t + " " + (nextTarget.toString(16).length() == 7 ? ("0x0" + nextTarget.toString(16)) : "0x" + nextTarget.toString(16)));
             switch(this.heightIncrFunction) {
                 case INCR_BY_ONE:
                     h = h.add(BigInteger.ONE);
