@@ -131,16 +131,4 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
         // We should have our candidate in the middle now.
         return blocks[1];
     }
-
-    private StoredBlock getFirst(StoredBlock storedPrev, BlockStore blockStore) throws BlockStoreException {
-        StoredBlock first = storedPrev;
-        for (int i = AVERAGE_BLOCKS_PER_DAY; i > 0; --i) {
-            first = first.getPrev(blockStore);
-            if (first == null) {
-                throw new BlockStoreException("The previous block no longer exists");
-            }
-        }
-        return GetMostSuitableBlock(first, blockStore);
-    }
-
 }
