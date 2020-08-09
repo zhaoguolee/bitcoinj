@@ -69,7 +69,7 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
     private boolean isAsertActivated(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
         try {
             long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
-            return mtp >= parameters.getAsertUpdateTime();
+            return mtp > parameters.getAsertUpdateTime();
         } catch (BlockStoreException e) {
             e.printStackTrace();
         }

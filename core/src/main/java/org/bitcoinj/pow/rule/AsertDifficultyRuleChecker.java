@@ -53,17 +53,38 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
         Preconditions.checkState(prevHeight >= networkParameters.getInterval());
 
         try {
+            StoredBlock asertReferenceBlock = getAsertReferenceBlock(storedPrev, blockStore);
             StoredBlock last = GetMostSuitableBlock(storedPrev, blockStore);
             BigInteger evalBlockTime = BigInteger.valueOf(last.getHeader().getTimeSeconds());
             BigInteger evalBlockHeight = BigInteger.valueOf(last.getHeight());
-            int referenceBlockBits = networkParameters.getAsertReferenceBlockBits();
-            BigInteger referenceBlockTime = networkParameters.getAsertReferenceBlockTime();
-            BigInteger referenceBlockHeight = networkParameters.getAsertReferenceBlockHeight();
+            BigInteger referenceBlockBitsBigInteger = BigInteger.valueOf(Utils.encodeCompactBits(asertReferenceBlock.getHeader().getDifficultyTargetAsInteger()));
+            int referenceBlockBits = referenceBlockBitsBigInteger.intValue();
+            BigInteger referenceBlockTime = BigInteger.valueOf(asertReferenceBlock.getHeader().getTimeSeconds());
+            BigInteger referenceBlockHeight = BigInteger.valueOf(asertReferenceBlock.getHeight());
             BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(referenceBlockBits, referenceBlockTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
             networkParameters.verifyAsertDifficulty(nextTarget, nextBlock);
         } catch (BlockStoreException x) {
             // We don't have enough blocks, yet
         }
+    }
+
+    private StoredBlock getAsertReferenceBlock(StoredBlock storedPrev, BlockStore blockStore) throws BlockStoreException {
+        while(true) {
+            StoredBlock prev = storedPrev.getPrev(blockStore);
+            if(!isAsertActivated(prev, blockStore, networkParameters)) {
+                return prev;
+            }
+        }
+    }
+
+    private boolean isAsertActivated(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
+        try {
+            long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
+            return mtp > parameters.getAsertUpdateTime();
+        } catch (BlockStoreException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     /**
