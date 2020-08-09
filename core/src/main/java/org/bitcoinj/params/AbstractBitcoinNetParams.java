@@ -217,6 +217,16 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         return medianTimePast >= parameters.getMonolithActivationTime();
     }
 
+    public static boolean isAsertEnabled(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
+        try {
+            long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
+            return mtp >= parameters.getAsertUpdateTime();
+        } catch (BlockStoreException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     @Override
     public Coin getMaxMoney() {
         return MAX_MONEY;

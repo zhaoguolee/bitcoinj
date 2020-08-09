@@ -70,23 +70,13 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
         StoredBlock bestAsertCandidate = storedPrev;
         StoredBlock prev = storedPrev;
         while(true) {
-            if(isAsertMtp(prev, blockStore, networkParameters)) {
+            if(AbstractBitcoinNetParams.isAsertEnabled(prev, blockStore, networkParameters)) {
                 bestAsertCandidate = prev;
                 prev = prev.getPrev(blockStore);
-            } else if(!isAsertMtp(prev, blockStore, networkParameters)) {
+            } else if(!AbstractBitcoinNetParams.isAsertEnabled(prev, blockStore, networkParameters)) {
                 return bestAsertCandidate;
             }
         }
-    }
-
-    private boolean isAsertMtp(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
-        try {
-            long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
-            return mtp >= parameters.getAsertUpdateTime();
-        } catch (BlockStoreException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     /**

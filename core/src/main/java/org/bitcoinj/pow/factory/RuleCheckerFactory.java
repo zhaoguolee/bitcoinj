@@ -20,6 +20,7 @@ import org.bitcoinj.core.Block;
 import org.bitcoinj.core.BlockChain;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.params.AbstractBitcoinNetParams;
 import org.bitcoinj.pow.AbstractRuleCheckerFactory;
 import org.bitcoinj.pow.RulesPoolChecker;
 import org.bitcoinj.pow.rule.RegTestRuleChecker;
@@ -53,7 +54,7 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
     public RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         if (NetworkParameters.ID_REGTEST.equals(networkParameters.getId())) {
             return this.regtestChecker;
-        } else if(isAsertActivated(storedPrev, blockStore, networkParameters)) {
+        } else if(AbstractBitcoinNetParams.isAsertEnabled(storedPrev, blockStore, networkParameters)) {
             return asertRulesFactory.getRuleChecker(storedPrev, nextBlock, blockStore);
         } else if (isNewDaaActivated(storedPrev, networkParameters)) {
             return daaRulesFactory.getRuleChecker(storedPrev, nextBlock, blockStore);
@@ -64,15 +65,5 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
 
     private boolean isNewDaaActivated(StoredBlock storedPrev, NetworkParameters parameters) {
         return storedPrev.getHeight() >= parameters.getDAAUpdateHeight();
-    }
-
-    private boolean isAsertActivated(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
-        try {
-            long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
-            return mtp >= parameters.getAsertUpdateTime();
-        } catch (BlockStoreException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 }
