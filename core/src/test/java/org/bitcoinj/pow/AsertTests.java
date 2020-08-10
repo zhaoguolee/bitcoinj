@@ -21,11 +21,7 @@ public class AsertTests {
         int anchorBits = 0x1d00ffff;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -34,11 +30,7 @@ public class AsertTests {
         int anchorBits = 0x1a2b3c4d;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -47,11 +39,7 @@ public class AsertTests {
         int anchorBits = 0x01010000;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -60,11 +48,7 @@ public class AsertTests {
         int anchorBits = 0x01010000;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -73,11 +57,7 @@ public class AsertTests {
         int anchorBits = 0x1d00ffff;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -86,11 +66,7 @@ public class AsertTests {
         int anchorBits = 0x1802aee8;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -99,11 +75,7 @@ public class AsertTests {
         int anchorBits = 0x1802aee8;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -112,11 +84,7 @@ public class AsertTests {
         int anchorBits = 0x1802aee8;
         BigInteger anchorTime = BigInteger.ZERO;
         BigInteger anchorHeight = BigInteger.ONE;
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -125,11 +93,7 @@ public class AsertTests {
         int anchorBits = 0x1802aee8;
         BigInteger anchorTime = BigInteger.valueOf(1234567290);
         BigInteger anchorHeight = BigInteger.valueOf(2147483642);
-        for(TestVector testVector : tests) {
-            BigInteger nextTarget;
-            nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
-            assert nextTarget.intValue() == testVector.bits;
-        }
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
     }
 
     @Test
@@ -138,6 +102,10 @@ public class AsertTests {
         int anchorBits = 0x1802aee8;
         BigInteger anchorTime = BigInteger.valueOf(2147483047);
         BigInteger anchorHeight = BigInteger.valueOf(9223372036854775802L);
+        runCalculations(tests, anchorBits, anchorTime, anchorHeight);
+    }
+
+    private void runCalculations(ArrayList<TestVector> tests, int anchorBits, BigInteger anchorTime, BigInteger anchorHeight) {
         for(TestVector testVector : tests) {
             BigInteger nextTarget;
             nextTarget = AbstractBitcoinNetParams.computeAsertTarget(anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
