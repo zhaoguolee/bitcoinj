@@ -47,14 +47,10 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
     }
 
     private void checkNextCashWorkRequired(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
-        int prevHeight = storedPrev.getHeight();
-        Preconditions.checkState(prevHeight >= networkParameters.getInterval());
-
         try {
             StoredBlock asertReferenceBlock = getAsertReferenceBlock(storedPrev, blockStore);
-            StoredBlock last = GetMostSuitableBlock(storedPrev, blockStore);
-            BigInteger evalBlockTime = BigInteger.valueOf(last.getHeader().getTimeSeconds());
-            BigInteger evalBlockHeight = BigInteger.valueOf(last.getHeight());
+            BigInteger evalBlockTime = BigInteger.valueOf(storedPrev.getHeader().getTimeSeconds());
+            BigInteger evalBlockHeight = BigInteger.valueOf(storedPrev.getHeight());
             BigInteger referenceBlockBitsBigInteger = BigInteger.valueOf(Utils.encodeCompactBits(asertReferenceBlock.getHeader().getDifficultyTargetAsInteger()));
             int referenceBlockBits = referenceBlockBitsBigInteger.intValue();
             BigInteger referenceBlockTime = BigInteger.valueOf(asertReferenceBlock.getHeader().getTimeSeconds());
@@ -77,50 +73,5 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
                 return bestAsertCandidate;
             }
         }
-    }
-
-    /**
-     * To reduce the impact of timestamp manipulation, we select the block we are
-     * basing our computation on via a median of 3.
-     */
-    private StoredBlock GetMostSuitableBlock(StoredBlock pindex, BlockStore blockStore) throws BlockStoreException {
-        /**
-         * In order to avoid a block is a very skewed timestamp to have too much
-         * influence, we select the median of the 3 top most blocks as a starting
-         * point.
-         */
-        StoredBlock blocks[] = new StoredBlock[3];
-        blocks[2] = pindex;
-        blocks[1] = pindex.getPrev(blockStore);
-        if(blocks[1] == null)
-            throw new BlockStoreException("Not enough blocks in blockStore to calculate difficulty");
-        blocks[0] = blocks[1].getPrev(blockStore);
-        if(blocks[0] == null)
-            throw new BlockStoreException("Not enough blocks in blockStore to calculate difficulty");
-
-        // Sorting network.
-        if (blocks[0].getHeader().getTimeSeconds() > blocks[2].getHeader().getTimeSeconds()) {
-            //std::swap(blocks[0], blocks[2]);
-            StoredBlock temp = blocks[0];
-            blocks[0] = blocks[2];
-            blocks[2] = temp;
-        }
-
-        if (blocks[0].getHeader().getTimeSeconds() > blocks[1].getHeader().getTimeSeconds()) {
-            //std::swap(blocks[0], blocks[1]);
-            StoredBlock temp = blocks[0];
-            blocks[0] = blocks[1];
-            blocks[1] = temp;
-        }
-
-        if (blocks[1].getHeader().getTimeSeconds() > blocks[2].getHeader().getTimeSeconds()) {
-            //std::swap(blocks[1], blocks[2]);
-            StoredBlock temp = blocks[1];
-            blocks[1] = blocks[2];
-            blocks[2] = temp;
-        }
-
-        // We should have our candidate in the middle now.
-        return blocks[1];
     }
 }
