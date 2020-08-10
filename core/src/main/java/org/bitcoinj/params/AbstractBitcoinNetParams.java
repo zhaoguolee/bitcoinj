@@ -232,9 +232,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         return MAX_MONEY;
     }
 
-    /** @deprecated use {@link TransactionOutput#getMinNonDustValue()} */
     @Override
-    @Deprecated
     public Coin getMinNonDustOutput() {
         return Transaction.MIN_NONDUST_OUTPUT;
     }

@@ -79,6 +79,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
                 "seed.bchd.cash",
                 "btccash-seeder.bitcoinunlimited.info"
         };
+
         httpSeeds = null;
         addrSeeds = null;
 
@@ -88,6 +89,8 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         daaUpdateHeight = 504031;
         cashAddrPrefix = "bitcoincash";
         simpleledgerPrefix = "simpleledger";
+
+        //This is for future use after the hardfork happens. I intend to hardcode the ASERT reference/anchor block data.
         asertReferenceBlockBits = 0x00000000;
         asertReferenceBlockHeight = BigInteger.ZERO;
         asertReferenceBlockTime = BigInteger.ZERO;
