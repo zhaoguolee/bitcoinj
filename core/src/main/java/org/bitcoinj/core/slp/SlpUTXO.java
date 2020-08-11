@@ -10,11 +10,11 @@ public class SlpUTXO {
     }
 
     private String tokenId;
-    private double tokenAmount;
+    private long tokenAmount;
     private TransactionOutput txUtxo;
     private SlpUtxoType slpUtxoType;
 
-    public SlpUTXO(String tokenId, double tokenAmount, TransactionOutput txUtxo, SlpUtxoType slpUtxoType) {
+    public SlpUTXO(String tokenId, long rawAmount, TransactionOutput txUtxo, SlpUtxoType slpUtxoType) {
         this.tokenId = tokenId;
         this.tokenAmount = tokenAmount;
         this.txUtxo = txUtxo;

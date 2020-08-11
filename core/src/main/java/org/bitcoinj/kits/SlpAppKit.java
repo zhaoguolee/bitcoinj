@@ -53,10 +53,10 @@ public class SlpAppKit extends AbstractIdleService {
     private File tokensFile;
     private DownloadProgressTracker progressTracker;
     private long MIN_DUST = 546L;
-    private ArrayList<SlpUTXO> slpUtxos = new ArrayList<SlpUTXO>();
-    private ArrayList<SlpToken> slpTokens = new ArrayList<SlpToken>();
-    private ArrayList<SlpTokenBalance> slpBalances = new ArrayList<SlpTokenBalance>();
-    private ArrayList<String> verifiedSlpTxs = new ArrayList<String>();
+    private ArrayList<SlpUTXO> slpUtxos = new ArrayList<>();
+    private ArrayList<SlpToken> slpTokens = new ArrayList<>();
+    private ArrayList<SlpTokenBalance> slpBalances = new ArrayList<>();
+    private ArrayList<String> verifiedSlpTxs = new ArrayList<>();
     private SlpDbProcessor slpDbProcessor;
     private InputStream checkpoints;
     private NetworkParameters params;
@@ -407,7 +407,7 @@ public class SlpAppKit extends AbstractIdleService {
                         String tokenType = new String(Hex.encode(tokenTypeChunk.data), StandardCharsets.UTF_8);
                         if (tokenType.equals("01")) {
                             SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getHashAsString());
-                            boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded(), tx.getHashAsString());
+                            boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded());
                             if (valid) {
                                 this.verifiedSlpTxs.add(tx.getHashAsString());
                                 this.saveVerifiedTxs(this.verifiedSlpTxs);
@@ -443,9 +443,36 @@ public class SlpAppKit extends AbstractIdleService {
     public void recalculateSlpUtxos() {
         this.slpUtxos.clear();
         this.slpBalances.clear();
-        List<TransactionOutput> utxos = this.wallet.getAllDustUtxos(false, true);
+        List<TransactionOutput> utxos = this.wallet.getAllDustUtxos(false, false);
         for (TransactionOutput utxo : utxos) {
             Transaction tx = utxo.getParentTransaction();
+            if(tx != null) {
+                if (SlpTransaction.isSlpTx(tx)) {
+                    if(!hasTransactionBeenRecorded(tx.getTxId().toString())) {
+                        SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getTxId().toString());
+                        boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded());
+                        if(valid) {
+                            SlpTransaction slpTx = new SlpTransaction(tx);
+                            slpUtxos.addAll(slpTx.getSlpUtxos());
+                            verifiedSlpTxs.add(slpTx.getTxIdAsString());
+                            String tokenId = slpTx.getTokenId();
+
+                            if(!this.tokenIsMapped(tokenId)) {
+                                SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
+                                JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
+
+                                if (tokenData != null) {
+                                    int decimals = tokenData.getInt("decimals");
+                                    String ticker = tokenData.getString("ticker");
+                                    SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
+                                    slpTokens.add(slpToken);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            /*Transaction tx = utxo.getParentTransaction();
             //If tx is already a verified SLP tx, we can save time by avoiding contacting SLPDB
             if (this.verifiedSlpTxs.contains(tx.getTxId().toString())) {
                 this.determineUtxoThenMaybeProcess(tx, utxo);
@@ -455,7 +482,7 @@ public class SlpAppKit extends AbstractIdleService {
                 if (validSlp) {
                     this.determineUtxoThenMaybeProcess(tx, utxo);
                 }
-            }
+            }*/
         }
     }
 
@@ -520,7 +547,7 @@ public class SlpAppKit extends AbstractIdleService {
                     String ticker = tokenData.getString("ticker");
 
                     double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
+                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                     if (!this.tokenUtxoIsMapped(slpUTXO)) {
                         slpUtxosToAdd.add(slpUTXO);
                     }
@@ -539,7 +566,7 @@ public class SlpAppKit extends AbstractIdleService {
                 int decimals = slpToken.getDecimals();
 
                 double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
+                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                 if (!this.tokenUtxoIsMapped(slpUTXO)) {
                     slpUtxosToAdd.add(slpUTXO);
                 }
@@ -587,7 +614,7 @@ public class SlpAppKit extends AbstractIdleService {
                     String ticker = tokenData.getString("ticker");
 
                     double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
+                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                     if (!this.tokenUtxoIsMapped(slpUTXO)) {
                         slpUtxosToAdd.add(slpUTXO);
                     }
@@ -606,7 +633,7 @@ public class SlpAppKit extends AbstractIdleService {
                 int decimals = slpToken.getDecimals();
 
                 double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
+                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                 if (!this.tokenUtxoIsMapped(slpUTXO)) {
                     slpUtxosToAdd.add(slpUTXO);
                 }
@@ -648,9 +675,8 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private boolean tokenIsMapped(String tokenId) {
-        for (Iterator<SlpToken> iterator = this.slpTokens.iterator(); iterator.hasNext();) {
-            SlpToken slpToken = iterator.next();
-            if(slpToken.getTokenId().equals(tokenId)) {
+        for (SlpToken slpToken : this.slpTokens) {
+            if (slpToken.getTokenId().equals(tokenId)) {
                 return true;
             }
         }
@@ -710,6 +736,10 @@ public class SlpAppKit extends AbstractIdleService {
         }
 
         return null;
+    }
+
+    public boolean hasTransactionBeenRecorded(String txid) {
+        return this.verifiedSlpTxs.contains(txid);
     }
 
     public Wallet getWallet() {

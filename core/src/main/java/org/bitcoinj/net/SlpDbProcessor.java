@@ -61,7 +61,7 @@ public class SlpDbProcessor {
         return tokenObj;
     }
 
-    public boolean isValidSlpTx(String base64Query, String hash) {
+    public boolean isValidSlpTx(String base64Query) {
         boolean valid = false;
         int tries = 12;
         int backOff = 1000;
@@ -69,12 +69,9 @@ public class SlpDbProcessor {
         for(int x = tries; x > 0; x--) {
             int randServer = new Random().nextInt(slpDbInstances.length);
             String slpDbServer = slpDbInstances[randServer];
-            System.out.println(slpDbServer);
-            System.out.println(hash);
             try (InputStream is = new URL("https://" + slpDbServer + slpDbEndpoint + base64Query).openStream()) {
                 BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                 String jsonText = readData(rd);
-                System.out.println(jsonText);
                 JSONArray confirmedArray = new JSONObject(jsonText).getJSONArray("c");
                 JSONArray unconfirmedArray = new JSONObject(jsonText).getJSONArray("u");
 

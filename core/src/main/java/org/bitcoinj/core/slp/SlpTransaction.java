@@ -1,7 +1,9 @@
 package org.bitcoinj.core.slp;
 
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.script.ScriptPattern;
@@ -13,18 +15,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class SlpTransaction {
-    private final String slpProtocolId = "534c5000";
-    private final String genesisTxTypeId = "47454e45534953";
-    private final String mintTxTypeId = "4d494e54";
-    private final String sendTxTypeId = "53454e44";
-    private final int opReturnLocation = 0;
-    private final int protocolChunkLocation = 1;
-    private final int slpTokenTypeChunkLocation = 2;
-    private final int slpTxTypeChunkLocation = 3;
-    private final int tokenIdChunkLocation = 4;
-    private final int mintBatonVoutGenesisChunkLocation = 9;
-    private final int mintBatonVoutMintChunkLocation = 5;
-    private final int tokenOutputsStartLocation = 5;
+    private static final String slpProtocolId = "534c5000";
+    private static final String genesisTxTypeId = "47454e45534953";
+    private static final String mintTxTypeId = "4d494e54";
+    private static final String sendTxTypeId = "53454e44";
+    private static final int opReturnLocation = 0;
+    private static final int protocolChunkLocation = 1;
+    private static final int slpTokenTypeChunkLocation = 2;
+    private static final int slpTxTypeChunkLocation = 3;
+    private static final int tokenIdChunkLocation = 4;
+    private static final int mintBatonVoutGenesisChunkLocation = 9;
+    private static final int mintBatonVoutMintChunkLocation = 5;
+    private static final int tokenOutputsStartLocation = 5;
 
     private enum SlpTxType {
         GENESIS,
@@ -37,14 +39,35 @@ public class SlpTransaction {
     private SlpTxType slpTxType;
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<>();
     private boolean hasMintingBaton = false;
+    private TransactionOutput mintingBatonUtxo = null;
 
     public SlpTransaction(Transaction tx) {
         this.tx = tx;
         Script opReturn = tx.getOutput(opReturnLocation).getScriptPubKey();
-        this.setSlpTxType(opReturn);
-        this.setTokenId(opReturn);
-        this.collectSlpUtxos(tx.getOutputs(), opReturn);
-        this.findMintingBaton(tx.getOutputs(), opReturn);
+
+        if(ScriptPattern.isOpReturn(opReturn)) {
+            this.setSlpTxType(opReturn);
+            this.setTokenId(opReturn);
+            this.collectSlpUtxos(tx.getOutputs(), opReturn);
+            this.findMintingBaton(tx.getOutputs(), opReturn);
+        } else {
+            throw new NullPointerException("Not an SLP transaction.");
+        }
+    }
+
+    public static boolean isSlpTx(Transaction tx) {
+        List<TransactionOutput> outputs = tx.getOutputs();
+        TransactionOutput opReturnUtxo = outputs.get(0);
+        Script opReturn = opReturnUtxo.getScriptPubKey();
+        if (ScriptPattern.isOpReturn(opReturn)) {
+            ScriptChunk protocolChunk = opReturn.getChunks().get(protocolChunkLocation);
+            if (protocolChunk != null && protocolChunk.data != null) {
+                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
+                return protocolId.equals(slpProtocolId);
+            }
+        }
+
+        return false;
     }
 
     private void setTokenId(Script opReturn) {
@@ -129,6 +152,7 @@ public class SlpTransaction {
                 TransactionOutput utxo = utxos.get(vout);
                 if(utxoIsMintBaton(opReturn, utxo)) {
                     this.hasMintingBaton = true;
+                    this.mintingBatonUtxo = utxo;
                 }
             }
         }
@@ -160,5 +184,33 @@ public class SlpTransaction {
         }
 
         return mintingBatonVout == utxoVout;
+    }
+
+    public String getTokenId() {
+        return this.tokenId;
+    }
+
+    public Transaction getTx() {
+        return this.tx;
+    }
+
+    public Sha256Hash getTxId() {
+        return this.tx.getTxId();
+    }
+
+    public String getTxIdAsString() {
+        return this.getTxId().toString();
+    }
+
+    public List<SlpUTXO> getSlpUtxos() {
+        return this.slpUtxos;
+    }
+
+    public boolean hasMintingBaton() {
+        return this.hasMintingBaton;
+    }
+
+    public TransactionOutput getMintingBatonUtxo() {
+        return this.mintingBatonUtxo;
     }
 }
