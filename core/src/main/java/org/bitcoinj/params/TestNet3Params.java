@@ -45,10 +45,10 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
     public TestNet3Params() {
         super();
         id = ID_TESTNET;
-        packetMagic = 0x0b110907;
+        packetMagic = 0xf4e5f3f4L;
         targetTimespan = TARGET_TIMESPAN;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
-        port = 18333;
+        port = 10333;
         addressHeader = 111;
         p2shHeader = 196;
         dumpedPrivateKeyHeader = 239;
@@ -61,19 +61,12 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
 
         dnsSeeds = new String[] {
-                "testnet-seed.bitcoin.jonasschnelli.ch", // Jonas Schnelli
-                "seed.tbtc.petertodd.org",               // Peter Todd
-                "seed.testnet.bitcoin.sprovoost.nl",     // Sjors Provoost
-                "testnet-seed.bluematt.me",              // Matt Corallo
+                "testnet-seed.bitcoinabc.org",
+                "testnet-seed-abc.bitcoinforks.org",
+                "testnet-seed.bitprim.org",
+                "testnet-seed.deadalnix.me"           // Matt Corallo
         };
-        httpSeeds = new HttpDiscovery.Details[] {
-                // Andreas Schildbach
-                new HttpDiscovery.Details(
-                        ECKey.fromPublicOnly(Utils.HEX.decode(
-                                "0238746c59d46d5408bf8b1d0af5740fe1a6e1703fcb56b2953f0b965c740d256f")),
-                        URI.create("http://testnet.httpseed.bitcoin.schildbach.de/peers")
-                )
-        };
+        httpSeeds = null;
         addrSeeds = null;
         bip32HeaderP2PKHpub = 0x043587cf; // The 4 byte header that serializes in base58 to "tpub".
         bip32HeaderP2PKHpriv = 0x04358394; // The 4 byte header that serializes in base58 to "tprv"
@@ -81,6 +74,17 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         majorityEnforceBlockUpgrade = TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE;
         majorityRejectBlockOutdated = TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = TESTNET_MAJORITY_WINDOW;
+        asertReferenceBlockBits = 0x00000000;
+        asertReferenceBlockHeight = BigInteger.ZERO;
+        asertReferenceBlockTime = BigInteger.ZERO;
+        asertUpdateTime = 1597096200L;
+        // Aug, 1 hard fork
+        uahfHeight = 1155876;
+        // Nov, 13 hard fork
+        daaUpdateHeight = 1188697;
+        cashAddrPrefix = "bchtest";
+        asertHalfLife = 60L * 60L;
+        allowMinDifficultyBlocks = true;
     }
 
     private static TestNet3Params instance;

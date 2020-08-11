@@ -48,14 +48,14 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
 
     private void checkNextCashWorkRequired(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         try {
-            StoredBlock asertReferenceBlock = getAsertReferenceBlock(storedPrev, blockStore);
             BigInteger evalBlockTime = BigInteger.valueOf(storedPrev.getHeader().getTimeSeconds());
+            System.out.println(storedPrev.getHeight());
+            //We add one because we are hoping this is the next block in the blockchain, so we take our current height and add 1.
             BigInteger evalBlockHeight = BigInteger.valueOf(storedPrev.getHeight());
-            BigInteger referenceBlockBitsBigInteger = BigInteger.valueOf(Utils.encodeCompactBits(asertReferenceBlock.getHeader().getDifficultyTargetAsInteger()));
-            int referenceBlockBits = referenceBlockBitsBigInteger.intValue();
-            BigInteger referenceBlockTime = BigInteger.valueOf(asertReferenceBlock.getHeader().getTimeSeconds());
+            StoredBlock asertReferenceBlock = getAsertReferenceBlock(storedPrev, blockStore);
+            BigInteger referenceBlockAncestorTime = BigInteger.valueOf(asertReferenceBlock.getPrev(blockStore).getHeader().getTimeSeconds());
             BigInteger referenceBlockHeight = BigInteger.valueOf(asertReferenceBlock.getHeight());
-            BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(referenceBlockBits, referenceBlockTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
+            BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(networkParameters, asertReferenceBlock.getHeader().getDifficultyTargetAsInteger(), referenceBlockAncestorTime, referenceBlockHeight, evalBlockTime, evalBlockHeight, storedPrev, nextBlock);
             networkParameters.verifyAsertDifficulty(nextTarget, nextBlock);
         } catch (BlockStoreException x) {
             // We don't have enough blocks, yet

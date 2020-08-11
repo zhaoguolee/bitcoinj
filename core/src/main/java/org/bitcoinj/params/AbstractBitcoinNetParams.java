@@ -156,13 +156,22 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     /**
      * Compute aserti-2d DAA target
      */
-    public static BigInteger computeAsertTarget(BigInteger refTarget, BigInteger referenceBlockTime, BigInteger referenceBlockHeight,
-                                                BigInteger evalBlockTime, BigInteger evalBlockHeight) {
-        Preconditions.checkState(evalBlockHeight.compareTo(referenceBlockHeight) > 0);
+    public static BigInteger computeAsertTarget(final NetworkParameters networkParameters, BigInteger refTarget, BigInteger referenceBlockAncestorTime, BigInteger referenceBlockHeight,
+                                                BigInteger evalBlockTime, BigInteger evalBlockHeight, StoredBlock storedPrev, Block nextBlock) {
+        Preconditions.checkState(evalBlockHeight.compareTo(referenceBlockHeight) >= 0);
+
+        if(storedPrev != null && nextBlock != null) {
+            if (networkParameters.allowMinDifficultyBlocks() &&
+                    (nextBlock.getTimeSeconds() >
+                            storedPrev.getHeader().getTimeSeconds() + 2 * TARGET_SPACING)) {
+                return new BigInteger(MAX_BITS_STRING, 16);
+            }
+        }
+
         BigInteger heightDiff = evalBlockHeight.subtract(referenceBlockHeight);
-        BigInteger timeDiff = evalBlockTime.subtract(referenceBlockTime);
+        BigInteger timeDiff = evalBlockTime.subtract(referenceBlockAncestorTime);
         //used by asert. two days in seconds.
-        BigInteger halfLife = BigInteger.valueOf(2L * 24L * 60L * 60L);
+        BigInteger halfLife = BigInteger.valueOf(networkParameters.getAsertHalfLife());
         BigInteger rbits = BigInteger.valueOf(16L);
         BigInteger radix = BigInteger.ONE.shiftLeft(rbits.intValue());
 
@@ -201,10 +210,15 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         return BigInteger.valueOf(Utils.encodeCompactBits(target));
     }
 
-    public static BigInteger computeAsertTarget(int referenceBlockBits, BigInteger referenceBlockTime, BigInteger referenceBlockHeight,
+    public static BigInteger computeAsertTarget(NetworkParameters networkParameters, BigInteger refTarget, BigInteger referenceBlockAncestorTime, BigInteger referenceBlockHeight,
+                                                BigInteger evalBlockTime, BigInteger evalBlockHeight) {
+        return computeAsertTarget(networkParameters, refTarget, referenceBlockAncestorTime, referenceBlockHeight, evalBlockTime, evalBlockHeight, null, null);
+    }
+
+    public static BigInteger computeAsertTarget(NetworkParameters networkParameters, int referenceBlockBits, BigInteger referenceBlockAncestorTime, BigInteger referenceBlockHeight,
                                                 BigInteger evalBlockTime, BigInteger evalBlockHeight) {
         BigInteger refTarget = Utils.decodeCompactBits(referenceBlockBits);
-        return computeAsertTarget(refTarget, referenceBlockTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
+        return computeAsertTarget(networkParameters, refTarget, referenceBlockAncestorTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
     }
 
     /**

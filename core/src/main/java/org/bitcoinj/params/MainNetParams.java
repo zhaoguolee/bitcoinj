@@ -94,6 +94,9 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         asertReferenceBlockBits = 0x00000000;
         asertReferenceBlockHeight = BigInteger.ZERO;
         asertReferenceBlockTime = BigInteger.ZERO;
+        asertUpdateTime = 1605441600L;
+        asertHalfLife = 2L * 24L * 60L * 60L;
+        allowMinDifficultyBlocks = false;
     }
 
     private static MainNetParams instance;

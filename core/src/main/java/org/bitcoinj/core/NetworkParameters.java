@@ -91,7 +91,7 @@ public abstract class NetworkParameters {
     // Nov, 15 2018 hard fork
     protected static long november2018ActivationTime = 1542300000L;
     // Nov, 15 2020 hard fork
-    protected long asertUpdateTime = 1605441600L;
+    protected long asertUpdateTime;
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
      * by looking at the port number.
@@ -114,6 +114,8 @@ public abstract class NetworkParameters {
     protected int asertReferenceBlockBits;
     protected BigInteger asertReferenceBlockTime;
     protected BigInteger asertReferenceBlockHeight;
+    protected long asertHalfLife;
+    protected boolean allowMinDifficultyBlocks;
 
     protected NetworkParameters() {
         alertSigningKey = SATOSHI_KEY;
@@ -250,7 +252,7 @@ public abstract class NetworkParameters {
         BigInteger receivedTarget = BigInteger.valueOf(Utils.encodeCompactBits(nextBlock.getDifficultyTargetAsInteger()));
         if (!newTarget.equals(receivedTarget))
             throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
-                    receivedTarget.toString(16) + " vs " + receivedTarget.toString(16));
+                    newTarget.toString(16) + " vs " + receivedTarget.toString(16));
     }
 
     /**
@@ -259,6 +261,14 @@ public abstract class NetworkParameters {
     public boolean passesCheckpoint(int height, Sha256Hash hash) {
         Sha256Hash checkpointHash = checkpoints.get(height);
         return checkpointHash == null || checkpointHash.equals(hash);
+    }
+
+    public long getAsertHalfLife() {
+        return asertHalfLife;
+    }
+
+    public boolean allowMinDifficultyBlocks() {
+        return allowMinDifficultyBlocks;
     }
 
     /**
