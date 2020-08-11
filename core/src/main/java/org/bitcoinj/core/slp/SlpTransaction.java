@@ -17,6 +17,7 @@ import java.util.Objects;
 
 public class SlpTransaction {
     private static final String slpProtocolId = "534c5000";
+    private static final String tokenTypeId = "01";
     private static final String genesisTxTypeId = "47454e45534953";
     private static final String mintTxTypeId = "4d494e54";
     private static final String sendTxTypeId = "53454e44";
@@ -66,7 +67,13 @@ public class SlpTransaction {
             ScriptChunk protocolChunk = opReturn.getChunks().get(protocolChunkLocation);
             if (protocolChunk != null && protocolChunk.data != null) {
                 String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
-                return protocolId.equals(slpProtocolId);
+                if(protocolId.equals(slpProtocolId)) {
+                    ScriptChunk tokenTypeChunk = opReturn.getChunks().get(slpTokenTypeChunkLocation);
+                    if (tokenTypeChunk != null && tokenTypeChunk.data != null) {
+                        String tokenType = new String(Hex.encode(tokenTypeChunk.data), StandardCharsets.UTF_8);
+                        return tokenType.equals(tokenTypeId);
+                    }
+                }
             }
         }
 
