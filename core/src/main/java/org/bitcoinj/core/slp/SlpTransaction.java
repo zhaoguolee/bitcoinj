@@ -50,7 +50,7 @@ public class SlpTransaction {
         Script opReturn = tx.getOutput(opReturnLocation).getScriptPubKey();
 
         if(ScriptPattern.isOpReturn(opReturn)) {
-            this.setSlpTxType(opReturn);
+            this.setSlpTxType(tx, opReturn);
             this.setTokenId(opReturn);
             this.collectSlpUtxos(tx.getOutputs(), opReturn);
             this.findMintingBaton(tx.getOutputs(), opReturn);
@@ -92,27 +92,21 @@ public class SlpTransaction {
         }
     }
 
-    private void setSlpTxType(Script opReturn) {
-        if (ScriptPattern.isOpReturn(opReturn)) {
-            ScriptChunk protocolChunk = opReturn.getChunks().get(protocolChunkLocation);
-            if (protocolChunk != null && protocolChunk.data != null) {
-                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
-                if (protocolId.equals(slpProtocolId)) {
-                    ScriptChunk slpTxTypeChunk = opReturn.getChunks().get(slpTxTypeChunkLocation);
-                    if (slpTxTypeChunk != null && slpTxTypeChunk.data != null) {
-                        String txType = new String(Hex.encode(slpTxTypeChunk.data), StandardCharsets.UTF_8);
-                        switch(txType) {
-                            case genesisTxTypeId:
-                                this.slpTxType = SlpTxType.GENESIS;
-                                break;
-                            case mintTxTypeId:
-                                this.slpTxType = SlpTxType.MINT;
-                                break;
-                            case sendTxTypeId:
-                                this.slpTxType = SlpTxType.SEND;
-                                break;
-                        }
-                    }
+    private void setSlpTxType(Transaction tx, Script opReturn) {
+        if (isSlpTx(tx)) {
+            ScriptChunk slpTxTypeChunk = opReturn.getChunks().get(slpTxTypeChunkLocation);
+            if (slpTxTypeChunk != null && slpTxTypeChunk.data != null) {
+                String txType = new String(Hex.encode(slpTxTypeChunk.data), StandardCharsets.UTF_8);
+                switch(txType) {
+                    case genesisTxTypeId:
+                        this.slpTxType = SlpTxType.GENESIS;
+                        break;
+                    case mintTxTypeId:
+                        this.slpTxType = SlpTxType.MINT;
+                        break;
+                    case sendTxTypeId:
+                        this.slpTxType = SlpTxType.SEND;
+                        break;
                 }
             }
         }
