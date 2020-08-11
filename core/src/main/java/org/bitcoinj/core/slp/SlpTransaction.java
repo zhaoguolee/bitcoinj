@@ -10,6 +10,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class SlpTransaction {
     private final String slpProtocolId = "534c5000";
@@ -21,6 +22,8 @@ public class SlpTransaction {
     private final int slpTokenTypeChunkLocation = 2;
     private final int slpTxTypeChunkLocation = 3;
     private final int tokenIdChunkLocation = 4;
+    private final int mintBatonVoutGenesisChunkLocation = 9;
+    private final int mintBatonVoutMintChunkLocation = 5;
     private final int tokenOutputsStartLocation = 5;
 
     private enum SlpTxType {
@@ -33,21 +36,26 @@ public class SlpTransaction {
     private Transaction tx;
     private SlpTxType slpTxType;
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<>();
+    private boolean hasMintingBaton = false;
 
     public SlpTransaction(Transaction tx) {
         this.tx = tx;
         Script opReturn = tx.getOutput(opReturnLocation).getScriptPubKey();
-        this.setTokenId(opReturn);
         this.setSlpTxType(opReturn);
+        this.setTokenId(opReturn);
         this.collectSlpUtxos(tx.getOutputs(), opReturn);
+        this.findMintingBaton(tx.getOutputs(), opReturn);
     }
 
     private void setTokenId(Script opReturn) {
         if (ScriptPattern.isOpReturn(opReturn)) {
-            ScriptChunk tokenIdChunk = opReturn.getChunks().get(tokenIdChunkLocation);
-            assert tokenIdChunk.data != null;
-            this.tokenId = new String(Hex.encode(tokenIdChunk.data));
-            System.out.println(this.tokenId);
+            if(this.getSlpTxType() == SlpTxType.SEND) {
+                ScriptChunk tokenIdChunk = opReturn.getChunks().get(tokenIdChunkLocation);
+                assert tokenIdChunk.data != null;
+                this.tokenId = new String(Hex.encode(tokenIdChunk.data));
+            } else if(this.getSlpTxType() == SlpTxType.GENESIS) {
+                this.tokenId = this.tx.getTxId().toString();
+            }
         }
     }
 
@@ -77,14 +85,80 @@ public class SlpTransaction {
         }
     }
 
+    public SlpTxType getSlpTxType() {
+        return this.slpTxType;
+    }
+
     private void collectSlpUtxos(List<TransactionOutput> utxos, Script opReturn) {
-        int tokenUtxosCount = opReturn.getChunks().size() - 5;
+        int chunkOffset = 0;
+        switch(this.slpTxType) {
+            case GENESIS:
+                chunkOffset = 10;
+                break;
+            case MINT:
+                chunkOffset = 6;
+                break;
+            case SEND:
+                chunkOffset = 5;
+                break;
+        }
+
+        int tokenUtxosCount = opReturn.getChunks().size() - chunkOffset;
+
         for(int x = 0; x < tokenUtxosCount; x++) {
-            int tokenUtxoChunkLocation = x + 5;
+            int tokenUtxoChunkLocation = x + chunkOffset;
             TransactionOutput utxo = utxos.get(x + 1);
-            long tokenAmountRaw = Long.parseLong(new String(Hex.encode(opReturn.getChunks().get(tokenUtxoChunkLocation).data)), 16);
+            long tokenAmountRaw = Long.parseLong(new String(Hex.encode(Objects.requireNonNull(opReturn.getChunks().get(tokenUtxoChunkLocation).data))), 16);
             SlpUTXO slpUtxo = new SlpUTXO(this.tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
             slpUtxos.add(slpUtxo);
         }
+    }
+
+    private void findMintingBaton(List<TransactionOutput> utxos, Script opReturn) {
+        byte[] mintingBatonVoutData = null;
+        if(this.getSlpTxType() == SlpTxType.GENESIS) {
+            mintingBatonVoutData = opReturn.getChunks().get(mintBatonVoutGenesisChunkLocation).data;
+        } else if(this.getSlpTxType() == SlpTxType.MINT) {
+            mintingBatonVoutData = opReturn.getChunks().get(mintBatonVoutMintChunkLocation).data;
+        }
+
+        if(mintingBatonVoutData != null) {
+            String voutHex = new String(Hex.encode(mintingBatonVoutData), StandardCharsets.UTF_8);
+            if(!voutHex.equals("")) {
+                int vout = Integer.parseInt(voutHex, 16);
+                TransactionOutput utxo = utxos.get(vout);
+                if(utxoIsMintBaton(opReturn, utxo)) {
+                    this.hasMintingBaton = true;
+                }
+            }
+        }
+    }
+
+    private boolean utxoIsMintBaton(Script opReturn, TransactionOutput utxo) {
+        int mintingBatonVout = 0;
+        int utxoVout = utxo.getIndex();
+        int voutChunkLocation = 0;
+
+        switch(this.slpTxType) {
+            case GENESIS:
+                voutChunkLocation = mintBatonVoutGenesisChunkLocation;
+                break;
+            case MINT:
+                voutChunkLocation = mintBatonVoutMintChunkLocation;
+                break;
+        }
+
+        ScriptChunk mintBatonVoutChunk = opReturn.getChunks().get(voutChunkLocation);
+        if (mintBatonVoutChunk != null && mintBatonVoutChunk.data != null) {
+            String voutHex = new String(Hex.encode(mintBatonVoutChunk.data), StandardCharsets.UTF_8);
+
+            if(!voutHex.equals("")) {
+                mintingBatonVout = Integer.parseInt(voutHex, 16);
+            } else {
+                return false;
+            }
+        }
+
+        return mintingBatonVout == utxoVout;
     }
 }
