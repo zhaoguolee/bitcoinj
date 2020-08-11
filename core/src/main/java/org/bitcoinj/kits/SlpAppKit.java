@@ -415,41 +415,46 @@ public class SlpAppKit extends AbstractIdleService {
                             if (valid) {
                                 SlpUTXO slpUTXO = processSlpUtxo(slpOpReturn, utxo);
                                 slpUtxosToAdd.add(slpUTXO);
+                                if (!this.tokenIsMapped(tokenId)) {
+                                    this.tryCacheToken(tokenId);
+                                } else {
+                                    SlpToken slpToken = this.getSlpToken(tokenId);
+                                    this.calculateSlpBalance(slpUTXO, slpToken);
+                                }
                                 this.verifiedSlpTxs.add(tx.getTxId().toString());
-                                this.tryCacheToken(tokenId);
                             }
                         } else {
                             SlpUTXO slpUTXO = processSlpUtxo(slpOpReturn, utxo);
                             slpUtxosToAdd.add(slpUTXO);
-                            this.tryCacheToken(tokenId);
+                            if (!this.tokenIsMapped(tokenId)) {
+                                this.tryCacheToken(tokenId);
+                            } else {
+                                SlpToken slpToken = this.getSlpToken(tokenId);
+                                this.calculateSlpBalance(slpUTXO, slpToken);
+                            }
                         }
                     }
                 }
             }
 
             this.slpUtxos.addAll(slpUtxosToAdd);
-
-            //Calculating balances
-            for (SlpUTXO slpUTXO : this.slpUtxos) {
-                String tokenId = slpUTXO.getTokenId();
-                double tokenAmount;
-
-                if (!this.tokenIsMapped(tokenId)) {
-                    this.tryCacheToken(tokenId);
-                } else {
-                    SlpToken slpToken = this.getSlpToken(tokenId);
-                    tokenAmount = BigDecimal.valueOf(slpUTXO.getTokenAmountRaw()).scaleByPowerOfTen(-slpToken.getDecimals()).doubleValue();
-                    if (this.isBalanceRecorded(tokenId)) {
-                        Objects.requireNonNull(this.getTokenBalance(tokenId)).addToBalance(tokenAmount);
-                    } else {
-                        this.slpBalances.add(new SlpTokenBalance(tokenId, tokenAmount));
-                    }
-                }
-            }
-
             this.saveVerifiedTxs(this.verifiedSlpTxs);
 
+            for(SlpTokenBalance slpTokenBalance : this.slpBalances) {
+                System.out.println(slpTokenBalance.getTokenId() + " /// " + slpTokenBalance.getBalance());
+            }
+
             recalculatingTokens = false;
+        }
+    }
+
+    private void calculateSlpBalance(SlpUTXO slpUTXO, SlpToken slpToken) {
+        String tokenId = slpToken.getTokenId();
+        double tokenAmount = BigDecimal.valueOf(slpUTXO.getTokenAmountRaw()).scaleByPowerOfTen(-slpToken.getDecimals()).doubleValue();
+        if (this.isBalanceRecorded(tokenId)) {
+            Objects.requireNonNull(this.getTokenBalance(tokenId)).addToBalance(tokenAmount);
+        } else {
+            this.slpBalances.add(new SlpTokenBalance(tokenId, tokenAmount));
         }
     }
 
