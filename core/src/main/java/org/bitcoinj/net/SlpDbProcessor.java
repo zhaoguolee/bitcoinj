@@ -40,7 +40,6 @@ public class SlpDbProcessor {
             try (InputStream is = new URL("https://" + slpDbServer + slpDbEndpoint + base64Query).openStream()) {
                 BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                 String jsonText = readData(rd);
-                System.out.println(jsonText);
                 JSONArray tokenArray = new JSONObject(jsonText).getJSONArray("t");
 
                 if(tokenArray.length() > 0) {

@@ -16,7 +16,7 @@ public class SlpUTXO {
 
     public SlpUTXO(String tokenId, long rawAmount, TransactionOutput txUtxo, SlpUtxoType slpUtxoType) {
         this.tokenId = tokenId;
-        this.tokenAmount = tokenAmount;
+        this.tokenAmount = rawAmount;
         this.txUtxo = txUtxo;
         this.slpUtxoType = slpUtxoType;
     }
@@ -25,7 +25,7 @@ public class SlpUTXO {
         return this.tokenId;
     }
 
-    public double getTokenAmount() {
+    public long getTokenAmountRaw() {
         return this.tokenAmount;
     }
 

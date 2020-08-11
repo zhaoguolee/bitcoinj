@@ -142,11 +142,11 @@ class SlpTxBuilder {
                 var inputSatoshi = 0L
                 val selectedUtxos = slpAppKit.slpUtxos
                         .filter { it.tokenId == tokenId }
-                        .sortedBy { it.tokenAmount }
+                        .sortedBy { it.tokenAmountRaw }
                         .takeWhile {
                             val amountTooLow = inputTokensRaw < sendTokensRaw
                             if (amountTooLow) {
-                                inputTokensRaw += toRawAmount(it.tokenAmount.toBigDecimal(), tokenDetails)
+                                inputTokensRaw += toRawAmount(it.tokenAmountRaw.toBigDecimal(), tokenDetails)
                                 inputSatoshi += (it.txUtxo.value.value - 148) // Deduct input fee
                             }
                             amountTooLow
@@ -210,11 +210,11 @@ class SlpTxBuilder {
                 var inputSatoshi = 0L
                 val selectedUtxos = slpAppKit.slpUtxos
                         .filter { it.tokenId == tokenId }
-                        .sortedBy { it.tokenAmount }
+                        .sortedBy { it.tokenAmountRaw }
                         .takeWhile {
                             val amountTooLow = inputTokensRaw < sendTokensRaw
                             if (amountTooLow) {
-                                inputTokensRaw += toRawAmount(it.tokenAmount.toBigDecimal(), tokenDetails)
+                                inputTokensRaw += toRawAmount(it.tokenAmountRaw.toBigDecimal(), tokenDetails)
                                 inputSatoshi += (it.txUtxo.value.value - 148) // Deduct input fee
                             }
                             amountTooLow

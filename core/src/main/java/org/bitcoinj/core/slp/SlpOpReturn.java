@@ -1,13 +1,10 @@
 package org.bitcoinj.core.slp;
 
-import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.script.ScriptPattern;
-import org.bitcoinj.wallet.Wallet;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
@@ -15,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class SlpTransaction {
+public class SlpOpReturn {
     private static final String slpProtocolId = "534c5000";
     private static final String genesisTxTypeId = "47454e45534953";
     private static final String mintTxTypeId = "4d494e54";
@@ -35,42 +32,26 @@ public class SlpTransaction {
         SEND
     }
 
+    private Script opReturn;
     private String tokenId;
     private Transaction tx;
     private SlpTxType slpTxType;
-    private ArrayList<SlpUTXO> slpUtxos = new ArrayList<>();
+    private int slpUtxos;
     private boolean hasMintingBaton = false;
-    private TransactionOutput mintingBatonUtxo = null;
-    private Wallet wallet;
+    private int mintingBatonVout = 0;
 
-    public SlpTransaction(Transaction tx, Wallet wallet) {
-        this.wallet = wallet;
+    public SlpOpReturn(Transaction tx) {
         this.tx = tx;
-        Script opReturn = tx.getOutput(opReturnLocation).getScriptPubKey();
+        opReturn = tx.getOutput(opReturnLocation).getScriptPubKey();
 
         if(ScriptPattern.isOpReturn(opReturn)) {
             this.setSlpTxType(opReturn);
             this.setTokenId(opReturn);
-            this.collectSlpUtxos(tx.getOutputs(), opReturn);
-            this.findMintingBaton(tx.getOutputs(), opReturn);
+            this.collectSlpUtxos(opReturn);
+            this.findMintingBaton(opReturn);
         } else {
             throw new NullPointerException("Not an SLP transaction.");
         }
-    }
-
-    public static boolean isSlpTx(Transaction tx) {
-        List<TransactionOutput> outputs = tx.getOutputs();
-        TransactionOutput opReturnUtxo = outputs.get(0);
-        Script opReturn = opReturnUtxo.getScriptPubKey();
-        if (ScriptPattern.isOpReturn(opReturn)) {
-            ScriptChunk protocolChunk = opReturn.getChunks().get(protocolChunkLocation);
-            if (protocolChunk != null && protocolChunk.data != null) {
-                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
-                return protocolId.equals(slpProtocolId);
-            }
-        }
-
-        return false;
     }
 
     private void setTokenId(Script opReturn) {
@@ -111,11 +92,7 @@ public class SlpTransaction {
         }
     }
 
-    public SlpTxType getSlpTxType() {
-        return this.slpTxType;
-    }
-
-    private void collectSlpUtxos(List<TransactionOutput> utxos, Script opReturn) {
+    private void collectSlpUtxos(Script opReturn) {
         int chunkOffset = 0;
         switch(this.slpTxType) {
             case GENESIS:
@@ -129,20 +106,10 @@ public class SlpTransaction {
                 break;
         }
 
-        int tokenUtxosCount = opReturn.getChunks().size() - chunkOffset;
-
-        for(int x = 0; x < tokenUtxosCount; x++) {
-            int tokenUtxoChunkLocation = x + chunkOffset;
-            TransactionOutput utxo = utxos.get(x + 1);
-            if(utxo.isMine(this.wallet)) {
-                long tokenAmountRaw = Long.parseLong(new String(Hex.encode(Objects.requireNonNull(opReturn.getChunks().get(tokenUtxoChunkLocation).data))), 16);
-                SlpUTXO slpUtxo = new SlpUTXO(this.tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
-                slpUtxos.add(slpUtxo);
-            }
-        }
+        slpUtxos = opReturn.getChunks().size() - chunkOffset;
     }
 
-    private void findMintingBaton(List<TransactionOutput> utxos, Script opReturn) {
+    private void findMintingBaton(Script opReturn) {
         byte[] mintingBatonVoutData = null;
         if(this.getSlpTxType() == SlpTxType.GENESIS) {
             mintingBatonVoutData = opReturn.getChunks().get(mintBatonVoutGenesisChunkLocation).data;
@@ -154,60 +121,35 @@ public class SlpTransaction {
             String voutHex = new String(Hex.encode(mintingBatonVoutData), StandardCharsets.UTF_8);
             if(!voutHex.equals("")) {
                 int vout = Integer.parseInt(voutHex, 16);
-                TransactionOutput utxo = utxos.get(vout);
-                if(utxoIsMintBaton(opReturn, utxo)) {
-                    this.hasMintingBaton = true;
-                    this.mintingBatonUtxo = utxo;
-                }
+                this.hasMintingBaton = true;
+                this.mintingBatonVout = vout;
             }
         }
     }
 
-    private boolean utxoIsMintBaton(Script opReturn, TransactionOutput utxo) {
-        int mintingBatonVout = 0;
-        int utxoVout = utxo.getIndex();
-        int voutChunkLocation = 0;
-
+    public long getRawAmountOfUtxo(int slpUtxoIndex) {
+        int chunkOffset = 0;
         switch(this.slpTxType) {
             case GENESIS:
-                voutChunkLocation = mintBatonVoutGenesisChunkLocation;
+                chunkOffset = 10;
                 break;
             case MINT:
-                voutChunkLocation = mintBatonVoutMintChunkLocation;
+                chunkOffset = 6;
+                break;
+            case SEND:
+                chunkOffset = 5;
                 break;
         }
 
-        ScriptChunk mintBatonVoutChunk = opReturn.getChunks().get(voutChunkLocation);
-        if (mintBatonVoutChunk != null && mintBatonVoutChunk.data != null) {
-            String voutHex = new String(Hex.encode(mintBatonVoutChunk.data), StandardCharsets.UTF_8);
-
-            if(!voutHex.equals("")) {
-                mintingBatonVout = Integer.parseInt(voutHex, 16);
-            } else {
-                return false;
-            }
-        }
-
-        return mintingBatonVout == utxoVout;
+        int utxoChunkLocation = slpUtxoIndex + chunkOffset;
+        return Long.parseLong(new String(Hex.encode(Objects.requireNonNull(opReturn.getChunks().get(utxoChunkLocation).data))), 16);
     }
 
     public String getTokenId() {
         return this.tokenId;
     }
 
-    public Transaction getTx() {
-        return this.tx;
-    }
-
-    public Sha256Hash getTxId() {
-        return this.tx.getTxId();
-    }
-
-    public String getTxIdAsString() {
-        return this.getTxId().toString();
-    }
-
-    public List<SlpUTXO> getSlpUtxos() {
+    public int getSlpUtxos() {
         return this.slpUtxos;
     }
 
@@ -215,7 +157,15 @@ public class SlpTransaction {
         return this.hasMintingBaton;
     }
 
-    public TransactionOutput getMintingBatonUtxo() {
-        return this.mintingBatonUtxo;
+    public SlpTxType getSlpTxType() {
+        return this.slpTxType;
+    }
+
+    public int getMintingBatonVout() {
+        return this.mintingBatonVout;
+    }
+
+    public Transaction getTx() {
+        return this.tx;
     }
 }

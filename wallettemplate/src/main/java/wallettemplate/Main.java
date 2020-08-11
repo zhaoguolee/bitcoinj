@@ -58,7 +58,7 @@ public class Main extends Application {
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static BIP47AppKit bitcoin;
+    public static SlpAppKit bitcoin;
     public static Main instance;
 
     private StackPane uiStack;
@@ -136,11 +136,25 @@ public class Main extends Application {
         // If seed is non-null it means we are restoring from backup.
         File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
-        bitcoin = new BIP47AppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
+        bitcoin = new SlpAppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
         Platform.runLater(controller::onBitcoinSetup);
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
         bitcoin.setDownloadProgressTracker(controller.progressBarUpdater());
+
+        new Thread() {
+            @Override
+            public void run() {
+                while(true) {
+                    bitcoin.recalculateSlpUtxos();
+                    try {
+                        Thread.sleep(5L * 1000L);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
     }
 
     private Node stopClickPane = new Pane();

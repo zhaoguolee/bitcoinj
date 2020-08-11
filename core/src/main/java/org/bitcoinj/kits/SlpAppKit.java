@@ -1,17 +1,13 @@
 package org.bitcoinj.kits;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.reactivex.Single;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
-import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.core.slp.*;
-import org.bitcoinj.crypto.HDPath;
 import org.bitcoinj.net.BlockingClientManager;
 import org.bitcoinj.net.SlpDbProcessor;
 import org.bitcoinj.net.SlpDbTokenDetails;
@@ -36,13 +32,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public class SlpAppKit extends AbstractIdleService {
-    private Wallet wallet;
+    public Wallet wallet;
     private SPVBlockStore spvBlockStore;
     private BlockChain blockChain;
     private PeerGroup peerGroup;
@@ -66,6 +63,7 @@ public class SlpAppKit extends AbstractIdleService {
     private boolean useTor = false;
     private String torProxyIp = "127.0.0.1";
     private String torProxyPort = "9050";
+    private boolean recalculatingTokens = false;
 
     @Nullable protected DeterministicSeed restoreFromSeed;
     @Nullable protected PeerDiscovery discovery;
@@ -396,266 +394,88 @@ public class SlpAppKit extends AbstractIdleService {
         this.slpDbProcessor = new SlpDbProcessor();
     }
 
-    private boolean isValidSlpTx(Transaction tx) {
-        if (tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
-            ScriptChunk protocolChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1);
-            if (protocolChunk != null && protocolChunk.data != null) {
-                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
-                if (protocolId.equals("534c5000")) {
-                    ScriptChunk tokenTypeChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(2);
-                    if (tokenTypeChunk != null) {
-                        String tokenType = new String(Hex.encode(tokenTypeChunk.data), StandardCharsets.UTF_8);
-                        if (tokenType.equals("01")) {
-                            SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getHashAsString());
+    public void recalculateSlpUtxos() {
+        if(!recalculatingTokens)  {
+            recalculatingTokens = true;
+            this.slpUtxos.clear();
+            this.slpBalances.clear();
+            List<TransactionOutput> utxos = this.wallet.getAllDustUtxos(false, false);
+            ArrayList<SlpUTXO> slpUtxosToAdd = new ArrayList<>();
+
+            for (TransactionOutput utxo : utxos) {
+                Transaction tx = utxo.getParentTransaction();
+                if (tx != null) {
+                    if (SlpTransaction.isSlpTx(tx)) {
+                        SlpOpReturn slpOpReturn = new SlpOpReturn(tx);
+                        String tokenId = slpOpReturn.getTokenId();
+
+                        if (!hasTransactionBeenRecorded(tx.getTxId().toString())) {
+                            SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getTxId().toString());
                             boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded());
                             if (valid) {
-                                this.verifiedSlpTxs.add(tx.getHashAsString());
-                                this.saveVerifiedTxs(this.verifiedSlpTxs);
+                                SlpUTXO slpUTXO = processSlpUtxo(slpOpReturn, utxo);
+                                slpUtxosToAdd.add(slpUTXO);
+                                this.verifiedSlpTxs.add(tx.getTxId().toString());
+                                this.tryCacheToken(tokenId);
                             }
-                            return valid;
+                        } else {
+                            SlpUTXO slpUTXO = processSlpUtxo(slpOpReturn, utxo);
+                            slpUtxosToAdd.add(slpUTXO);
+                            this.tryCacheToken(tokenId);
                         }
                     }
                 }
             }
-        }
 
-        return false;
-    }
-
-    public String getSlpTxType(Transaction tx) {
-        if (tx.getOutputs().get(0).getScriptPubKey().isOpReturn()) {
-            ScriptChunk protocolChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(1);
-            if (protocolChunk != null && protocolChunk.data != null) {
-                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
-                if (protocolId.equals("534c5000")) {
-                    ScriptChunk slpTxTypeChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(3);
-                    if (slpTxTypeChunk != null) {
-                        String txType = new String(Hex.encode(slpTxTypeChunk.data), StandardCharsets.UTF_8);
-                        return txType;
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public void recalculateSlpUtxos() {
-        this.slpUtxos.clear();
-        this.slpBalances.clear();
-        List<TransactionOutput> utxos = this.wallet.getAllDustUtxos(false, false);
-        for (TransactionOutput utxo : utxos) {
-            Transaction tx = utxo.getParentTransaction();
-            if(tx != null) {
-                if (SlpTransaction.isSlpTx(tx)) {
-                    if(!hasTransactionBeenRecorded(tx.getTxId().toString())) {
-                        SlpDbValidTransaction validTxQuery = new SlpDbValidTransaction(tx.getTxId().toString());
-                        boolean valid = this.slpDbProcessor.isValidSlpTx(validTxQuery.getEncoded());
-                        if(valid) {
-                            SlpTransaction slpTx = new SlpTransaction(tx);
-                            slpUtxos.addAll(slpTx.getSlpUtxos());
-                            verifiedSlpTxs.add(slpTx.getTxIdAsString());
-                            String tokenId = slpTx.getTokenId();
-
-                            if(!this.tokenIsMapped(tokenId)) {
-                                SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
-                                JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
-
-                                if (tokenData != null) {
-                                    int decimals = tokenData.getInt("decimals");
-                                    String ticker = tokenData.getString("ticker");
-                                    SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                                    slpTokens.add(slpToken);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            /*Transaction tx = utxo.getParentTransaction();
-            //If tx is already a verified SLP tx, we can save time by avoiding contacting SLPDB
-            if (this.verifiedSlpTxs.contains(tx.getTxId().toString())) {
-                this.determineUtxoThenMaybeProcess(tx, utxo);
-            } else {
-                //Not verified tx, doing now.
-                boolean validSlp = this.isValidSlpTx(tx);
-                if (validSlp) {
-                    this.determineUtxoThenMaybeProcess(tx, utxo);
-                }
-            }*/
-        }
-    }
-
-    private void determineUtxoThenMaybeProcess(Transaction tx, TransactionOutput utxo) {
-        String slpTxType = this.getSlpTxType(tx);
-
-        switch (slpTxType) {
-            case genesisTxType:  // GENESIS
-            case mintTxType:  // MINT
-                if (!this.utxoIsMintBaton(tx, utxo, slpTxType)) {
-                    this.processGenesisOrMintUtxo(utxo, tx, slpTxType);
-                }
-                break;
-            case sendTxType:  // SEND
-                this.processUtxo(utxo, tx);
-                break;
-        }
-    }
-
-    private boolean utxoIsMintBaton(Transaction tx, TransactionOutput utxo, String slpTxType) {
-        int mintingBatonVout = 0;
-        int utxoVout = utxo.getIndex();
-        int chunkIndex = 0;
-
-        if(slpTxType.equals(genesisTxType)) { // GENESIS
-            chunkIndex = 9;
-        } else if(slpTxType.equals(mintTxType)) { // MINT
-            chunkIndex = 5;
-        }
-
-        ScriptChunk mintBatonVoutChunk = tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkIndex);
-        if (mintBatonVoutChunk != null) {
-            String voutHex = new String(Hex.encode(mintBatonVoutChunk.data), StandardCharsets.UTF_8);
-
-            if(!voutHex.equals("")) {
-                mintingBatonVout = Integer.parseInt(voutHex, 16);
-            } else {
-                return false;
-            }
-        }
-
-        return mintingBatonVout == utxoVout;
-    }
-
-    private void processUtxo(TransactionOutput utxo, Transaction tx) {
-        if(utxo.getValue().value == this.MIN_DUST) {
-            String tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
-            int chunkPosition = utxo.getIndex() + 4;
-            String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
-            long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
-
-            ArrayList<SlpUTXO> slpUtxosToAdd = new ArrayList<>();
-            ArrayList<SlpToken> slpTokensToAdd = new ArrayList<>();
-            ArrayList<SlpTokenBalance> slpBalancesToAdd = new ArrayList<>();
-            ArrayList<SlpTokenBalance> cachedTokenBalances = this.slpBalances;
-
-            if (!this.tokenIsMapped(tokenId)) {
-                SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
-                JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
-                if (tokenData != null) {
-                    int decimals = tokenData.getInt("decimals");
-                    String ticker = tokenData.getString("ticker");
-
-                    double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
-                    if (!this.tokenUtxoIsMapped(slpUTXO)) {
-                        slpUtxosToAdd.add(slpUTXO);
-                    }
-
-                    SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                    slpTokensToAdd.add(slpToken);
-
-                    if (this.isBalanceRecorded(tokenId)) {
-                        this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
-                    } else {
-                        slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
-                    }
-                }
-            } else {
-                SlpToken slpToken = this.getSlpToken(tokenId);
-                int decimals = slpToken.getDecimals();
-
-                double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
-                if (!this.tokenUtxoIsMapped(slpUTXO)) {
-                    slpUtxosToAdd.add(slpUTXO);
-                }
-
-                if (this.isBalanceRecorded(tokenId)) {
-                    this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
-                } else {
-                    slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
-                }
-            }
             this.slpUtxos.addAll(slpUtxosToAdd);
-            this.slpBalances = cachedTokenBalances;
-            this.slpBalances.addAll(slpBalancesToAdd);
-            this.slpTokens.addAll(slpTokensToAdd);
-            this.saveTokens(slpTokens);
+
+            //Calculating balances
+            for (SlpUTXO slpUTXO : this.slpUtxos) {
+                String tokenId = slpUTXO.getTokenId();
+                double tokenAmount;
+
+                if (!this.tokenIsMapped(tokenId)) {
+                    this.tryCacheToken(tokenId);
+                } else {
+                    SlpToken slpToken = this.getSlpToken(tokenId);
+                    tokenAmount = BigDecimal.valueOf(slpUTXO.getTokenAmountRaw()).scaleByPowerOfTen(-slpToken.getDecimals()).doubleValue();
+                    if (this.isBalanceRecorded(tokenId)) {
+                        Objects.requireNonNull(this.getTokenBalance(tokenId)).addToBalance(tokenAmount);
+                    } else {
+                        this.slpBalances.add(new SlpTokenBalance(tokenId, tokenAmount));
+                    }
+                }
+            }
+
+            this.saveVerifiedTxs(this.verifiedSlpTxs);
+
+            recalculatingTokens = false;
         }
     }
 
-    private void processGenesisOrMintUtxo(TransactionOutput utxo, Transaction tx, String slpTxType) {
-        if(utxo.getValue().value == this.MIN_DUST) {
-            String tokenId = "";
-            int chunkPosition = 0;
+    private SlpUTXO processSlpUtxo(SlpOpReturn slpOpReturn, TransactionOutput utxo) {
+        long tokenRawAmount = slpOpReturn.getRawAmountOfUtxo(utxo.getIndex() - 1);
+        return new SlpUTXO(slpOpReturn.getTokenId(), tokenRawAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
+    }
 
-            if(slpTxType.equals(genesisTxType)) {
-                tokenId = tx.getHashAsString();
-                chunkPosition = 10;
-            } else if(slpTxType.equals(mintTxType)) {
-                tokenId = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(4).data), StandardCharsets.UTF_8);
-                chunkPosition = 6;
+    private void tryCacheToken(String tokenId) {
+        if(!this.tokenIsMapped(tokenId)) {
+            SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
+            JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
+
+            if (tokenData != null) {
+                int decimals = tokenData.getInt("decimals");
+                String ticker = tokenData.getString("ticker");
+                SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
+                this.slpTokens.add(slpToken);
+                this.saveTokens(this.slpTokens);
             }
-
-            String tokenAmountHex = new String(Hex.encode(tx.getOutputs().get(0).getScriptPubKey().getChunks().get(chunkPosition).data), StandardCharsets.UTF_8);
-            long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
-
-            ArrayList<SlpUTXO> slpUtxosToAdd = new ArrayList<>();
-            ArrayList<SlpToken> slpTokensToAdd = new ArrayList<>();
-            ArrayList<SlpTokenBalance> slpBalancesToAdd = new ArrayList<>();
-            ArrayList<SlpTokenBalance> cachedTokenBalances = this.slpBalances;
-
-            if (!this.tokenIsMapped(tokenId)) {
-                SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
-                JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
-                if (tokenData != null) {
-                    int decimals = tokenData.getInt("decimals");
-                    String ticker = tokenData.getString("ticker");
-
-                    double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
-                    if (!this.tokenUtxoIsMapped(slpUTXO)) {
-                        slpUtxosToAdd.add(slpUTXO);
-                    }
-
-                    SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                    slpTokensToAdd.add(slpToken);
-
-                    if (this.isBalanceRecorded(tokenId)) {
-                        this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
-                    } else {
-                        slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
-                    }
-                }
-            } else {
-                SlpToken slpToken = this.getSlpToken(tokenId);
-                int decimals = slpToken.getDecimals();
-
-                double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
-                if (!this.tokenUtxoIsMapped(slpUTXO)) {
-                    slpUtxosToAdd.add(slpUTXO);
-                }
-
-                if (this.isBalanceRecorded(tokenId)) {
-                    this.getTokenBalance(cachedTokenBalances, tokenId).addToBalance(tokenAmount);
-                } else {
-                    slpBalancesToAdd.add(new SlpTokenBalance(tokenId, tokenAmount));
-                }
-            }
-            this.slpUtxos.addAll(slpUtxosToAdd);
-            this.slpBalances = cachedTokenBalances;
-            this.slpBalances.addAll(slpBalancesToAdd);
-            this.slpTokens.addAll(slpTokensToAdd);
-            this.saveTokens(slpTokens);
         }
     }
 
     private boolean isBalanceRecorded(String tokenId) {
-        for (Iterator<SlpTokenBalance> iterator = this.slpBalances.iterator(); iterator.hasNext();) {
-            SlpTokenBalance tokenBalance = iterator.next();
-            if(tokenBalance.getTokenId().equals(tokenId)) {
+        for (SlpTokenBalance tokenBalance : this.slpBalances) {
+            if (tokenBalance.getTokenId().equals(tokenId)) {
                 return true;
             }
         }
@@ -663,10 +483,9 @@ public class SlpAppKit extends AbstractIdleService {
         return false;
     }
 
-    private SlpTokenBalance getTokenBalance(ArrayList<SlpTokenBalance> tokenBalances, String tokenId) {
-        for (Iterator<SlpTokenBalance> iterator = tokenBalances.iterator(); iterator.hasNext();) {
-            SlpTokenBalance tokenBalance = iterator.next();
-            if(tokenBalance.getTokenId().equals(tokenId)) {
+    private SlpTokenBalance getTokenBalance(String tokenId) {
+        for (SlpTokenBalance tokenBalance : this.slpBalances) {
+            if (tokenBalance.getTokenId().equals(tokenId)) {
                 return tokenBalance;
             }
         }
@@ -676,62 +495,24 @@ public class SlpAppKit extends AbstractIdleService {
 
     private boolean tokenIsMapped(String tokenId) {
         for (SlpToken slpToken : this.slpTokens) {
-            if (slpToken.getTokenId().equals(tokenId)) {
-                return true;
+            String slpTokenTokenId = slpToken.getTokenId();
+            if (slpTokenTokenId != null) {
+                if (slpTokenTokenId.equals(tokenId)) {
+                    return true;
+                }
             }
         }
 
         return false;
-    }
-
-    private boolean tokenUtxoIsMapped(SlpUTXO slpUtxo) {
-        for (Iterator<SlpUTXO> iterator = this.slpUtxos.iterator(); iterator.hasNext();) {
-            SlpUTXO mappedUtxo = iterator.next();
-            String mappedUtxoHash = mappedUtxo.getTxUtxo().getParentTransactionHash().toString();
-            int mappedUtxoIndex = mappedUtxo.getTxUtxo().getIndex();
-            String slpUtxoHash = slpUtxo.getTxUtxo().getParentTransactionHash().toString();
-            int slpUtxoIndex = slpUtxo.getTxUtxo().getIndex();
-            if(mappedUtxoHash.equals(slpUtxoHash) && mappedUtxoIndex == slpUtxoIndex) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean tokenUtxoIsMapped(TransactionOutput utxo) {
-        for (Iterator<SlpUTXO> iterator = this.slpUtxos.iterator(); iterator.hasNext();) {
-            SlpUTXO mappedUtxo = iterator.next();
-            String mappedUtxoHash = mappedUtxo.getTxUtxo().getParentTransactionHash().toString();
-            int mappedUtxoIndex = mappedUtxo.getTxUtxo().getIndex();
-            String slpUtxoHash = utxo.getParentTransactionHash().toString();
-            int slpUtxoIndex = utxo.getIndex();
-            if(mappedUtxoHash.equals(slpUtxoHash) && mappedUtxoIndex == slpUtxoIndex) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private SlpUTXO getSlpUtxo(String txHash, int index) {
-        for (Iterator<SlpUTXO> iterator = this.slpUtxos.iterator(); iterator.hasNext();) {
-            SlpUTXO slpUtxo = iterator.next();
-            String utxoHash = slpUtxo.getTxUtxo().getParentTransactionHash().toString();
-            int utxoIndex = slpUtxo.getTxUtxo().getIndex();
-            if(utxoHash.equals(txHash) && utxoIndex == index) {
-                return slpUtxo;
-            }
-        }
-
-        return null;
     }
 
     public SlpToken getSlpToken(String tokenId) {
-        for (Iterator<SlpToken> iterator = this.slpTokens.iterator(); iterator.hasNext();) {
-            SlpToken slpToken = iterator.next();
-            if(slpToken.getTokenId().equals(tokenId)) {
-                return slpToken;
+        for (SlpToken slpToken : this.slpTokens) {
+            String slpTokenTokenId = slpToken.getTokenId();
+            if (slpTokenTokenId != null) {
+                if (slpTokenTokenId.equals(tokenId)) {
+                    return slpToken;
+                }
             }
         }
 
@@ -742,7 +523,7 @@ public class SlpAppKit extends AbstractIdleService {
         return this.verifiedSlpTxs.contains(txid);
     }
 
-    public Wallet getWallet() {
+    public Wallet getvWallet() {
         return this.wallet;
     }
 
