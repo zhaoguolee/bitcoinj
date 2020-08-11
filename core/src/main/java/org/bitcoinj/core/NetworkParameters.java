@@ -435,7 +435,10 @@ public abstract class NetworkParameters {
     /**
      * Scheme part for URIs, for example "bitcoin".
      */
-    public abstract String getUriScheme();
+    public String getUriScheme() {
+        return getCashAddrPrefix();
+    }
+
 
     /**
      * Returns whether this network has a maximum number of coins (finite supply) or
