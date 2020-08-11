@@ -443,13 +443,11 @@ public class SlpAppKit extends AbstractIdleService {
     public void recalculateSlpUtxos() {
         this.slpUtxos.clear();
         this.slpBalances.clear();
-        List<TransactionOutput> utxos = this.wallet.calculateAllSpendCandidates(false, true, true);
-        for (Iterator<TransactionOutput> iterator = utxos.iterator(); iterator.hasNext();) {
-            TransactionOutput utxo = iterator.next();
+        List<TransactionOutput> utxos = this.wallet.getAllDustUtxos(false, true);
+        for (TransactionOutput utxo : utxos) {
             Transaction tx = utxo.getParentTransaction();
-
             //If tx is already a verified SLP tx, we can save time by avoiding contacting SLPDB
-            if(this.verifiedSlpTxs.contains(tx.getHashAsString())) {
+            if (this.verifiedSlpTxs.contains(tx.getTxId().toString())) {
                 this.determineUtxoThenMaybeProcess(tx, utxo);
             } else {
                 //Not verified tx, doing now.
