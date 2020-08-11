@@ -49,8 +49,6 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
     private void checkNextCashWorkRequired(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         try {
             BigInteger evalBlockTime = BigInteger.valueOf(storedPrev.getHeader().getTimeSeconds());
-            System.out.println(storedPrev.getHeight());
-            //We add one because we are hoping this is the next block in the blockchain, so we take our current height and add 1.
             BigInteger evalBlockHeight = BigInteger.valueOf(storedPrev.getHeight());
             StoredBlock asertReferenceBlock = getAsertReferenceBlock(storedPrev, blockStore);
             BigInteger referenceBlockAncestorTime = BigInteger.valueOf(asertReferenceBlock.getPrev(blockStore).getHeader().getTimeSeconds());
