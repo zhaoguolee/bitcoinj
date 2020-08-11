@@ -1,6 +1,5 @@
 package org.bitcoinj.net;
 
-import com.github.kiulian.converter.AddressConverter;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.crypto.HashHelper;
@@ -75,7 +74,7 @@ public class NetHelper {
                     if(forceCashAddr) {
                         if (!Address.isValidPaymentCode(hash160)) {
                             LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, hash160);
-                            address = AddressConverter.toCashAddress(legacyAddress.toBase58());
+                            address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
                         }
                     } else {
                         if (Address.isValidPaymentCode(hash160)) {
@@ -83,7 +82,7 @@ public class NetHelper {
                             break;
                         } else {
                             LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, hash160);
-                            address = AddressConverter.toCashAddress(legacyAddress.toBase58());
+                            address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
                         }
                     }
                 }
@@ -135,7 +134,7 @@ public class NetHelper {
                         break;
                     } else {
                         LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, Hex.decode(hash160));
-                        address = AddressConverter.toCashAddress(legacyAddress.toBase58());
+                        address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
                     }
                 }
 

@@ -17,7 +17,6 @@
 
 package org.bitcoinj.wallet;
 
-import com.github.kiulian.converter.AddressConverter;
 import com.google.common.annotations.*;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.*;
@@ -558,12 +557,10 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #currentKey(KeyChain.KeyPurpose)}
      */
-    public CashAddress currentAddress(KeyChain.KeyPurpose purpose) {
+    public Address currentAddress(KeyChain.KeyPurpose purpose) {
         keyChainGroupLock.lock();
         try {
-            String legacy = keyChainGroup.currentAddress(purpose).toString();
-            String cashAddr = AddressConverter.toCashAddress(legacy);
-            return CashAddress.fromCashAddress(this.getParams(), cashAddr);
+            return keyChainGroup.currentAddress(purpose);
         } finally {
             keyChainGroupLock.unlock();
         }
@@ -573,7 +570,7 @@ public class Wallet extends BaseTaggableObject
      * An alias for calling {@link #currentAddress(KeyChain.KeyPurpose)} with
      * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public CashAddress currentReceiveAddress() {
+    public Address currentReceiveAddress() {
         return currentAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
@@ -622,25 +619,23 @@ public class Wallet extends BaseTaggableObject
     /**
      * Returns address for a {@link #freshKey(KeyChain.KeyPurpose)}
      */
-    public CashAddress freshAddress(KeyChain.KeyPurpose purpose) {
-        CashAddress address;
+    public Address freshAddress(KeyChain.KeyPurpose purpose) {
+        Address key;
         keyChainGroupLock.lock();
         try {
-            String legacy = keyChainGroup.freshAddress(purpose).toString();
-            String cashAddr = AddressConverter.toCashAddress(legacy);
-            address = CashAddress.fromCashAddress(this.getParams(), cashAddr);
+            key = keyChainGroup.freshAddress(purpose);
         } finally {
             keyChainGroupLock.unlock();
         }
         saveNow();
-        return address;
+        return key;
     }
 
     /**
-     * An alias for calling {@link #freshAddress(KeyChain.KeyPurpose)} with
-     * {@link KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
+     * An alias for calling {@link #freshAddress(org.bitcoinj.wallet.KeyChain.KeyPurpose)} with
+     * {@link org.bitcoinj.wallet.KeyChain.KeyPurpose#RECEIVE_FUNDS} as the parameter.
      */
-    public CashAddress freshReceiveAddress() {
+    public Address freshReceiveAddress() {
         return freshAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
@@ -822,7 +817,7 @@ public class Wallet extends BaseTaggableObject
         return currentAddress(KeyChain.KeyPurpose.CHANGE);
     }
 
-    public CashAddress freshChangeAddress() {
+    public Address freshChangeAddress() {
         return freshAddress(KeyChain.KeyPurpose.CHANGE);
     }
 

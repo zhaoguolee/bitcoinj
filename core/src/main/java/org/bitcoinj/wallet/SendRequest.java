@@ -202,17 +202,9 @@ public class SendRequest {
         if(recipient.contains("#"))
         {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
-            if(Address.isValidCashAddr(params, cashAcctAddress)) {
-                destination = CashAddress.fromCashAddress(params, cashAcctAddress);
-            } else if(Address.isValidLegacyAddress(params, cashAcctAddress)){
-                destination = LegacyAddress.fromBase58(params, cashAcctAddress);
-            }
+            destination = Address.fromString(params, cashAcctAddress);
         } else {
-            if(Address.isValidCashAddr(params, recipient)) {
-                destination = CashAddress.fromCashAddress(params, recipient);
-            } else if(Address.isValidLegacyAddress(params, recipient)){
-                destination = LegacyAddress.fromBase58(params, recipient);
-            }
+            destination = Address.fromString(params, recipient);
         }
 
         checkNotNull(params, "Address is for an unknown network");
@@ -261,17 +253,9 @@ public class SendRequest {
         if(recipient.contains("#"))
         {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
-            if(Address.isValidCashAddr(params, cashAcctAddress)) {
-                destination = CashAddress.fromCashAddress(params, cashAcctAddress);
-            } else if(Address.isValidLegacyAddress(params, cashAcctAddress)){
-                destination = LegacyAddress.fromBase58(params, cashAcctAddress);
-            }
+            destination = Address.fromString(params, cashAcctAddress);
         } else {
-            if(Address.isValidCashAddr(params, recipient)) {
-                destination = CashAddress.fromCashAddress(params, recipient);
-            } else if(Address.isValidLegacyAddress(params, recipient)){
-                destination = LegacyAddress.fromBase58(params, recipient);
-            }
+            destination = Address.fromString(params, recipient);
         }
 
         checkNotNull(params, "Address is for an unknown network");
@@ -286,13 +270,10 @@ public class SendRequest {
         SendRequest req = new SendRequest();
         Address destination = null;
 
-        if(Address.isValidCashAddr(params, desiredAddressForCashAccount)) {
-            destination = CashAddress.fromCashAddress(params, desiredAddressForCashAccount);
-        } else if(Address.isValidLegacyAddress(params, desiredAddressForCashAccount)){
-            destination = LegacyAddress.fromBase58(params, desiredAddressForCashAccount);
-        }
+        destination = Address.fromString(params, desiredAddressForCashAccount);
 
         checkNotNull(params, "Address is for an unknown network");
+        assert destination != null;
         checkNotNull(destination, "No address set!");
         String hash160 = new String(Hex.encode(destination.getHash()), StandardCharsets.UTF_8);
         req.tx = new Transaction(params);

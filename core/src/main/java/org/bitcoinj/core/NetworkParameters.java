@@ -68,6 +68,7 @@ public abstract class NetworkParameters {
     protected BigInteger maxTarget;
     protected int port;
     protected long packetMagic;  // Indicates message origin network and is used to seek to the next message when stream state is unknown.
+    protected int[] acceptableAddressCodes;
     protected int addressHeader;
     protected int p2shHeader;
     protected int dumpedPrivateKeyHeader;
@@ -261,6 +262,10 @@ public abstract class NetworkParameters {
     public boolean passesCheckpoint(int height, Sha256Hash hash) {
         Sha256Hash checkpointHash = checkpoints.get(height);
         return checkpointHash == null || checkpointHash.equals(hash);
+    }
+
+    public int[] getAcceptableAddressCodes() {
+        return acceptableAddressCodes;
     }
 
     public long getAsertHalfLife() {

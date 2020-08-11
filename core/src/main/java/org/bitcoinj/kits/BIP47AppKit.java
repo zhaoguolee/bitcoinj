@@ -6,7 +6,6 @@
 package org.bitcoinj.kits;
 
 
-import com.github.kiulian.converter.AddressConverter;
 import com.google.common.io.Closeables;
 import com.google.common.util.concurrent.*;
 import com.google.gson.Gson;
@@ -179,7 +178,7 @@ public class BIP47AppKit extends AbstractIdleService {
             this.vWallet.addWatchedAddress(notificationAddress);
         }
 
-        String notifAsCashAddr = AddressConverter.toCashAddress(notificationAddress.toString());
+        String notifAsCashAddr = notificationAddress.toString();
         this.grabNotificationAddressUtxos(notifAsCashAddr);
     }
 
@@ -811,7 +810,7 @@ public class BIP47AppKit extends AbstractIdleService {
                 vWallet.getKeyChainSeed().getMnemonicCode());
     }
 
-    public CashAddress getCurrentAddress() {
+    public Address getCurrentAddress() {
         return vWallet.currentReceiveAddress();
     }
 
