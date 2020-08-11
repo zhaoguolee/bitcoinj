@@ -520,7 +520,7 @@ public class SlpAppKit extends AbstractIdleService {
                     String ticker = tokenData.getString("ticker");
 
                     double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
+                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                     if (!this.tokenUtxoIsMapped(slpUTXO)) {
                         slpUtxosToAdd.add(slpUTXO);
                     }
@@ -539,7 +539,7 @@ public class SlpAppKit extends AbstractIdleService {
                 int decimals = slpToken.getDecimals();
 
                 double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
+                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                 if (!this.tokenUtxoIsMapped(slpUTXO)) {
                     slpUtxosToAdd.add(slpUTXO);
                 }
@@ -587,7 +587,7 @@ public class SlpAppKit extends AbstractIdleService {
                     String ticker = tokenData.getString("ticker");
 
                     double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
+                    SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                     if (!this.tokenUtxoIsMapped(slpUTXO)) {
                         slpUtxosToAdd.add(slpUTXO);
                     }
@@ -606,7 +606,7 @@ public class SlpAppKit extends AbstractIdleService {
                 int decimals = slpToken.getDecimals();
 
                 double tokenAmount = BigDecimal.valueOf(tokenAmountRaw).scaleByPowerOfTen(-decimals).doubleValue();
-                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo);
+                SlpUTXO slpUTXO = new SlpUTXO(tokenId, tokenAmount, utxo, SlpUTXO.SlpUtxoType.NORMAL);
                 if (!this.tokenUtxoIsMapped(slpUTXO)) {
                     slpUtxosToAdd.add(slpUTXO);
                 }
