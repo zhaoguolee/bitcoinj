@@ -13,8 +13,8 @@ public class SlpAddress {
     }
 
     public String toCashAddress() {
-        LegacyAddress legacyAddr = LegacyAddress.fromBase58(params, AddressConverter.toLegacyAddress(this.address));
-        return CashAddressFactory.create().getFromBase58(this.params, legacyAddr.toString()).toString();
+        String legacyAddr = AddressConverter.toLegacyAddress(this.address);
+        return CashAddressFactory.create().getFromBase58(this.params, legacyAddr).toString();
     }
 
     public String toLegacyAddress() {
