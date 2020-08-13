@@ -1,10 +1,7 @@
 package org.bitcoinj.core.slp;
 
 import com.github.kiulian.converter.AddressConverter;
-import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.CashAddress;
-import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.*;
 
 public class SlpAddress {
     private NetworkParameters params;
@@ -16,8 +13,8 @@ public class SlpAddress {
     }
 
     public String toCashAddress() {
-        String legacyAddr = AddressConverter.toLegacyAddress(this.address);
-        return CashAddress.fromBase58(this.params, legacyAddr).toString();
+        LegacyAddress legacyAddr = LegacyAddress.fromBase58(params, AddressConverter.toLegacyAddress(this.address));
+        return CashAddressFactory.create().getFromBase58(this.params, legacyAddr.toString()).toString();
     }
 
     public String toLegacyAddress() {

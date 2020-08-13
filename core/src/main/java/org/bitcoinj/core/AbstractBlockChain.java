@@ -18,7 +18,6 @@
 package org.bitcoinj.core;
 
 import com.google.common.base.*;
-import com.google.common.collect.*;
 import com.google.common.util.concurrent.*;
 import org.bitcoinj.core.listeners.*;
 import org.bitcoinj.pow.AbstractPowRulesChecker;
@@ -373,7 +372,7 @@ public abstract class AbstractBlockChain {
             } catch (BlockStoreException e1) {
                 throw new RuntimeException(e1);
             }
-            throw new VerificationException("Could not verify block " + block.getHash().toString() + "\n" +
+            throw new VerificationException(e.getMessage() + " Could not verify block " + block.getHash().toString() + "\n" +
                     block.toString(), e);
         }
     }
@@ -470,7 +469,7 @@ public abstract class AbstractBlockChain {
             } else {
                 checkState(lock.isHeldByCurrentThread());
                 // It connects to somewhere on the chain. Not necessarily the top of the best known chain.
-                AbstractPowRulesChecker rulesChecker = ruleCheckerFactory.getRuleChecker(storedPrev, block);
+                AbstractPowRulesChecker rulesChecker = ruleCheckerFactory.getRuleChecker(storedPrev, block, blockStore);
                 rulesChecker.checkRules(storedPrev, block, blockStore, this);
                 connectBlock(block, storedPrev, shouldVerifyTransactions(), filteredTxHashList, filteredTxn);
             }
@@ -652,7 +651,7 @@ public abstract class AbstractBlockChain {
         // (in the case of the listener being a wallet). Wallets need to know how deep each transaction is so
         // coinbases aren't used before maturity.
         boolean first = true;
-        Set<Sha256Hash> falsePositives = Sets.newHashSet();
+        Set<Sha256Hash> falsePositives = new HashSet<>();
         if (filteredTxHashList != null) falsePositives.addAll(filteredTxHashList);
 
         for (final ListenerRegistration<TransactionReceivedInBlockListener> registration : transactionReceivedListeners) {
@@ -667,7 +666,7 @@ public abstract class AbstractBlockChain {
                     public void run() {
                         try {
                             // We can't do false-positive handling when executing on another thread
-                            Set<Sha256Hash> ignoredFalsePositives = Sets.newHashSet();
+                            Set<Sha256Hash> ignoredFalsePositives = new HashSet<>();
                             informListenerForNewTransactions(block, newBlockType, filteredTxHashList, filteredTxn,
                                     newStoredBlock, notFirst, registration.listener, ignoredFalsePositives);
                         } catch (VerificationException e) {

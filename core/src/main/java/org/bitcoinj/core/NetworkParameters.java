@@ -17,14 +17,9 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.net.discovery.*;
 import org.bitcoinj.params.*;
 import org.bitcoinj.script.*;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
 
 import org.bitcoinj.utils.MonetaryFormat;
 
@@ -69,10 +64,11 @@ public abstract class NetworkParameters {
 
     // TODO: Seed nodes should be here as well.
 
-    protected Block genesisBlock;
+    protected final Block genesisBlock;
     protected BigInteger maxTarget;
     protected int port;
     protected long packetMagic;  // Indicates message origin network and is used to seek to the next message when stream state is unknown.
+    protected int[] acceptableAddressCodes;
     protected int addressHeader;
     protected int p2shHeader;
     protected int dumpedPrivateKeyHeader;
@@ -95,7 +91,8 @@ public abstract class NetworkParameters {
     protected long monolithActivationTime = 1526400000L;
     // Nov, 15 2018 hard fork
     protected static long november2018ActivationTime = 1542300000L;
-
+    // Nov, 15 2020 hard fork
+    protected long asertUpdateTime;
     /**
      * See getId(). This may be null for old deserialized wallets. In that case we derive it heuristically
      * by looking at the port number.
@@ -115,6 +112,11 @@ public abstract class NetworkParameters {
     protected volatile transient MessageSerializer defaultSerializer = null;
     protected String cashAddrPrefix;
     protected String simpleledgerPrefix;
+    protected int asertReferenceBlockBits;
+    protected BigInteger asertReferenceBlockTime;
+    protected BigInteger asertReferenceBlockHeight;
+    protected long asertHalfLife;
+    protected boolean allowMinDifficultyBlocks;
 
     protected NetworkParameters() {
         alertSigningKey = SATOSHI_KEY;
@@ -146,6 +148,7 @@ public abstract class NetworkParameters {
 
     public static final int TARGET_TIMESPAN = 14 * 24 * 60 * 60;  // 2 weeks per difficulty cycle, on average.
     public static final int TARGET_SPACING = 10 * 60;  // 10 minutes per block.
+    public static final BigInteger TARGET_SPACING_BIGINT = BigInteger.valueOf(10L * 60L);  // 10 minutes per block.
     public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;
     
     /**
@@ -241,12 +244,36 @@ public abstract class NetworkParameters {
                     Long.toHexString(newTargetCompact) + " vs " + Long.toHexString(receivedTargetCompact));
     }
 
+    public void verifyAsertDifficulty(BigInteger newTarget, Block nextBlock)
+    {
+        if (newTarget.compareTo(this.getMaxTarget()) > 0) {
+            newTarget = this.getMaxTarget();
+        }
+
+        BigInteger receivedTarget = BigInteger.valueOf(Utils.encodeCompactBits(nextBlock.getDifficultyTargetAsInteger()));
+        if (!newTarget.equals(receivedTarget))
+            throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
+                    newTarget.toString(16) + " vs " + receivedTarget.toString(16));
+    }
+
     /**
      * Returns true if the block height is either not a checkpoint, or is a checkpoint and the hash matches.
      */
     public boolean passesCheckpoint(int height, Sha256Hash hash) {
         Sha256Hash checkpointHash = checkpoints.get(height);
         return checkpointHash == null || checkpointHash.equals(hash);
+    }
+
+    public int[] getAcceptableAddressCodes() {
+        return acceptableAddressCodes;
+    }
+
+    public long getAsertHalfLife() {
+        return asertHalfLife;
+    }
+
+    public boolean allowMinDifficultyBlocks() {
+        return allowMinDifficultyBlocks;
     }
 
     /**
@@ -370,6 +397,20 @@ public abstract class NetworkParameters {
         return daaUpdateHeight;
     }
 
+    public int getAsertReferenceBlockBits(){
+        return asertReferenceBlockBits;
+    }
+    public BigInteger getAsertReferenceBlockTime(){
+        return asertReferenceBlockTime;
+    }
+    public BigInteger getAsertReferenceBlockHeight(){
+        return asertReferenceBlockHeight;
+    }
+
+    public long getAsertUpdateTime(){
+        return asertUpdateTime;
+    }
+
     /** MTP activation time for May 15th, 2018 upgrade **/
     public long getMonolithActivationTime() {
         return monolithActivationTime;
@@ -394,7 +435,10 @@ public abstract class NetworkParameters {
     /**
      * Scheme part for URIs, for example "bitcoin".
      */
-    public abstract String getUriScheme();
+    public String getUriScheme() {
+        return getCashAddrPrefix();
+    }
+
 
     /**
      * Returns whether this network has a maximum number of coins (finite supply) or

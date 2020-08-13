@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import com.github.kiulian.converter.AddressConverter;
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script.ScriptType;
 
@@ -145,8 +144,7 @@ public class LegacyAddress extends Address {
 
     public static LegacyAddress fromCashAddress(NetworkParameters params, String cashAddr) {
         if(Address.isValidCashAddr(params, cashAddr)) {
-            String legacy = AddressConverter.toLegacyAddress(cashAddr);
-            return fromBase58(params, legacy);
+            return LegacyAddress.fromCashAddress(params, CashAddressFactory.create().getFromFormattedAddress(params, cashAddr).toString());
         } else {
             throw new AddressFormatException("Invalid address!");
         }

@@ -19,27 +19,21 @@ package org.bitcoinj.pow.factory;
 import org.bitcoinj.core.Block;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.pow.AbstractRuleCheckerFactory;
 import org.bitcoinj.pow.RulesPoolChecker;
-import org.bitcoinj.pow.rule.MinimalDifficultyRuleChecker;
-import org.bitcoinj.pow.rule.NewDifficultyAdjustmentAlgorithmRulesChecker;
+import org.bitcoinj.pow.rule.AsertDifficultyRuleChecker;
 import org.bitcoinj.store.BlockStore;
 
-public class DAARuleCheckerFactory extends AbstractRuleCheckerFactory {
+public class AsertRuleCheckerFactory extends AbstractRuleCheckerFactory {
 
-    public DAARuleCheckerFactory(NetworkParameters parameters) {
+    public AsertRuleCheckerFactory(NetworkParameters parameters) {
         super(parameters);
     }
 
     @Override
     public RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         RulesPoolChecker rulesChecker = new RulesPoolChecker(networkParameters);
-        if (isTestNet() && TestNet3Params.isValidTestnetDateBlock(nextBlock)) {
-            rulesChecker.addRule(new MinimalDifficultyRuleChecker(networkParameters));
-        } else {
-            rulesChecker.addRule(new NewDifficultyAdjustmentAlgorithmRulesChecker(networkParameters));
-        }
+        rulesChecker.addRule(new AsertDifficultyRuleChecker(networkParameters));
         return rulesChecker;
     }
 

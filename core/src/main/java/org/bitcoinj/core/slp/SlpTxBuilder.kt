@@ -1,10 +1,7 @@
 package org.bitcoinj.core.slp
 
 import io.reactivex.Single
-import org.bitcoinj.core.CashAddress
-import org.bitcoinj.core.Coin
-import org.bitcoinj.core.Transaction
-import org.bitcoinj.core.TransactionOutput
+import org.bitcoinj.core.*
 import org.bitcoinj.kits.SlpAppKit
 import org.bitcoinj.protocols.payments.slp.SlpPaymentSession
 import org.bitcoinj.script.Script
@@ -24,7 +21,7 @@ class SlpTxBuilder {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
                         val cashAddr = SlpAddress(slpAppKit.wallet.params, toAddress).toCashAddress()
-                        val addrTo = CashAddress.fromCashAddress(slpAppKit.wallet.params, cashAddr)
+                        val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, cashAddr)
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
 
@@ -47,7 +44,7 @@ class SlpTxBuilder {
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddress.fromCashAddress(slpAppKit.wallet.params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
                         }
 
                         // Send our BCH change back to our BCH address
@@ -102,13 +99,13 @@ class SlpTxBuilder {
 
                         for(x in addresses.indices) {
                             val cashAddr = SlpAddress(slpAppKit.wallet.params, addresses[x]).toCashAddress()
-                            val addrTo = CashAddress.fromCashAddress(slpAppKit.wallet.params, cashAddr)
+                            val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, cashAddr)
                             req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, addrTo)
                         }
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddress.fromCashAddress(slpAppKit.wallet.params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
                         }
 
                         // Send our BCH change back to our BCH address

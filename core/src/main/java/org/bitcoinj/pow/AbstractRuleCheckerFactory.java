@@ -19,6 +19,7 @@ package org.bitcoinj.pow;
 import org.bitcoinj.core.Block;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.store.BlockStore;
 
 public abstract class AbstractRuleCheckerFactory {
 
@@ -28,7 +29,7 @@ public abstract class AbstractRuleCheckerFactory {
         this.networkParameters = networkParameters;
     }
 
-    public abstract RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock);
+    public abstract RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore);
 
     protected boolean isTestNet() {
         return NetworkParameters.ID_TESTNET.equals(networkParameters.getId());

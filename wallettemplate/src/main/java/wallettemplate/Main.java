@@ -18,6 +18,7 @@ package wallettemplate;
 
 import com.google.common.util.concurrent.*;
 import javafx.scene.input.*;
+import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.core.slp.SlpToken;
 import org.bitcoinj.kits.BIP47AppKit;
@@ -47,12 +48,14 @@ import wallettemplate.utils.TextFieldValidator;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 import static wallettemplate.utils.GuiUtils.*;
 
 public class Main extends Application {
-    public static NetworkParameters params = MainNetParams.get();
+    public static NetworkParameters params = TestNet3Params.get();
     public static final Script.ScriptType PREFERRED_OUTPUT_SCRIPT_TYPE = Script.ScriptType.P2PKH;
     public static final String APP_NAME = "WalletTemplate";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
@@ -115,7 +118,7 @@ public class Main extends Application {
         // a future version.
         Threading.USER_THREAD = Platform::runLater;
         // Create the app kit. It won't do any heavyweight initialization until after we start it.
-        setupWalletKit(null);
+        setupWalletKit(new DeterministicSeed("armor found urban where kind label weird daring until brother swap smoke", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
 
         mainWindow.show();
 

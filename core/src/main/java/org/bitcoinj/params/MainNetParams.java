@@ -24,6 +24,8 @@ package org.bitcoinj.params;
         import org.bitcoinj.core.Sha256Hash;
         import org.bitcoinj.core.Utils;
 
+        import java.math.BigInteger;
+
         import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -36,12 +38,12 @@ public class MainNetParams extends AbstractBitcoinNetParams {
 
     public MainNetParams() {
         super();
-        interval = INTERVAL;
         targetTimespan = TARGET_TIMESPAN;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
         dumpedPrivateKeyHeader = 128;
         addressHeader = 0;
         p2shHeader = 5;
+        acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
         port = 8333;
         packetMagic = 0xe3e1f3e8L;
         bip32HeaderP2PKHpub = 0x0488b21e; // The 4 byte header that serializes in base58 to "xpub".
@@ -55,7 +57,6 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         genesisBlock.setTime(1231006505L);
         genesisBlock.setNonce(2083236893);
         id = ID_MAINNET;
-        subsidyDecreaseBlockCount = 210000;
         spendableCoinbaseDepth = 100;
         String genesisHash = genesisBlock.getHashAsString();
         checkState(genesisHash.equals("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
@@ -79,6 +80,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
                 "seed.bchd.cash",
                 "btccash-seeder.bitcoinunlimited.info"
         };
+
         httpSeeds = null;
         addrSeeds = null;
 
@@ -88,6 +90,14 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         daaUpdateHeight = 504031;
         cashAddrPrefix = "bitcoincash";
         simpleledgerPrefix = "simpleledger";
+
+        //This is for future use after the hardfork happens. I intend to hardcode the ASERT reference/anchor block data.
+        asertReferenceBlockBits = 0x00000000;
+        asertReferenceBlockHeight = BigInteger.ZERO;
+        asertReferenceBlockTime = BigInteger.ZERO;
+        asertUpdateTime = 1605441600L;
+        asertHalfLife = 2L * 24L * 60L * 60L;
+        allowMinDifficultyBlocks = false;
     }
 
     private static MainNetParams instance;
