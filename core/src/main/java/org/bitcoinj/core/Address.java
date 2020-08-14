@@ -19,6 +19,8 @@ package org.bitcoinj.core;
 import javax.annotation.Nullable;
 
 import org.bitcoinj.core.bip47.BIP47PaymentCode;
+import org.bitcoinj.core.slp.SlpAddress;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.ScriptType;
 
@@ -77,6 +79,17 @@ public abstract class Address extends PrefixedChecksummedBytes {
     {
         try {
             LegacyAddress.fromBase58(params, legacyAddress);
+            return true;
+        } catch(Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean isValidSlpAddress(NetworkParameters params, String slpAddress)
+    {
+        try {
+            SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getSimpleledgerPrefix(), slpAddress);
+            new CashAddress(params, addrData.version, addrData.bytes);
             return true;
         } catch(Exception e) {
             return false;

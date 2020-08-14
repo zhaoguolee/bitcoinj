@@ -80,9 +80,9 @@ public class CashAddress extends Address {
     }
 
     static CashAddressType getType(NetworkParameters params, int version) {
-        if (version == params.getAddressHeader()) {
+        if (version == params.getAddressHeader() || version == params.getSlpP2pkhHeader()) {
             return CashAddressType.PubKey;
-        } else if (version == params.getP2SHHeader()) {
+        } else if (version == params.getP2SHHeader() || version == params.getSlpP2shHeader()) {
             return CashAddressType.Script;
         }
         throw new AddressFormatException("Invalid Cash address version: " + version);
@@ -94,7 +94,7 @@ public class CashAddress extends Address {
         this.hash160 = hash;
     }
 
-    CashAddress(NetworkParameters params, int version, byte[] hash160) {
+    public CashAddress(NetworkParameters params, int version, byte[] hash160) {
         super(params, hash160);
         this.addressType = getType(params, version);
         this.hash160 = hash160;

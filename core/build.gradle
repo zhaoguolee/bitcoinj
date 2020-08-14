@@ -11,7 +11,6 @@ apply plugin: 'kotlin'
 version = '0.22'
 
 dependencies {
-    compile 'com.github.sealedtx:bitcoin-cash-converter:1.0'
     api 'org.bouncycastle:bcprov-jdk15on:1.65'
     api 'com.google.guava:guava:29.0-android'
     compile 'commons-io:commons-io:2.5'

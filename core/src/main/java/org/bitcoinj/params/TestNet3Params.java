@@ -51,7 +51,9 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         port = 18333;
         addressHeader = 111;
         p2shHeader = 196;
-        acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
+        slpP2shHeader = 8;
+        slpP2pkhHeader = 0;
+        acceptableAddressCodes = new int[] { addressHeader, p2shHeader, slpP2shHeader, slpP2pkhHeader };
         dumpedPrivateKeyHeader = 239;
         genesisBlock.setTime(1296688602L);
         genesisBlock.setDifficultyTarget(0x1d00ffffL);
@@ -84,6 +86,8 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         // Nov, 13 hard fork
         daaUpdateHeight = 1188697;
         cashAddrPrefix = "bchtest";
+        simpleledgerPrefix = "slptest";
+
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
     }

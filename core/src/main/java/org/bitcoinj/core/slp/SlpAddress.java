@@ -1,6 +1,5 @@
 package org.bitcoinj.core.slp;
 
-import com.github.kiulian.converter.AddressConverter;
 import org.bitcoinj.core.*;
 
 public class SlpAddress {
@@ -8,13 +7,18 @@ public class SlpAddress {
     private String address;
 
     public SlpAddress(NetworkParameters params, String address) {
-        this.params = params;
-        this.address = address;
+        if(Address.isValidSlpAddress(params, address)) {
+            this.params = params;
+            this.address = address;
+        } else {
+            throw new AddressFormatException("Invalid Slp address!");
+        }
     }
 
     public String toCashAddress() {
-        String legacyAddr = AddressConverter.toLegacyAddress(this.address);
-        return CashAddressFactory.create().getFromBase58(this.params, legacyAddr).toString();
+        SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getSimpleledgerPrefix(), this.address);
+        CashAddress cashAddr = new CashAddress(params, addrData.version, addrData.bytes);
+        return cashAddr.toString();
     }
 
     public String toLegacyAddress() {
@@ -298,8 +302,8 @@ public class SlpAddress {
         }
 
         public static class AddressVersionAndBytes {
-            private final byte version;
-            private final byte[] bytes;
+            public final byte version;
+            public final byte[] bytes;
 
             public AddressVersionAndBytes(byte version, byte[] bytes) {
                 this.version = version;
