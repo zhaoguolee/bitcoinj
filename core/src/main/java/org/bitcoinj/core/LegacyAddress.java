@@ -144,7 +144,12 @@ public class LegacyAddress extends Address {
 
     public static LegacyAddress fromCashAddress(NetworkParameters params, String cashAddr) {
         if(Address.isValidCashAddr(params, cashAddr)) {
-            return LegacyAddress.fromCashAddress(params, CashAddressFactory.create().getFromFormattedAddress(params, cashAddr).toString());
+            CashAddress cashAddress = CashAddressFactory.create().getFromFormattedAddress(params, cashAddr);
+            if(cashAddress.isP2SHAddress()) {
+                return LegacyAddress.fromScriptHash(params, cashAddress.getHash());
+            } else {
+                return LegacyAddress.fromPubKeyHash(params, cashAddress.getHash());
+            }
         } else {
             throw new AddressFormatException("Invalid address!");
         }
