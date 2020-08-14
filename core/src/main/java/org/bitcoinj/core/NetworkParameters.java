@@ -115,7 +115,7 @@ public abstract class NetworkParameters {
     protected String cashAddrPrefix;
     protected String simpleledgerPrefix;
     protected int asertReferenceBlockBits;
-    protected BigInteger asertReferenceBlockTime;
+    protected BigInteger asertReferenceBlockAncestorTime;
     protected BigInteger asertReferenceBlockHeight;
     protected long asertHalfLife;
     protected boolean allowMinDifficultyBlocks;
@@ -410,8 +410,8 @@ public abstract class NetworkParameters {
     public int getAsertReferenceBlockBits(){
         return asertReferenceBlockBits;
     }
-    public BigInteger getAsertReferenceBlockTime(){
-        return asertReferenceBlockTime;
+    public BigInteger getAsertReferenceBlockAncestorTime(){
+        return asertReferenceBlockAncestorTime;
     }
     public BigInteger getAsertReferenceBlockHeight(){
         return asertReferenceBlockHeight;
