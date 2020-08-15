@@ -771,12 +771,8 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public BIP47Channel getBip47MetaForPaymentCode(String paymentCode) {
-        for (BIP47Channel BIP47Channel : bip47MetaData.values()) {
-            if (BIP47Channel.getPaymentCode().equals(paymentCode)) {
-                return BIP47Channel;
-            }
-        }
-        return null;
+        BIP47Account bip47Account = new BIP47Account(getParams(), paymentCode);
+        return getBip47MetaForNotificationAddress(bip47Account.getNotificationAddress().toString());
     }
 
     public BIP47Channel getBip47MetaForNotificationAddress(String notificationAddress) {
