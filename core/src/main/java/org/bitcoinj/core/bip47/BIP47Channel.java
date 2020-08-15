@@ -35,7 +35,6 @@ public class BIP47Channel {
     private String paymentCode = null;
     private String notificationAddress = null;
     private List<BIP47Address> incomingAddresses = new ArrayList<BIP47Address>();
-    private List<String> outgoingAddresses = new ArrayList<String>();
     private int status = STATUS_NOT_SENT;
     private int currentOutgoingIndex = 0;
     private int currentIncomingIndex = -1;
@@ -106,10 +105,6 @@ public class BIP47Channel {
         currentIncomingIndex = nextIndex;
     }
 
-    public List<String> getOutgoingAddresses() {
-        return outgoingAddresses;
-    }
-
     public boolean isNotificationTransactionSent() {
         return status == STATUS_SENT_CFM;
     }
@@ -124,10 +119,6 @@ public class BIP47Channel {
 
     public void incrementOutgoingIndex() {
         currentOutgoingIndex++;
-    }
-
-    public void addAddressToOutgoingAddresses(String address) {
-        outgoingAddresses.add(address);
     }
 
     public void setStatusNotSent() {

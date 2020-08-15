@@ -109,9 +109,7 @@ public class BIP47AppKit extends AbstractIdleService {
     private BlockchainDownloadProgressTracker mBlockchainDownloadProgressTracker;
 
     // This wallet allows one listener to be invoked when there are coins received and
-    private TransactionEventListener mCoinsReceivedEventListener = null;
-    // one listener when the transaction confidence changes
-    private TransactionEventListener mTransactionConfidenceListener = null;
+    private TransactionEventListener mTransactionsEventListener = null;
 
     private boolean mBlockchainDownloadStarted = false;
 
@@ -366,16 +364,12 @@ public class BIP47AppKit extends AbstractIdleService {
     // When a new *payment* transaction is received:
     //  - a new key is generated and imported to the wallet
     private void addTransactionsListener(final Runnable runnable) {
-        this.addOnReceiveTransactionListener(new TransactionEventListener() {
+        this.addTransactionEvenListener(new TransactionEventListener() {
             @Override
             public void onTransactionReceived(BIP47AppKit bip47AppKit, Transaction transaction) {
                 if (isNotificationTransaction(transaction)) {
-                    System.out.println("Valid notification transaction received");
                     BIP47PaymentCode BIP47PaymentCode = getPaymentCodeInNotificationTransaction(transaction);
-                    if (BIP47PaymentCode == null) {
-                        System.err.println("Error decoding payment code in tx " + transaction);
-                    } else {
-                        System.out.println("Payment Code: " + BIP47PaymentCode);
+                    if (BIP47PaymentCode != null) {
                         boolean needsSaving = savePaymentCode(BIP47PaymentCode);
                         if (needsSaving) {
                             try {
@@ -387,13 +381,10 @@ public class BIP47AppKit extends AbstractIdleService {
                         }
                     }
                 } else if (isToBIP47Address(transaction)) {
-                    System.out.println("New BIP47 payment received to address: " + getAddressOfReceived(transaction));
                     boolean needsSaving = generateNewBip47IncomingAddress(getAddressOfReceived(transaction).toString());
                     if (needsSaving) {
                         saveBip47MetaData();
                     }
-                    String paymentCode = getPaymentCodeForAddress(getAddressOfReceived(transaction).toString());
-                    System.out.println("Received tx for Payment Code: " + paymentCode);
                 }
 
                 if(runnable != null)
@@ -416,14 +407,11 @@ public class BIP47AppKit extends AbstractIdleService {
 
                             saveBip47MetaData();
                         }
-                        System.out.println("Found ntx being sent from us: " + transaction.getTxId().toString());
                     }
                 }
-            }
 
-            @Override
-            public void onTransactionConfidenceEvent(BIP47AppKit bip47AppKit, Transaction transaction) {
-                return;
+                if(runnable != null)
+                    runnable.run();
             }
         });
     }
@@ -494,12 +482,12 @@ public class BIP47AppKit extends AbstractIdleService {
         try {
             List<BIP47Channel> BIP47ChannelList = gson.fromJson(jsonString, collectionType);
             if (BIP47ChannelList != null) {
-                for (BIP47Channel BIP47Channel : BIP47ChannelList) {
-                    if(BIP47Channel.getNotificationAddress() == null && BIP47Channel.getPaymentCode() != null) {
-                        BIP47Account bip47Account = new BIP47Account(getParams(), BIP47Channel.getPaymentCode());
-                        BIP47Channel.setNotificationAddress(bip47Account.getNotificationAddress().toString());
+                for (BIP47Channel channel : BIP47ChannelList) {
+                    if(channel.getNotificationAddress() == null && channel.getPaymentCode() != null) {
+                        BIP47Account bip47Account = new BIP47Account(getParams(), channel.getPaymentCode());
+                        channel.setNotificationAddress(bip47Account.getNotificationAddress().toString());
                     }
-                    bip47MetaData.put(BIP47Channel.getNotificationAddress(), BIP47Channel);
+                    bip47MetaData.put(channel.getNotificationAddress(), channel);
                 }
             }
         } catch (JsonSyntaxException e) {
@@ -533,31 +521,14 @@ public class BIP47AppKit extends AbstractIdleService {
     /**
      * <p>A listener is added to be invoked when the wallet sees an incoming transaction. </p>
      */
-    public void addOnReceiveTransactionListener(TransactionEventListener transactionEventListener) {
-        if (this.mCoinsReceivedEventListener != null)
-            vWallet.removeCoinsReceivedEventListener(mCoinsReceivedEventListener);
+    public void addTransactionEvenListener(TransactionEventListener transactionEventListener) {
+        if (this.mTransactionsEventListener != null)
+            vWallet.removeCoinsReceivedEventListener(mTransactionsEventListener);
 
         transactionEventListener.setWallet(this);
         vWallet.addCoinsReceivedEventListener(transactionEventListener);
         vWallet.addCoinsSentEventListener(transactionEventListener);
-        mCoinsReceivedEventListener = transactionEventListener;
-    }
-
-    /**
-     * <p>A listener is added to be invoked when the wallet receives blocks and builds confidence on a transaction </p>
-     */
-    public void addTransactionConfidenceEventListener(TransactionEventListener transactionEventListener) {
-        if (this.mTransactionConfidenceListener != null)
-            vWallet.removeTransactionConfidenceEventListener(mTransactionConfidenceListener);
-
-        transactionEventListener.setWallet(this);
-        vWallet.addTransactionConfidenceEventListener(transactionEventListener);
-
-        mTransactionConfidenceListener = transactionEventListener;
-    }
-
-    public TransactionEventListener getCoinsReceivedEventListener() {
-        return this.mCoinsReceivedEventListener;
+        mTransactionsEventListener = transactionEventListener;
     }
 
     /**
@@ -629,22 +600,6 @@ public class BIP47AppKit extends AbstractIdleService {
         return null;
     }
 
-    /* Find the address (in P2PKH or P2PSH output) that does not belong to this wallet. */
-    public Address getAddressOfSent(Transaction tx) {
-        for (final TransactionOutput output : tx.getOutputs()) {
-            try {
-                if (!output.isMineOrWatched(vWallet)) {
-                    final Script script = output.getScriptPubKey();
-                    return script.getToAddress(params, true);
-                }
-            } catch (final ScriptException x) {
-                // swallow
-            }
-        }
-
-        return null;
-    }
-
     /**
      * Given a notification transaction, extracts a valid payment code
      */
@@ -656,40 +611,53 @@ public class BIP47AppKit extends AbstractIdleService {
 
     // <p> Receives a payment code and returns true iff there is already an incoming address generated for the channel</p>
     public boolean savePaymentCode(BIP47PaymentCode bip47PaymentCode) {
+        boolean save = true;
         BIP47Account bip47Account = new BIP47Account(getParams(), bip47PaymentCode.toString());
         String notificationAddress = bip47Account.getNotificationAddress().toString();
         for(BIP47Channel channel : bip47MetaData.values()) {
-            if(channel.getNotificationAddress().equals(notificationAddress)) {
-                return false;
+            if (channel.getNotificationAddress().equals(notificationAddress) && channel.getPaymentCode() != null && channel.getIncomingAddresses().size() != 0) {
+                save = false;
+                break;
             }
         }
 
         if (bip47MetaData.containsKey(notificationAddress)) {
-            BIP47Channel BIP47Channel = bip47MetaData.get(notificationAddress);
-            if (BIP47Channel.getIncomingAddresses().size() != 0) {
-                return false;
+            BIP47Channel bip47Channel = bip47MetaData.get(notificationAddress);
+            if (bip47Channel.getIncomingAddresses().size() != 0) {
+                save = false;
             } else {
                 try {
-                    BIP47Channel.generateKeys(this);
-                    return true;
+                    if(bip47Channel.getPaymentCode() == null)
+                        bip47Channel.setPaymentCode(bip47PaymentCode.toString());
+
+                    bip47Channel.generateKeys(this);
+                    save = true;
                 } catch (Exception e) {
                     e.printStackTrace();
-                    return false;
+                    save = false;
                 }
             }
         }
 
-        BIP47Channel BIP47Channel = new BIP47Channel(bip47PaymentCode.toString());
+        if(save) {
+            BIP47Channel bip47Channel = bip47MetaData.get(notificationAddress);
+            if (bip47Channel == null) {
+                bip47Channel = new BIP47Channel(bip47PaymentCode.toString());
+            } else {
+                if (bip47Channel.getPaymentCode() == null)
+                    bip47Channel.setPaymentCode(bip47PaymentCode.toString());
+            }
 
-        try {
-            BIP47Channel.generateKeys(this);
-            bip47MetaData.put(notificationAddress, BIP47Channel);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            try {
+                bip47Channel.generateKeys(this);
+                bip47MetaData.put(notificationAddress, bip47Channel);
+            } catch (Exception e) {
+                e.printStackTrace();
+                save = false;
+            }
         }
 
-        return true;
+        return save;
     }
 
     public boolean saveOutgoingChannel(String notificationAddress, Transaction ntx) {
@@ -796,17 +764,6 @@ public class BIP47AppKit extends AbstractIdleService {
             for (BIP47Address bip47Address : BIP47Channel.getIncomingAddresses()) {
                 if (bip47Address.getAddress().equals(address)) {
                     return BIP47Channel.getPaymentCode();
-                }
-            }
-        }
-        return null;
-    }
-
-    public BIP47Channel getBip47MetaForOutgoingAddress(String address) {
-        for (BIP47Channel BIP47Channel : bip47MetaData.values()) {
-            for (String outgoingAddress : BIP47Channel.getOutgoingAddresses()) {
-                if (outgoingAddress.equals(address)) {
-                    return BIP47Channel;
                 }
             }
         }
@@ -1034,9 +991,9 @@ public class BIP47AppKit extends AbstractIdleService {
         BIP47Account bip47Account = new BIP47Account(getParams(), paymentCode);
         String notificationAddress = bip47Account.getNotificationAddress().toString();
         if (bip47MetaData.containsKey(notificationAddress)) {
-            BIP47Channel BIP47Channel = bip47MetaData.get(notificationAddress);
-            BIP47Channel.setNtxHash(ntx.getHash());
-            BIP47Channel.setStatusSent();
+            BIP47Channel bip47Channel = bip47MetaData.get(notificationAddress);
+            bip47Channel.setNtxHash(ntx.getTxId());
+            bip47Channel.setStatusSent();
         } else {
             putBip47Meta(notificationAddress, paymentCode, ntx);
             putPaymenCodeStatusSent(paymentCode, ntx);
@@ -1044,9 +1001,9 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     /* Return the next address to send a payment to */
-    public String getCurrentOutgoingAddress(BIP47Channel BIP47Channel) {
+    public String getCurrentOutgoingAddress(BIP47Channel bip47Channel) {
         try {
-            ECKey key = getSendAddress(this, new BIP47PaymentCode(BIP47Channel.getPaymentCode()), BIP47Channel.getCurrentOutgoingIndex()).getSendECKey();
+            ECKey key = getSendAddress(this, new BIP47PaymentCode(bip47Channel.getPaymentCode()), bip47Channel.getCurrentOutgoingIndex()).getSendECKey();
             return key.toAddress(getParams()).toString();
         } catch (Exception e) {
             e.printStackTrace();
