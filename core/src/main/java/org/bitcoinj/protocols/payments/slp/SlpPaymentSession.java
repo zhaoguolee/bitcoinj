@@ -372,7 +372,7 @@ public class SlpPaymentSession {
         List<TransactionOutput> txUtxos = this.getSendRequest().tx.getOutputs();
         for(TransactionOutput utxo : txUtxos) {
             if(!ScriptPattern.isOpReturn(utxo.getScriptPubKey())) {
-                LegacyAddress address = null;
+                CashAddress address = null;
                 address = utxo.getAddressFromP2PKHScript(params);
                 if(address == null) {
                     address = utxo.getAddressFromP2SH(params);

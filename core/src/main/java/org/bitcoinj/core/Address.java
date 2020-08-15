@@ -154,6 +154,9 @@ public abstract class Address extends PrefixedChecksummedBytes {
             throw new IllegalArgumentException(outputScriptType.toString());
     }
 
+    public String toBase58() {
+        return new LegacyAddress(params, getOutputScriptType() == ScriptType.P2PKH, getHash()).toString();
+    }
     /**
      * Get either the public key hash or script hash that is encoded in the address.
      * 

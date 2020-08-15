@@ -10,6 +10,7 @@ import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.kits.BIP47AppKit;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.wallet.bip47.NotSecp256k1Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +32,8 @@ public class BIP47Channel {
 
     private static final int LOOKAHEAD = 20;
 
-    private String paymentCode;
-    private String label = "";
+    private String paymentCode = null;
+    private String notificationAddress = null;
     private List<BIP47Address> incomingAddresses = new ArrayList<BIP47Address>();
     private List<String> outgoingAddresses = new ArrayList<String>();
     private int status = STATUS_NOT_SENT;
@@ -44,17 +45,26 @@ public class BIP47Channel {
     public BIP47Channel() {}
 
     public BIP47Channel(String paymentCode) {
+        BIP47Account bip47Account = new BIP47Account(MainNetParams.get(), paymentCode);
         this.paymentCode = paymentCode;
+        this.notificationAddress = bip47Account.getNotificationAddress().toString();
     }
 
-    public BIP47Channel(String paymentCode, String label) {
-        this(paymentCode);
-        this.label = label;
+    public BIP47Channel(String notificationAddress, Sha256Hash ntxTxid) {
+        this.notificationAddress = notificationAddress;
+
+        if(ntxTxid != null) {
+            this.setNtxHash(ntxTxid);
+        }
     }
 
     public String getPaymentCode() {
         return paymentCode;
     }
+
+    public String getNotificationAddress() { return notificationAddress; }
+
+    public void setNotificationAddress(String na) { notificationAddress = na; }
 
     public void setPaymentCode(String pc) {
         paymentCode = pc;
@@ -94,14 +104,6 @@ public class BIP47Channel {
     public void addNewIncomingAddress(String newAddress, int nextIndex) {
         incomingAddresses.add(nextIndex, new BIP47Address(newAddress, nextIndex));
         currentIncomingIndex = nextIndex;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(String l) {
-        label = l;
     }
 
     public List<String> getOutgoingAddresses() {

@@ -88,7 +88,7 @@ public class CashAddress extends Address {
         throw new AddressFormatException("Invalid Cash address version: " + version);
     }
 
-    CashAddress(NetworkParameters params, CashAddressType addressType, byte[] hash) {
+    public CashAddress(NetworkParameters params, CashAddressType addressType, byte[] hash) {
         super(params, hash);
         this.addressType = addressType;
         this.hash160 = hash;
@@ -115,6 +115,37 @@ public class CashAddress extends Address {
     public String toString() {
         return CashAddressHelper.encodeCashAddress(getParameters().getCashAddrPrefix(),
                 CashAddressHelper.packAddressData(getHash(), addressType.getValue()));
+    }
+
+    public static CashAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
+        return new CashAddress(params, CashAddressType.PubKey, hash160);
+    }
+
+    /**
+     * Construct a {@link LegacyAddress} that represents the public part of the given {@link ECKey}. Note that an address is
+     * derived from a hash of the public key and is not the public key itself.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param key
+     *            only the public part is used
+     * @return constructed address
+     */
+    public static CashAddress fromKey(NetworkParameters params, ECKey key) {
+        return fromPubKeyHash(params, key.getPubKeyHash());
+    }
+
+    /**
+     * Construct a {@link LegacyAddress} that represents the given P2SH script hash.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param hash160
+     *            P2SH script hash
+     * @return constructed address
+     */
+    public static CashAddress fromScriptHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
+        return new CashAddress(params, CashAddressType.Script, hash160);
     }
 
     /**
