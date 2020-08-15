@@ -705,11 +705,10 @@ public class BIP47AppKit extends AbstractIdleService {
             BIP47Channel bip47Channel = bip47MetaData.get(notificationAddress);
             if(bip47Channel == null) {
                 bip47Channel = new BIP47Channel(notificationAddress, ntx.getTxId());
-                bip47Channel.setStatusSent();
             } else {
                 bip47Channel.setNtxHash(ntx.getTxId());
-                bip47Channel.setStatusSent();
             }
+            bip47Channel.setStatusSent();
 
             try {
                 bip47MetaData.put(notificationAddress, bip47Channel);
