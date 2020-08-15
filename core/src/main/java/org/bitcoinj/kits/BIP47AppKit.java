@@ -178,27 +178,18 @@ public class BIP47AppKit extends AbstractIdleService {
         this.grabNotificationAddressUtxos(notifAsCashAddr);
     }
 
-    private String[] apiServersAddress = new String[] {"http://rest.bitcoin.com/v2/address/utxo/"};
-    private String[] apiServersTx = new String[] {"http://rest.bitcoin.com/v2/rawtransactions/getRawTransaction/"};
-
     private void grabNotificationAddressUtxos(final String cashAddr) {
         new Thread() {
             @Override
             public void run() {
                 ArrayList<String> txids = new ArrayList<String>();
-                String randApiServer = apiServersAddress[new Random().nextInt(apiServersAddress.length)];
-                String apiUrl = randApiServer + cashAddr;
+                String apiUrl = "http://rest.bitcoin.com/v2/address/utxo/" + cashAddr;
                 JSONObject utxosJson = getJSONObject(apiUrl);
                 try {
                     JSONArray utxos = utxosJson.getJSONArray("utxos");
                     for (int x = 0; x < utxos.length(); x++) {
                         JSONObject utxo = utxos.getJSONObject(x);
-                        String txid = "";
-                        if(randApiServer.contains("rest.bitcoin.com")) {
-                            txid = utxo.getString("txid");
-                        } else if(randApiServer.contains("insomnia.fountainhead.cash")) {
-                            txid = utxo.getString("tx_hash");
-                        }
+                        String txid = utxo.getString("txid");
                         txids.add(txid);
                     }
 
@@ -213,31 +204,17 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     private void grabTransactionAndProcessNotificationTransaction(String txid) {
-        String randApiServer = apiServersTx[new Random().nextInt(apiServersTx.length)];
-        String url = randApiServer + txid;
+        String url = "http://rest.bitcoin.com/v2/rawtransactions/getRawTransaction/" + txid + "?verbose=true";
 
-        if(randApiServer.contains("rest.bitcoin.com")) {
-            url += "?verbose=true";
-        }
         JSONObject txJson = getJSONObject(url);
         if(txJson != null) {
             try {
-                String txHexVariable = "";
-                if(randApiServer.contains("rest.bitcoin.com")) {
-                    txHexVariable = "hex";
-                } else if(randApiServer.contains("insomnia.fountainhead.cash")) {
-                    txHexVariable = "tx";
-                }
-
+                String txHexVariable = "hex";
                 String txHex = txJson.getString(txHexVariable);
                 Transaction tx = new Transaction(this.params, Hex.decode(txHex));
                 if (isNotificationTransaction(tx)) {
-                    System.out.println("Valid notification transaction received");
                     BIP47PaymentCode BIP47PaymentCode = getPaymentCodeInNotificationTransaction(tx);
-                    if (BIP47PaymentCode == null) {
-                        System.err.println("Error decoding payment code in tx " + tx);
-                    } else {
-                        System.out.println("Payment Code: " + BIP47PaymentCode);
+                    if (BIP47PaymentCode != null) {
                         boolean needsSaving = savePaymentCode(BIP47PaymentCode);
                         if (needsSaving) {
                             saveBip47MetaData();
@@ -300,44 +277,26 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     private static BIP47AppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        try {
-            FileInputStream stream = null;
-            try {
-                stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
-                Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-                return new BIP47AppKit(wallet, baseDir, walletName);
-            } finally {
-                if (stream != null) stream.close();
-            }
+        try (FileInputStream stream = new FileInputStream(new File(baseDir, walletName + ".wallet"))) {
+            Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
+            return new BIP47AppKit(wallet, baseDir, walletName);
         } catch (IOException e) {
             throw new UnreadableWalletException("Could not open file", e);
         }
     }
 
     public static boolean isWalletEncrypted(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        try {
-            FileInputStream stream = null;
-            try {
-                stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
-                Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-                return wallet.getKeyChainSeed().isEncrypted();
-            } finally {
-                if (stream != null) stream.close();
-            }
+        try (FileInputStream stream = new FileInputStream(new File(baseDir, walletName + ".wallet"))) {
+            Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
+            return wallet.getKeyChainSeed().isEncrypted();
         } catch (IOException e) {
             throw new UnreadableWalletException("Could not open file", e);
         }
     }
 
     public static Wallet getEncryptedWallet(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        try {
-            FileInputStream stream = null;
-            try {
-                stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
-                return Wallet.loadFromFileStream(stream, walletExtensions);
-            } finally {
-                if (stream != null) stream.close();
-            }
+        try (FileInputStream stream = new FileInputStream(new File(baseDir, walletName + ".wallet"))) {
+            return Wallet.loadFromFileStream(stream, walletExtensions);
         } catch (IOException e) {
             throw new UnreadableWalletException("Could not open file", e);
         }
