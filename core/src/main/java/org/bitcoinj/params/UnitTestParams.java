@@ -36,6 +36,9 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         packetMagic = 0x0b110907;
         addressHeader = 111;
         p2shHeader = 196;
+        slpP2shHeader = 8;
+        slpP2pkhHeader = 0;
+        acceptableAddressCodes = new int[] { addressHeader, p2shHeader, slpP2shHeader, slpP2pkhHeader };
         maxTarget = new BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
         genesisBlock.setTime(Utils.currentTimeSeconds());
         genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);
@@ -54,6 +57,17 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         majorityEnforceBlockUpgrade = 3;
         majorityRejectBlockOutdated = 4;
         majorityWindow = 7;
+
+        asertReferenceBlockBits = 0x00000000;
+        asertReferenceBlockHeight = BigInteger.ZERO;
+        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertUpdateTime = 1597096200L;
+
+        cashAddrPrefix = "bchtest";
+        simpleledgerPrefix = "slptest";
+
+        asertHalfLife = 60L * 60L;
+        allowMinDifficultyBlocks = true;
     }
 
     private static UnitTestParams instance;
