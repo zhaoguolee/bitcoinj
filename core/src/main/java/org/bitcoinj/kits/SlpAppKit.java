@@ -369,7 +369,7 @@ public class SlpAppKit extends AbstractIdleService {
         req.feePerKb = Coin.valueOf(1000L);
         SlpOpReturnOutputGenesis slpOpReturn = new SlpOpReturnOutputGenesis(ticker, name, url, decimals, tokenQuantity);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
-        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), CashAddressFactory.create().getFromFormattedAddress(this.wallet.getParams(), this.wallet.currentChangeAddress().toString()));
+        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), this.wallet.currentChangeAddress());
         return wallet.sendCoinsOffline(req);
     }
 
