@@ -360,18 +360,6 @@ public class TransactionTest {
         }
     }
 
-    @Test
-    public void parseTransactionWithHugeDeclaredWitnessPushCountSize() throws Exception {
-        Transaction tx = new HugeDeclaredSizeTransaction(UNITTEST, false, false, true);
-        byte[] serializedTx = tx.bitcoinSerialize();
-        try {
-            new Transaction(UNITTEST, serializedTx);
-            fail("We expect ProtocolException with the fixed code and OutOfMemoryError with the buggy code, so this is weird");
-        } catch (ProtocolException e) {
-            //Expected, do nothing
-        }
-    }
-
     private static class HugeDeclaredSizeTransaction extends Transaction {
 
         private boolean hackInputsSize;

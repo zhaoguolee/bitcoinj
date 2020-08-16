@@ -108,14 +108,14 @@ public abstract class Address extends PrefixedChecksummedBytes {
 
     /**
      * Get either the public key hash or script hash that is encoded in the address.
-     * 
+     *
      * @return hash that is encoded in the address
      */
     public abstract byte[] getHash();
 
     /**
      * Get the type of output script that will be used for sending to the address.
-     * 
+     *
      * @return type of output script
      */
     public abstract ScriptType getOutputScriptType();
