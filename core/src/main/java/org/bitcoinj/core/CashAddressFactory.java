@@ -50,6 +50,38 @@ public class CashAddressFactory {
     }
 
     /**
+     * Construct a {@link LegacyAddress} that represents the public part of the given {@link ECKey}. Note that an address is
+     * derived from a hash of the public key and is not the public key itself.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param key
+     *            only the public part is used
+     * @return constructed address
+     */
+    public CashAddress fromKey(NetworkParameters params, ECKey key) {
+        return fromPubKeyHash(params, key.getPubKeyHash());
+    }
+
+    /**
+     * Construct an {@link Address} that represents the public part of the given {@link ECKey}.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param key
+     *            only the public part is used
+     * @param outputScriptType
+     *            script type the address should use
+     * @return constructed address
+     */
+    public Address fromKey(final NetworkParameters params, final ECKey key, final Script.ScriptType outputScriptType) {
+        if (outputScriptType == Script.ScriptType.P2PKH)
+            return fromKey(params, key);
+        else
+            throw new IllegalArgumentException(outputScriptType.toString());
+    }
+
+    /**
      * Construct an address from its Base58 representation.
      * @param params
      *            The expected NetworkParameters or null if you don't want validation.

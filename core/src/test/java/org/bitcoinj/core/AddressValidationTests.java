@@ -1,12 +1,34 @@
 package org.bitcoinj.core;
 
+import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.core.slp.SlpAddress;
+import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class AddressValidationTests {
+
+    @Test
+    public void paymentCodeTests() {
+        String paymentCode = "PM8TJR38ZQu4JyFWWRrLZj7fKQUEDmi3bfyWDc4og136vaH8pWYq2xhcbwFK8dsf1XujMKRs3yecGRVV35MMqtoHwchnemRSy7WMzzqYs2qjMPZtGrsc";
+        assertTrue(Address.isValidPaymentCode(paymentCode));
+
+        byte[] paymentCodeHash160 = Hex.decode("01000288931be8bbb769268c11345806e7b4006a3649c498216df044cc41066ddfd56215c06a34a8cedb5d10e7e0757252c7a57a60d33a231f24ac5ee81e6a7e7be7c300000000000000000000000000");
+        assertTrue(Address.isValidPaymentCode(paymentCodeHash160));
+        BIP47PaymentCode bip47PaymentCode = new BIP47PaymentCode(paymentCodeHash160);
+        BIP47PaymentCode bip47PaymentCode2 = new BIP47PaymentCode("PM8TJR38ZQu4JyFWWRrLZj7fKQUEDmi3bfyWDc4og136vaH8pWYq2xhcbwFK8dsf1XujMKRs3yecGRVV35MMqtoHwchnemRSy7WMzzqYs2qjMPZtGrsc");
+        assertEquals("PM8TJR38ZQu4JyFWWRrLZj7fKQUEDmi3bfyWDc4og136vaH8pWYq2xhcbwFK8dsf1XujMKRs3yecGRVV35MMqtoHwchnemRSy7WMzzqYs2qjMPZtGrsc", bip47PaymentCode.toString());
+        assertEquals(bip47PaymentCode.toString(), bip47PaymentCode2.toString());
+    }
+
+    @Test
+    public void cashAccountTests() {
+        String address = new NetHelper().getCashAccountAddress(MainNetParams.get(), "cyberpunk#66149", false);
+        assertEquals("PM8TJLAWsHQeTmCzXmUQDsW7ZvBY5v16xMgVHCVq68jyY6miSVhzhYXMwC2fcDz8MY8UQxyAfFzJsGuATyfXkbVAnUu2EYuxfAjLTfk1QBCq9rF7Bz1o", address);
+    }
 
     @Test
     public void validateCashAddrs() {

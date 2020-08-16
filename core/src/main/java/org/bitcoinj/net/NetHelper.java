@@ -10,6 +10,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.net.Proxy;
 import java.net.URL;
@@ -23,7 +24,6 @@ import java.util.Random;
 public class NetHelper {
     private String[] cashAcctServers = new String[]{
             "https://cashacct.imaginary.cash",
-            "https://cashaccounts.bchdata.cash",
             "https://cashacct.electroncash.dk"
     };
 
@@ -37,10 +37,20 @@ public class NetHelper {
 
     public String getCashAccountAddress(NetworkParameters params, String cashAccount)
     {
-        return this.getCashAccountAddress(params, cashAccount, false);
+        return this.getCashAccountAddress(params, cashAccount, false, null);
     }
 
     public String getCashAccountAddress(NetworkParameters params, String cashAccount, boolean forceCashAddr)
+    {
+        return this.getCashAccountAddress(params, cashAccount, forceCashAddr, null);
+    }
+
+    public String getCashAccountAddress(NetworkParameters params, String cashAccount, Proxy proxy)
+    {
+        return this.getCashAccountAddress(params, cashAccount, false, proxy);
+    }
+
+    public String getCashAccountAddress(NetworkParameters params, String cashAccount, boolean forceCashAddr, @Nullable Proxy proxy)
     {
         String[] splitAccount = cashAccount.split("#");
         String username = splitAccount[0];
@@ -54,87 +64,64 @@ public class NetHelper {
         else {
             block = splitAccount[1];
         }
-        String txHex = getTxHexFromCashAcct(cashAccount);
-
+        String txHex;
+        if(proxy != null) {
+            txHex = getTxHexFromCashAcct(cashAccount, proxy);
+        } else {
+            txHex = getTxHexFromCashAcct(cashAccount);
+        }
+        
         if(txHex != null) {
             Transaction decodedTx = new Transaction(params, Hex.decode(txHex));
 
             String txid = decodedTx.getHashAsString();
-            int txHeight = getTransactionHeight(txid);
+            int txHeight;
+            if(proxy != null) {
+                txHeight = getTransactionHeight(txid, proxy);
+            } else {
+                txHeight = getTransactionHeight(txid);
+            }
             int blockInt = Integer.parseInt(block);
             int cashAccountGenesis = 563620;
             if (blockInt == (txHeight - cashAccountGenesis)) {
                 String address = "";
-                String blockHash = getTransactionsBlockHash(txid);
+                String blockHash;
+                if(proxy != null) {
+                    blockHash = getTransactionsBlockHash(txid, proxy);
+                } else {
+                    blockHash = getTransactionsBlockHash(txid);
+                }
                 String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
-                ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
+                ArrayList<String> expectedAddresses;
+                if(proxy != null) {
+                    expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision, proxy);
+                } else {
+                    expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
+                }
                 ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
                 for (String s : addresses) {
                     byte[] hash160 = Hex.decode(s.substring(2));
                     if(forceCashAddr) {
                         if (!Address.isValidPaymentCode(hash160)) {
-                            LegacyAddress legacyAddress = AddressFactory.create().fromPubKeyHash(params, hash160);
-                            address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
+                            do {
+                                address = CashAddressFactory.create().fromPubKeyHash(params, hash160).toString();
+                                if (expectedAddresses.indexOf(address) == -1) {
+                                    address = CashAddressFactory.create().fromScriptHash(params, hash160).toString();
+                                }
+                            } while (expectedAddresses.indexOf(address) == -1);
                         }
                     } else {
                         if (Address.isValidPaymentCode(hash160)) {
                             address = new BIP47PaymentCode(hash160).toString();
                             break;
                         } else {
-                            LegacyAddress legacyAddress = AddressFactory.create().fromPubKeyHash(params, hash160);
-                            address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
+                            do {
+                                address = CashAddressFactory.create().fromPubKeyHash(params, hash160).toString();
+                                if (expectedAddresses.indexOf(address) == -1) {
+                                    address = CashAddressFactory.create().fromScriptHash(params, hash160).toString();
+                                }
+                            } while (expectedAddresses.indexOf(address) == -1);
                         }
-                    }
-                }
-
-                if (expectedAddresses.indexOf(address) != -1)
-                    return address;
-                else
-                    return null;
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
-
-    public String getCashAccountAddress(NetworkParameters params, String cashAccount, Proxy proxy)
-    {
-        String[] splitAccount = cashAccount.split("#");
-        String username = splitAccount[0];
-        String block;
-
-        if(cashAccount.contains("."))
-        {
-            String[] splitBlock = splitAccount[1].split("\\.");
-            block = splitBlock[0];
-        }
-        else {
-            block = splitAccount[1];
-        }
-        String txHex = getTxHexFromCashAcct(cashAccount, proxy);
-        if(txHex != null) {
-            Transaction decodedTx = new Transaction(params, Hex.decode(txHex));
-
-            String txid = decodedTx.getHashAsString();
-            int txHeight = getTransactionHeight(txid, proxy);
-            int blockInt = Integer.parseInt(block);
-            int cashAccountGenesis = 563620;
-            if (blockInt == (txHeight - cashAccountGenesis)) {
-                String address = "";
-                String blockHash = getTransactionsBlockHash(txid, proxy);
-                String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
-                ArrayList<String> expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision, proxy);
-                ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
-                for (String s : addresses) {
-                    String hash160 = s.substring(2);
-                    if (Address.isValidPaymentCode(Hex.decode(hash160))) {
-                        address = new BIP47PaymentCode(Hex.decode(hash160)).toString();
-                        break;
-                    } else {
-                        LegacyAddress legacyAddress = AddressFactory.create().fromPubKeyHash(params, Hex.decode(hash160));
-                        address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
                     }
                 }
 
