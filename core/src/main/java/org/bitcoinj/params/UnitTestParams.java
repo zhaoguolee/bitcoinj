@@ -39,7 +39,7 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         slpP2shHeader = 8;
         slpP2pkhHeader = 0;
         acceptableAddressCodes = new int[] { addressHeader, p2shHeader, slpP2shHeader, slpP2pkhHeader };
-        maxTarget = new BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
+        maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
         genesisBlock.setTime(Utils.currentTimeSeconds());
         genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);
         genesisBlock.solve();
