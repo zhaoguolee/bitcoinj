@@ -74,11 +74,11 @@ public class LegacyAddressTest {
     @Test
     public void stringification() {
         // Test a testnet address.
-        LegacyAddress a = AddressFactory.create().fromPubKeyHash(TESTNET, HEX.decode("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"));
+        Address a = AddressFactory.create().fromPubKeyHash(TESTNET, HEX.decode("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"));
         assertEquals("n4eA2nbYqErp7H6jebchxAN59DmNpksexv", a.toString());
         assertEquals(ScriptType.P2PKH, a.getOutputScriptType());
 
-        LegacyAddress b = AddressFactory.create().fromPubKeyHash(MAINNET, HEX.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Address b = AddressFactory.create().fromPubKeyHash(MAINNET, HEX.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
         assertEquals("17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL", b.toString());
         assertEquals(ScriptType.P2PKH, b.getOutputScriptType());
     }
@@ -207,8 +207,8 @@ public class LegacyAddressTest {
 
     @Test
     public void cloning() throws Exception {
-        LegacyAddress a = AddressFactory.create().fromPubKeyHash(TESTNET, HEX.decode("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"));
-        LegacyAddress b = a.clone();
+        Address a = AddressFactory.create().fromPubKeyHash(TESTNET, HEX.decode("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"));
+        Address b = (Address) a.clone();
 
         assertEquals(a, b);
         assertNotSame(a, b);

@@ -76,13 +76,13 @@ public class AddressFactory {
         if(Address.isValidLegacyAddress(params, str)) {
             return fromBase58(params, str);
         } else if(Address.isValidCashAddr(params, str)) {
-            return CashAddressFactory.create().getFromFormattedAddress(params, str);
+            return fromCashAddress(params, str);
         } else {
             return null;
         }
     }
 
-    public LegacyAddress fromCashAddress(NetworkParameters params, String cashAddr) {
+    public Address fromCashAddress(NetworkParameters params, String cashAddr) {
         if(Address.isValidCashAddr(params, cashAddr)) {
             CashAddress cashAddress = CashAddressFactory.create().getFromFormattedAddress(params, cashAddr);
             if(cashAddress.isP2SHAddress()) {
@@ -105,7 +105,7 @@ public class AddressFactory {
      *            20-byte pubkey hash
      * @return constructed address
      */
-    public LegacyAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
+    public Address fromPubKeyHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
         return new LegacyAddress(params, false, hash160);
     }
 
@@ -119,7 +119,7 @@ public class AddressFactory {
      *            only the public part is used
      * @return constructed address
      */
-    public LegacyAddress fromKey(NetworkParameters params, ECKey key) {
+    public Address fromKey(NetworkParameters params, ECKey key) {
         return fromPubKeyHash(params, key.getPubKeyHash());
     }
 
@@ -184,7 +184,7 @@ public class AddressFactory {
      */
     public Address fromKey(final NetworkParameters params, final ECKey key, final Script.ScriptType outputScriptType) {
         if (outputScriptType == Script.ScriptType.P2PKH)
-            return CashAddressFactory.create().getFromBase58(params, fromKey(params, key).toBase58());
+            return fromPubKeyHash(params, key.getPubKeyHash());
         else
             throw new IllegalArgumentException(outputScriptType.toString());
     }

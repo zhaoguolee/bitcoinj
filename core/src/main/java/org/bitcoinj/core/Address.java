@@ -33,6 +33,9 @@ import org.bitcoinj.script.Script.ScriptType;
 public abstract class Address extends PrefixedChecksummedBytes {
     public Address(NetworkParameters params, byte[] bytes) {
         super(params, bytes);
+        if (bytes.length != 20)
+            throw new AddressFormatException.InvalidDataLength(
+                    "Legacy addresses are 20 byte (160 bit) hashes, but got: " + bytes.length);
     }
 
     /**
