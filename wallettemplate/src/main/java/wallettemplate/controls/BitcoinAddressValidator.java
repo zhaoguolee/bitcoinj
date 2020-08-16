@@ -17,6 +17,7 @@
 package wallettemplate.controls;
 
 import org.bitcoinj.core.Address;
+import org.bitcoinj.core.AddressFactory;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 
@@ -56,7 +57,7 @@ public class BitcoinAddressValidator {
     private boolean testAddr(String text) {
         if(!text.isEmpty()) {
             try {
-                Address.fromString(params, text);
+                AddressFactory.create().fromString(params, text);
                 return true;
             } catch (AddressFormatException e) {
                 return false;
