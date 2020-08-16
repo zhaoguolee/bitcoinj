@@ -417,8 +417,7 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
         List<UTXO> outputsList = transactionOutputMap.values();
         for (UTXO output : outputsList) {
             for (ECKey key : keys) {
-                // TODO switch to pubKeyHash in order to support native segwit addresses
-                Address address = LegacyAddress.fromKey(params, key);
+                Address address = AddressFactory.create().fromKey(params, key);
                 if (output.getAddress().equals(address.toString())) {
                     foundOutputs.add(output);
                 }

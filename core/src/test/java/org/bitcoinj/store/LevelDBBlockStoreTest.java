@@ -16,11 +16,7 @@
 
 package org.bitcoinj.store;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.core.*;
 import org.bitcoinj.params.*;
 import org.junit.*;
 
@@ -46,7 +42,7 @@ public class LevelDBBlockStoreTest {
         assertEquals(0, genesis.getHeight());
 
         // Build a new block.
-        Address to = LegacyAddress.fromBase58(UNITTEST, "mrj2K6txjo2QBcSmuAzHj4nD1oXSEJE1Qo");
+        Address to = AddressFactory.create().fromBase58(UNITTEST, "mrj2K6txjo2QBcSmuAzHj4nD1oXSEJE1Qo");
         StoredBlock b1 = genesis.build(genesis.getHeader().createNextBlock(to).cloneAsHeader());
         store.put(b1);
         store.setChainHead(b1);

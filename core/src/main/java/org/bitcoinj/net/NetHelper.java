@@ -73,7 +73,7 @@ public class NetHelper {
                     byte[] hash160 = Hex.decode(s.substring(2));
                     if(forceCashAddr) {
                         if (!Address.isValidPaymentCode(hash160)) {
-                            LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, hash160);
+                            LegacyAddress legacyAddress = AddressFactory.create().fromPubKeyHash(params, hash160);
                             address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
                         }
                     } else {
@@ -81,7 +81,7 @@ public class NetHelper {
                             address = new BIP47PaymentCode(hash160).toString();
                             break;
                         } else {
-                            LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, hash160);
+                            LegacyAddress legacyAddress = AddressFactory.create().fromPubKeyHash(params, hash160);
                             address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
                         }
                     }
@@ -133,7 +133,7 @@ public class NetHelper {
                         address = new BIP47PaymentCode(Hex.decode(hash160)).toString();
                         break;
                     } else {
-                        LegacyAddress legacyAddress = LegacyAddress.fromPubKeyHash(params, Hex.decode(hash160));
+                        LegacyAddress legacyAddress = AddressFactory.create().fromPubKeyHash(params, Hex.decode(hash160));
                         address = CashAddressFactory.create().getFromBase58(params, legacyAddress.toBase58()).toString();
                     }
                 }

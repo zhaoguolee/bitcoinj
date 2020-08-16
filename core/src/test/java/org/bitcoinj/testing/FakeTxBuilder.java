@@ -17,23 +17,7 @@
 
 package org.bitcoinj.testing;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.MessageSerializer;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.ProtocolException;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionConfidence;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutPoint;
-import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStore;
@@ -50,12 +34,12 @@ import static com.google.common.base.Preconditions.checkState;
 public class FakeTxBuilder {
     /** Create a fake transaction, without change. */
     public static Transaction createFakeTx(final NetworkParameters params) {
-        return createFakeTxWithoutChangeAddress(params, Coin.COIN, LegacyAddress.fromKey(params, new ECKey()));
+        return createFakeTxWithoutChangeAddress(params, Coin.COIN, AddressFactory.create().fromKey(params, new ECKey()));
     }
 
     /** Create a fake transaction, without change. */
     public static Transaction createFakeTxWithoutChange(final NetworkParameters params, final TransactionOutput output) {
-        Transaction prevTx = FakeTxBuilder.createFakeTx(params, Coin.COIN, LegacyAddress.fromKey(params, new ECKey()));
+        Transaction prevTx = FakeTxBuilder.createFakeTx(params, Coin.COIN, AddressFactory.create().fromKey(params, new ECKey()));
         Transaction tx = new Transaction(params);
         tx.addOutput(output);
         tx.addInput(prevTx.getOutput(0));
@@ -69,7 +53,7 @@ public class FakeTxBuilder {
         Transaction tx = new Transaction(params);
         tx.addInput(input);
         TransactionOutput outputToMe = new TransactionOutput(params, tx, Coin.FIFTY_COINS,
-                LegacyAddress.fromKey(params, new ECKey()));
+                AddressFactory.create().fromKey(params, new ECKey()));
         tx.addOutput(outputToMe);
 
         checkState(tx.isCoinBase());
@@ -139,7 +123,7 @@ public class FakeTxBuilder {
      * else to simulate change. There is one random input.
      */
     public static Transaction createFakeTx(NetworkParameters params, Coin value, Address to) {
-        return createFakeTxWithChangeAddress(params, value, to, LegacyAddress.fromKey(params, new ECKey()));
+        return createFakeTxWithChangeAddress(params, value, to, AddressFactory.create().fromKey(params, new ECKey()));
     }
 
     /**
@@ -173,7 +157,7 @@ public class FakeTxBuilder {
         Transaction t = new Transaction(params);
         TransactionOutput outputToMe = new TransactionOutput(params, t, value, to);
         t.addOutput(outputToMe);
-        TransactionOutput change = new TransactionOutput(params, t, valueOf(1, 11), LegacyAddress.fromKey(params, new ECKey()));
+        TransactionOutput change = new TransactionOutput(params, t, valueOf(1, 11), AddressFactory.create().fromKey(params, new ECKey()));
         t.addOutput(change);
         // Make a feeder tx that sends to the from address specified. This feeder tx is not really valid but it doesn't
         // matter for our purposes.
@@ -219,7 +203,7 @@ public class FakeTxBuilder {
     public static DoubleSpends createFakeDoubleSpendTxns(NetworkParameters params, Address to) {
         DoubleSpends doubleSpends = new DoubleSpends();
         Coin value = COIN;
-        Address someBadGuy = LegacyAddress.fromKey(params, new ECKey());
+        Address someBadGuy = AddressFactory.create().fromKey(params, new ECKey());
 
         doubleSpends.prevTx = new Transaction(params);
         TransactionOutput prevOut = new TransactionOutput(params, doubleSpends.prevTx, value, someBadGuy);
@@ -261,7 +245,7 @@ public class FakeTxBuilder {
                                             Transaction... transactions) {
         try {
             Block previousBlock = previousStoredBlock.getHeader();
-            Address to = LegacyAddress.fromKey(previousBlock.getParams(), new ECKey());
+            Address to = AddressFactory.create().fromKey(previousBlock.getParams(), new ECKey());
             Block b = previousBlock.createNextBlock(to, version, timeSeconds, height);
             // Coinbase tx was already added.
             for (Transaction tx : transactions) {
@@ -313,7 +297,7 @@ public class FakeTxBuilder {
     }
 
     public static Block makeSolvedTestBlock(Block prev, Transaction... transactions) throws BlockStoreException {
-        Address to = LegacyAddress.fromKey(prev.getParams(), new ECKey());
+        Address to = AddressFactory.create().fromKey(prev.getParams(), new ECKey());
         Block b = prev.createNextBlock(to);
         // Coinbase tx already exists.
         for (Transaction tx : transactions) {

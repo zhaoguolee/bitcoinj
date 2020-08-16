@@ -48,7 +48,7 @@ public abstract class Address extends PrefixedChecksummedBytes {
     public static boolean isValidLegacyAddress(NetworkParameters params, String legacyAddress)
     {
         try {
-            LegacyAddress.fromBase58(params, legacyAddress);
+            AddressFactory.create().fromBase58(params, legacyAddress);
             return true;
         } catch(Exception e) {
             return false;

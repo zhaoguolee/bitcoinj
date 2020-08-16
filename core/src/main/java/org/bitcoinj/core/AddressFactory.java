@@ -16,9 +16,11 @@
 
 package org.bitcoinj.core;
 
+import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 
 /**
  * This is a factory class that creates Address or CashAddress objects from strings.
@@ -72,11 +74,100 @@ public class AddressFactory {
     public Address fromString(@Nullable NetworkParameters params, String str)
             throws AddressFormatException {
         if(Address.isValidLegacyAddress(params, str)) {
-            return LegacyAddress.fromBase58(params, str);
+            return fromBase58(params, str);
         } else if(Address.isValidCashAddr(params, str)) {
             return CashAddressFactory.create().getFromFormattedAddress(params, str);
         } else {
             return null;
+        }
+    }
+
+    public LegacyAddress fromCashAddress(NetworkParameters params, String cashAddr) {
+        if(Address.isValidCashAddr(params, cashAddr)) {
+            CashAddress cashAddress = CashAddressFactory.create().getFromFormattedAddress(params, cashAddr);
+            if(cashAddress.isP2SHAddress()) {
+                return fromScriptHash(params, cashAddress.getHash());
+            } else {
+                return fromPubKeyHash(params, cashAddress.getHash());
+            }
+        } else {
+            throw new AddressFormatException("Invalid address!");
+        }
+    }
+
+    /**
+     * Construct a {@link LegacyAddress} that represents the given pubkey hash. The resulting address will be a P2PKH type of
+     * address.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param hash160
+     *            20-byte pubkey hash
+     * @return constructed address
+     */
+    public LegacyAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
+        return new LegacyAddress(params, false, hash160);
+    }
+
+    /**
+     * Construct a {@link LegacyAddress} that represents the public part of the given {@link ECKey}. Note that an address is
+     * derived from a hash of the public key and is not the public key itself.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param key
+     *            only the public part is used
+     * @return constructed address
+     */
+    public LegacyAddress fromKey(NetworkParameters params, ECKey key) {
+        return fromPubKeyHash(params, key.getPubKeyHash());
+    }
+
+    /**
+     * Construct a {@link LegacyAddress} that represents the given P2SH script hash.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param hash160
+     *            P2SH script hash
+     * @return constructed address
+     */
+    public LegacyAddress fromScriptHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
+        return new LegacyAddress(params, true, hash160);
+    }
+
+    /**
+     * Construct a {@link LegacyAddress} from its base58 form.
+     *
+     * @param params
+     *            expected network this address is valid for, or null if if the network should be derived from the
+     *            base58
+     * @param base58
+     *            base58-encoded textual form of the address
+     * @throws AddressFormatException
+     *             if the given base58 doesn't parse or the checksum is invalid
+     * @throws AddressFormatException.WrongNetwork
+     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     */
+    public LegacyAddress fromBase58(@Nullable NetworkParameters params, String base58)
+            throws AddressFormatException, AddressFormatException.WrongNetwork {
+        byte[] versionAndDataBytes = Base58.decodeChecked(base58);
+        int version = versionAndDataBytes[0] & 0xFF;
+        byte[] bytes = Arrays.copyOfRange(versionAndDataBytes, 1, versionAndDataBytes.length);
+        if (params == null) {
+            for (NetworkParameters p : Networks.get()) {
+                if (version == p.getAddressHeader())
+                    return new LegacyAddress(p, false, bytes);
+                else if (version == p.getP2SHHeader())
+                    return new LegacyAddress(p, true, bytes);
+            }
+            throw new AddressFormatException.InvalidPrefix("No network found for " + base58);
+        } else {
+            if (version == params.getAddressHeader())
+                return new LegacyAddress(params, false, bytes);
+            else if (version == params.getP2SHHeader())
+                return new LegacyAddress(params, true, bytes);
+            throw new AddressFormatException.WrongNetwork(version);
         }
     }
 
@@ -93,7 +184,7 @@ public class AddressFactory {
      */
     public Address fromKey(final NetworkParameters params, final ECKey key, final Script.ScriptType outputScriptType) {
         if (outputScriptType == Script.ScriptType.P2PKH)
-            return CashAddressFactory.create().getFromBase58(params, LegacyAddress.fromKey(params, key).toBase58());
+            return CashAddressFactory.create().getFromBase58(params, fromKey(params, key).toBase58());
         else
             throw new IllegalArgumentException(outputScriptType.toString());
     }

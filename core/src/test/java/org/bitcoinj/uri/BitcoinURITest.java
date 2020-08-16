@@ -17,6 +17,7 @@
 package org.bitcoinj.uri;
 
 import org.bitcoinj.core.Address;
+import org.bitcoinj.core.AddressFactory;
 import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
@@ -41,7 +42,7 @@ public class BitcoinURITest {
 
     @Test
     public void testConvertToBitcoinURI() throws Exception {
-        Address goodAddress = LegacyAddress.fromBase58(MAINNET, MAINNET_GOOD_ADDRESS);
+        Address goodAddress = AddressFactory.create().fromBase58(MAINNET, MAINNET_GOOD_ADDRESS);
         
         // simple example
         assertEquals("bitcoincash:" + MAINNET_GOOD_ADDRESS + "?amount=12.34&label=Hello&message=AMessage", BitcoinURI.convertToBitcoinURI(goodAddress, parseCoin("12.34"), "Hello", "AMessage"));
@@ -84,7 +85,7 @@ public class BitcoinURITest {
         };
 
         assertEquals("test:" + MAINNET_GOOD_ADDRESS + "?amount=12.34&label=Hello&message=AMessage",
-             BitcoinURI.convertToBitcoinURI(LegacyAddress.fromBase58(alternativeParameters, MAINNET_GOOD_ADDRESS), parseCoin("12.34"), "Hello", "AMessage"));
+             BitcoinURI.convertToBitcoinURI(AddressFactory.create().fromBase58(alternativeParameters, MAINNET_GOOD_ADDRESS), parseCoin("12.34"), "Hello", "AMessage"));
     }
 
     @Test

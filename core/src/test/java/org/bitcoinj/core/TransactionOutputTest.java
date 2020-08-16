@@ -68,7 +68,7 @@ public class TransactionOutputTest extends TestWithWallet {
     @Test
     public void testP2SHOutputScript() throws Exception {
         String P2SHAddressString = "35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU";
-        Address P2SHAddress = LegacyAddress.fromBase58(MAINNET, P2SHAddressString);
+        Address P2SHAddress = AddressFactory.create().fromBase58(MAINNET, P2SHAddressString);
         Script script = ScriptBuilder.createOutputScript(P2SHAddress);
         Transaction tx = new Transaction(MAINNET);
         tx.addOutput(Coin.COIN, script);
@@ -88,7 +88,7 @@ public class TransactionOutputTest extends TestWithWallet {
     public void getMinNonDustValue() throws Exception {
         TransactionOutput p2pk = new TransactionOutput(UNITTEST, null, Coin.COIN, myKey);
         assertEquals(Coin.valueOf(576), p2pk.getMinNonDustValue());
-        TransactionOutput p2pkh = new TransactionOutput(UNITTEST, null, Coin.COIN, LegacyAddress.fromKey(UNITTEST, myKey));
+        TransactionOutput p2pkh = new TransactionOutput(UNITTEST, null, Coin.COIN, AddressFactory.create().fromKey(UNITTEST, myKey));
         assertEquals(Coin.valueOf(546), p2pkh.getMinNonDustValue());
     }
 }

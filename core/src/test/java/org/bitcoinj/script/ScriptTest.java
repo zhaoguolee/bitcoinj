@@ -81,7 +81,7 @@ public class ScriptTest {
         byte[] pubkeyBytes = HEX.decode(pubkeyProg);
         Script pubkey = new Script(pubkeyBytes);
         assertEquals("DUP HASH160 PUSHDATA(20)[33e81a941e64cda12c6a299ed322ddbdd03f8d0e] EQUALVERIFY CHECKSIG", pubkey.toString());
-        Address toAddr = LegacyAddress.fromPubKeyHash(TESTNET, ScriptPattern.extractHashFromP2PKH(pubkey));
+        Address toAddr = AddressFactory.create().fromPubKeyHash(TESTNET, ScriptPattern.extractHashFromP2PKH(pubkey));
         assertEquals("mkFQohBpy2HDXrCwyMrYL5RtfrmeiuuPY2", toAddr.toString());
     }
 
@@ -113,7 +113,7 @@ public class ScriptTest {
 
     @Test
     public void testP2SHOutputScript() throws Exception {
-        Address p2shAddress = LegacyAddress.fromBase58(MAINNET, "35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU");
+        Address p2shAddress = AddressFactory.create().fromBase58(MAINNET, "35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU");
         assertTrue(ScriptPattern.isP2SH(ScriptBuilder.createOutputScript(p2shAddress)));
     }
 
@@ -135,7 +135,7 @@ public class ScriptTest {
         Transaction transaction = TESTNET.getDefaultSerializer().makeTransaction(bytes);
         TransactionOutput output = transaction.getOutput(1);
         Transaction spendTx = new Transaction(TESTNET);
-        Address address = LegacyAddress.fromBase58(TESTNET, "n3CFiCmBXVt5d3HXKQ15EFZyhPz4yj5F3H");
+        Address address = AddressFactory.create().fromBase58(TESTNET, "n3CFiCmBXVt5d3HXKQ15EFZyhPz4yj5F3H");
         Script outputScript = ScriptBuilder.createOutputScript(address);
         spendTx.addOutput(output.getValue(), outputScript);
         spendTx.addInput(output);
@@ -444,13 +444,13 @@ public class ScriptTest {
     public void getToAddress() throws Exception {
         // P2PK
         ECKey toKey = new ECKey();
-        Address toAddress = LegacyAddress.fromKey(TESTNET, toKey);
+        Address toAddress = AddressFactory.create().fromKey(TESTNET, toKey);
         assertEquals(toAddress, ScriptBuilder.createP2PKOutputScript(toKey).getToAddress(TESTNET, true));
         // pay to pubkey hash
         assertEquals(toAddress, ScriptBuilder.createOutputScript(toAddress).getToAddress(TESTNET, true));
         // pay to script hash
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(new byte[20]);
-        Address scriptAddress = LegacyAddress.fromScriptHash(TESTNET,
+        Address scriptAddress = AddressFactory.create().fromScriptHash(TESTNET,
                 ScriptPattern.extractHashFromP2SH(p2shScript));
         assertEquals(scriptAddress, p2shScript.getToAddress(TESTNET, true));
     }

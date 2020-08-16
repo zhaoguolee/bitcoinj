@@ -17,16 +17,7 @@
 
 package org.bitcoinj.protocols.payments;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.Utils;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.TrustStoreLoader;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
@@ -84,7 +75,7 @@ public class PaymentSessionTest {
         tx.addInput(new TransactionInput(TESTNET, tx, outputToMe.getScriptBytes()));
         ArrayList<Transaction> txns = new ArrayList<>();
         txns.add(tx);
-        Address refundAddr = LegacyAddress.fromKey(TESTNET, serverKey);
+        Address refundAddr = AddressFactory.create().fromKey(TESTNET, serverKey);
         paymentSession.sendPayment(txns, refundAddr, paymentMemo);
         assertEquals(1, paymentSession.getPaymentLog().size());
         assertEquals(simplePaymentUrl, paymentSession.getPaymentLog().get(0).getUrl().toString());
@@ -156,7 +147,7 @@ public class PaymentSessionTest {
         tx.addInput(new TransactionInput(TESTNET, tx, outputToMe.getScriptBytes()));
         ArrayList<Transaction> txns = new ArrayList<>();
         txns.add(tx);
-        Address refundAddr = LegacyAddress.fromKey(TESTNET, serverKey);
+        Address refundAddr = AddressFactory.create().fromKey(TESTNET, serverKey);
         paymentSession.sendPayment(txns, refundAddr, paymentMemo);
         assertEquals(1, paymentSession.getPaymentLog().size());
     }

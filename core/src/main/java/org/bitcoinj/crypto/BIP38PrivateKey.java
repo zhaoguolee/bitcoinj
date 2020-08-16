@@ -118,7 +118,7 @@ public class BIP38PrivateKey extends PrefixedChecksummedBytes {
     public ECKey decrypt(String passphrase) throws BadPassphraseException {
         String normalizedPassphrase = Normalizer.normalize(passphrase, Normalizer.Form.NFC);
         ECKey key = ecMultiply ? decryptEC(normalizedPassphrase) : decryptNoEC(normalizedPassphrase);
-        Sha256Hash hash = Sha256Hash.twiceOf(LegacyAddress.fromKey(params, key).toString().getBytes(StandardCharsets.US_ASCII));
+        Sha256Hash hash = Sha256Hash.twiceOf(AddressFactory.create().fromKey(params, key).toString().getBytes(StandardCharsets.US_ASCII));
         byte[] actualAddressHash = Arrays.copyOfRange(hash.getBytes(), 0, 4);
         if (!Arrays.equals(actualAddressHash, addressHash))
             throw new BadPassphraseException();

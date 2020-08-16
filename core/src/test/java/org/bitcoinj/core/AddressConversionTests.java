@@ -14,7 +14,7 @@ public class AddressConversionTests {
         assertEquals("bitcoincash:qrnpf0nqkzgxpvjzqlqcqm4h78sg45zyu54rngdxff", CashAddressFactory.create().getFromBase58(params, legacyAddressP2PKH).toString());
 
         String cashAddressP2PKH = "bitcoincash:qrnpf0nqkzgxpvjzqlqcqm4h78sg45zyu54rngdxff";
-        String legacyAddress = LegacyAddress.fromCashAddress(params, cashAddressP2PKH).toString();
+        String legacyAddress = AddressFactory.create().fromCashAddress(params, cashAddressP2PKH).toString();
         assertEquals("1MyZGR8HpaN8Hot5trvxUNALEW6E1haAuk", legacyAddress);
 
         String legacyAddressP2SH = "36JVCGHDv8KaT3aMzrkS8Y2Qh2CHm8Z129";

@@ -373,7 +373,7 @@ public class KeyChainGroup implements KeyBag {
         if (chain.isMarried()) {
             Script outputScript = chain.freshOutputScript(purpose);
             checkState(ScriptPattern.isP2SH(outputScript)); // Only handle P2SH for now
-            Address freshAddress = LegacyAddress.fromScriptHash(params,
+            Address freshAddress = AddressFactory.create().fromScriptHash(params,
                     ScriptPattern.extractHashFromP2SH(outputScript));
             maybeLookaheadScripts();
             currentAddresses.put(purpose, freshAddress);
@@ -957,7 +957,7 @@ public class KeyChainGroup implements KeyBag {
 
             log.info(
                     "Upgrading from basic keychain to P2PKH deterministic keychain. Using oldest non-rotating private key (address: {})",
-                    LegacyAddress.fromKey(params, keyToUse));
+                    AddressFactory.create().fromKey(params, keyToUse));
             byte[] entropy = checkNotNull(keyToUse.getSecretBytes());
             // Private keys should be at least 128 bits long.
             checkState(entropy.length >= DeterministicSeed.DEFAULT_SEED_ENTROPY_BITS / 8);

@@ -96,7 +96,7 @@ public class BlockChainTest {
         resetBlockStore();
         chain = new BlockChain(UNITTEST, wallet, blockStore);
 
-        coinbaseTo = LegacyAddress.fromKey(UNITTEST, wallet.currentReceiveKey());
+        coinbaseTo = AddressFactory.create().fromKey(UNITTEST, wallet.currentReceiveKey());
     }
 
     @Test
@@ -132,7 +132,7 @@ public class BlockChainTest {
         // Quick check that we can actually receive coins.
         Transaction tx1 = createFakeTx(UNITTEST,
                                        COIN,
-                                       LegacyAddress.fromKey(UNITTEST, wallet.currentReceiveKey()));
+                                       AddressFactory.create().fromKey(UNITTEST, wallet.currentReceiveKey()));
         Block b1 = createFakeBlock(blockStore, height, tx1).block;
         chain.add(b1);
         assertTrue(wallet.getBalance().signum() > 0);
@@ -295,10 +295,10 @@ public class BlockChainTest {
     public void intraBlockDependencies() throws Exception {
         // Covers issue 166 in which transactions that depend on each other inside a block were not always being
         // considered relevant.
-        Address somebodyElse = LegacyAddress.fromKey(UNITTEST, new ECKey());
+        Address somebodyElse = AddressFactory.create().fromKey(UNITTEST, new ECKey());
         Block b1 = UNITTEST.getGenesisBlock().createNextBlock(somebodyElse);
         ECKey key = wallet.freshReceiveKey();
-        Address addr = LegacyAddress.fromKey(UNITTEST, key);
+        Address addr = AddressFactory.create().fromKey(UNITTEST, key);
         // Create a tx that gives us some coins, and another that spends it to someone else in the same block.
         Transaction t1 = FakeTxBuilder.createFakeTx(UNITTEST, COIN, addr);
         Transaction t2 = new Transaction(UNITTEST);
@@ -321,7 +321,7 @@ public class BlockChainTest {
         int height = 1;
         chain.addWallet(wallet2);
 
-        Address addressToSendTo = LegacyAddress.fromKey(UNITTEST, receiveKey);
+        Address addressToSendTo = AddressFactory.create().fromKey(UNITTEST, receiveKey);
 
         // Create a block, sending the coinbase to the coinbaseTo address (which is in the wallet).
         Block b1 = UNITTEST.getGenesisBlock().createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS, wallet.currentReceiveKey().getPubKey(), height++);
@@ -345,7 +345,7 @@ public class BlockChainTest {
         // Check that the coinbase is unavailable to spend for the next spendableCoinbaseDepth - 2 blocks.
         for (int i = 0; i < UNITTEST.getSpendableCoinbaseDepth() - 2; i++) {
             // Non relevant tx - just for fake block creation.
-            Transaction tx2 = createFakeTx(UNITTEST, COIN, LegacyAddress.fromKey(UNITTEST, new ECKey()));
+            Transaction tx2 = createFakeTx(UNITTEST, COIN, AddressFactory.create().fromKey(UNITTEST, new ECKey()));
 
             Block b2 = createFakeBlock(blockStore, height++, tx2).block;
             chain.add(b2);
@@ -366,7 +366,7 @@ public class BlockChainTest {
         }
 
         // Give it one more block - should now be able to spend coinbase transaction. Non relevant tx.
-        Transaction tx3 = createFakeTx(UNITTEST, COIN, LegacyAddress.fromKey(UNITTEST, new ECKey()));
+        Transaction tx3 = createFakeTx(UNITTEST, COIN, AddressFactory.create().fromKey(UNITTEST, new ECKey()));
         Block b3 = createFakeBlock(blockStore, height++, tx3).block;
         chain.add(b3);
 

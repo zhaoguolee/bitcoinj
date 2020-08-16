@@ -813,7 +813,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public LegacyAddress getAddressFromBase58(String addr) {
-        return LegacyAddress.fromBase58(getParams(), addr);
+        return AddressFactory.create().fromBase58(getParams(), addr);
     }
 
     private static Coin getDefaultFee(NetworkParameters params) {
