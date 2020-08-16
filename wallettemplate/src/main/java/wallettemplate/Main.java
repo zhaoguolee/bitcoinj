@@ -20,7 +20,9 @@ import com.google.common.util.concurrent.*;
 import javafx.scene.input.*;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.slp.SlpToken;
+import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.kits.BIP47AppKit;
+import org.bitcoinj.kits.MultisigAppKit;
 import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.utils.AppDataDirectory;
 import org.bitcoinj.kits.WalletAppKit;
@@ -28,6 +30,7 @@ import org.bitcoinj.params.*;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.DeterministicKeyChain;
 import org.bitcoinj.wallet.DeterministicSeed;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -48,6 +51,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
 
 import static wallettemplate.utils.GuiUtils.*;
 
@@ -58,7 +63,7 @@ public class Main extends Application {
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static BIP47AppKit bitcoin;
+    public static MultisigAppKit bitcoin;
     public static Main instance;
 
     private StackPane uiStack;
@@ -136,11 +141,24 @@ public class Main extends Application {
         // If seed is non-null it means we are restoring from backup.
         File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
-        bitcoin = new BIP47AppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
-        Platform.runLater(controller::onBitcoinSetup);
+        ArrayList<DeterministicKey> followingKeys = new ArrayList<>();
+        for(int x = 0; x < 3; x++) {
+            final DeterministicKeyChain keyChain = DeterministicKeyChain.builder().random(new SecureRandom()).build();
+            DeterministicKey partnerKey = keyChain.getWatchingKey().dropPrivateBytes().dropParent();
+            followingKeys.add(partnerKey);
+        }
+
+        bitcoin = new MultisigAppKit(params, new File("."), WALLET_FILE_NAME, followingKeys) {
+            @Override
+            public void onSetupCompleted() {
+                Platform.runLater(controller::onBitcoinSetup);
+
+                System.out.println("Address:: " + wallet().currentReceiveAddress().toString());
+            }
+        };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        bitcoin.setDownloadProgressTracker(controller.progressBarUpdater());
+        bitcoin.setDownloadListener(controller.progressBarUpdater());
     }
 
     private Node stopClickPane = new Pane();
