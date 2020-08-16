@@ -110,6 +110,10 @@ public abstract class Address extends PrefixedChecksummedBytes {
         return new LegacyAddress(params, getOutputScriptType() == ScriptType.P2PKH, getHash()).toString();
     }
 
+    public String toCashAddr() {
+        return new CashAddress(params, getOutputScriptType() == ScriptType.P2PKH ? CashAddress.CashAddressType.PubKey : CashAddress.CashAddressType.Script, getHash()).toString();
+    }
+
     /**
      * Get either the public key hash or script hash that is encoded in the address.
      *

@@ -118,17 +118,17 @@ public class TransactionOutput extends ChildMessage {
     }
 
     @Nullable
-    public CashAddress getAddressFromP2PKHScript(NetworkParameters params) throws ScriptException {
+    public Address getAddressFromP2PKHScript(NetworkParameters params) throws ScriptException {
         if (ScriptPattern.isP2PKH(getScriptPubKey()))
-            return CashAddressFactory.create().fromPubKeyHash(params,
+            return AddressFactory.create().fromPubKeyHash(params,
                     ScriptPattern.extractHashFromP2PKH(getScriptPubKey()));
         return null;
     }
 
     @Nullable
-    public CashAddress getAddressFromP2SH(NetworkParameters params) throws ScriptException {
+    public Address getAddressFromP2SH(NetworkParameters params) throws ScriptException {
         if (ScriptPattern.isP2SH(getScriptPubKey()))
-            return CashAddressFactory.create().fromScriptHash(params, ScriptPattern.extractHashFromP2SH(getScriptPubKey()));
+            return AddressFactory.create().fromScriptHash(params, ScriptPattern.extractHashFromP2SH(getScriptPubKey()));
         return null;
     }
 

@@ -1293,11 +1293,11 @@ public class ECKey implements EncryptableItem {
             NetworkParameters params, Script.ScriptType outputScriptType, @Nullable String comment) {
         builder.append("  addr:");
         if (outputScriptType != null) {
-            builder.append(CashAddressFactory.create().fromKey(params, this, outputScriptType));
+            builder.append(AddressFactory.create().fromKey(params, this, outputScriptType));
         } else {
-            builder.append(CashAddressFactory.create().fromKey(params, this));
+            builder.append(AddressFactory.create().fromKey(params, this));
             if (isCompressed())
-                builder.append(',').append(CashAddressFactory.create().fromKey(params, this));
+                builder.append(',').append(AddressFactory.create().fromKey(params, this));
         }
         if (!isCompressed())
             builder.append("  UNCOMPRESSED");
@@ -1340,6 +1340,6 @@ public class ECKey implements EncryptableItem {
     }
 
     public Address toAddress(NetworkParameters params) {
-        return CashAddressFactory.create().fromKey(params, this, Script.ScriptType.P2PKH);
+        return AddressFactory.create().fromKey(params, this, Script.ScriptType.P2PKH);
     }
 }

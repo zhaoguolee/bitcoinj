@@ -781,7 +781,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
             return;
         } else {
             try {
-                a = CashAddressFactory.create().getFromBase58(params, out.getAddress());
+                a = AddressFactory.create().fromBase58(params, out.getAddress());
             } catch (AddressFormatException e) {
                 if (instrument)
                     endMethod("addUnspentTransactionOutput");
@@ -876,7 +876,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
                 Script sc = out.getScript();
                 a = sc.getToAddress(params);
             } else {
-                a = CashAddressFactory.create().getFromBase58(params, out.getAddress());
+                a = AddressFactory.create().fromBase58(params, out.getAddress());
             }
             hashBytes = a.getHash();
         } catch (AddressFormatException e) {
