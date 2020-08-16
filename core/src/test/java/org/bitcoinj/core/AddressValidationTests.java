@@ -28,6 +28,9 @@ public class AddressValidationTests {
     public void cashAccountTests() {
         String address = new NetHelper().getCashAccountAddress(MainNetParams.get(), "cyberpunk#66149", false);
         assertEquals("PM8TJLAWsHQeTmCzXmUQDsW7ZvBY5v16xMgVHCVq68jyY6miSVhzhYXMwC2fcDz8MY8UQxyAfFzJsGuATyfXkbVAnUu2EYuxfAjLTfk1QBCq9rF7Bz1o", address);
+
+        String p2shTest = new NetHelper().getCashAccountAddress(MainNetParams.get(), "ABCTAX2#84938", false);
+        assertEquals("bitcoincash:pqnqv9lt7e5vjyp0w88zf2af0l92l8rxdgnlxww9j9", p2shTest);
     }
 
     @Test
