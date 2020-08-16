@@ -309,7 +309,7 @@ public class KeyChainGroup implements KeyBag {
             }
             return current;
         } else if (outputScriptType == Script.ScriptType.P2PKH) {
-            return AddressFactory.create().fromKey(params, currentKey(purpose), outputScriptType);
+            return CashAddressFactory.create().fromKey(params, currentKey(purpose), outputScriptType);
         } else {
             throw new IllegalStateException(chain.getOutputScriptType().toString());
         }
@@ -361,7 +361,7 @@ public class KeyChainGroup implements KeyBag {
      */
     public Address freshAddress(KeyChain.KeyPurpose purpose, Script.ScriptType outputScriptType, long keyRotationTimeSecs) {
         DeterministicKeyChain chain = getActiveKeyChain(outputScriptType, keyRotationTimeSecs);
-        return AddressFactory.create().fromKey(params, chain.getKey(purpose), outputScriptType);
+        return CashAddressFactory.create().fromKey(params, chain.getKey(purpose), outputScriptType);
     }
 
     /**
@@ -373,13 +373,13 @@ public class KeyChainGroup implements KeyBag {
         if (chain.isMarried()) {
             Script outputScript = chain.freshOutputScript(purpose);
             checkState(ScriptPattern.isP2SH(outputScript)); // Only handle P2SH for now
-            Address freshAddress = AddressFactory.create().fromScriptHash(params,
+            Address freshAddress = CashAddressFactory.create().fromScriptHash(params,
                     ScriptPattern.extractHashFromP2SH(outputScript));
             maybeLookaheadScripts();
             currentAddresses.put(purpose, freshAddress);
             return freshAddress;
         } else if (outputScriptType == Script.ScriptType.P2PKH) {
-            return AddressFactory.create().fromKey(params, freshKey(purpose), outputScriptType);
+            return CashAddressFactory.create().fromKey(params, freshKey(purpose), outputScriptType);
         } else {
             throw new IllegalStateException(chain.getOutputScriptType().toString());
         }
@@ -508,7 +508,7 @@ public class KeyChainGroup implements KeyBag {
         return null;
     }
 
-    public void markP2SHAddressAsUsed(LegacyAddress address) {
+    public void markP2SHAddressAsUsed(Address address) {
         checkArgument(address.getOutputScriptType() == ScriptType.P2SH);
         RedeemData data = findRedeemDataFromScriptHash(address.getHash());
         if (data == null)
@@ -559,7 +559,7 @@ public class KeyChainGroup implements KeyBag {
     }
 
     /** If the given P2SH address is "current", advance it to a new one. */
-    private void maybeMarkCurrentAddressAsUsed(LegacyAddress address) {
+    private void maybeMarkCurrentAddressAsUsed(Address address) {
         checkArgument(address.getOutputScriptType() == ScriptType.P2SH);
         for (Map.Entry<KeyChain.KeyPurpose, Address> entry : currentAddresses.entrySet()) {
             if (entry.getValue() != null && entry.getValue().equals(address)) {
@@ -957,7 +957,7 @@ public class KeyChainGroup implements KeyBag {
 
             log.info(
                     "Upgrading from basic keychain to P2PKH deterministic keychain. Using oldest non-rotating private key (address: {})",
-                    AddressFactory.create().fromKey(params, keyToUse));
+                    CashAddressFactory.create().fromKey(params, keyToUse));
             byte[] entropy = checkNotNull(keyToUse.getSecretBytes());
             // Private keys should be at least 128 bits long.
             checkState(entropy.length >= DeterministicSeed.DEFAULT_SEED_ENTROPY_BITS / 8);

@@ -687,7 +687,7 @@ public class Wallet extends BaseTaggableObject
             for (final DeterministicKeyChain chain : keyChainGroup.getActiveKeyChains(keyRotationTimeSecs)) {
                 Script.ScriptType outputScriptType = chain.getOutputScriptType();
                 for (ECKey key : chain.getIssuedReceiveKeys())
-                    addresses.add(AddressFactory.create().fromKey(getParams(), key, outputScriptType));
+                    addresses.add(CashAddressFactory.create().fromKey(getParams(), key, outputScriptType));
             }
             return addresses;
         } finally {
@@ -1238,7 +1238,7 @@ public class Wallet extends BaseTaggableObject
                         byte[] pubkeyHash = ScriptPattern.extractHashFromP2PKH(script);
                         keyChainGroup.markPubKeyHashAsUsed(pubkeyHash);
                     } else if (ScriptPattern.isP2SH(script)) {
-                        LegacyAddress a = AddressFactory.create().fromScriptHash(tx.getParams(),
+                        CashAddress a = CashAddressFactory.create().fromScriptHash(tx.getParams(),
                                 ScriptPattern.extractHashFromP2SH(script));
                         keyChainGroup.markP2SHAddressAsUsed(a);
                     }

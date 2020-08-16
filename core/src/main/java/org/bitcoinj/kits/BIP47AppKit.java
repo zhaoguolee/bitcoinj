@@ -834,10 +834,6 @@ public class BIP47AppKit extends AbstractIdleService {
         return vWallet.currentReceiveAddress();
     }
 
-    public LegacyAddress getAddressFromBase58(String addr) {
-        return AddressFactory.create().fromBase58(getParams(), addr);
-    }
-
     private static Coin getDefaultFee(NetworkParameters params) {
         return Transaction.DEFAULT_TX_FEE;
     }

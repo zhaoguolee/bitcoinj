@@ -1149,7 +1149,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
             maybeConnect();
             s = conn.get().prepareStatement(getTransactionOutputSelectSQL());
             for (ECKey key : keys) {
-                s.setString(1, AddressFactory.create().fromKey(params, key).toString());
+                s.setString(1, CashAddressFactory.create().fromKey(params, key).toString());
                 ResultSet rs = s.executeQuery();
                 while (rs.next()) {
                     Sha256Hash hash = Sha256Hash.wrap(rs.getBytes(1));
