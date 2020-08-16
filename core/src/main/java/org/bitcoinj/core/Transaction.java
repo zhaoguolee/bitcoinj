@@ -124,8 +124,6 @@ public class Transaction extends ChildMessage {
     public static final int MAX_STANDARD_VERSION = 2;
     public static final int FORKID_VERSION = 2;
 
-    /** @deprecated use {@link TransactionOutput#getMinNonDustValue()} */
-    @Deprecated
     public static final Coin MIN_NONDUST_OUTPUT = Coin.valueOf(546); // satoshis
 
     // These are bitcoin serialized.
@@ -984,7 +982,6 @@ public class Transaction extends ChildMessage {
     public TransactionOutput addOutput(Coin value, Script script) {
         return addOutput(new TransactionOutput(params, this, value, script.getProgram()));
     }
-
 
 
     /**

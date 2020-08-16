@@ -40,8 +40,10 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     /**
      * Scheme part for Bitcoin URIs.
      */
-    public static final String BITCOIN_SCHEME = "bitcoincash";
     public static final int REWARD_HALVING_INTERVAL = 210000;
+    public static final int MAX_BITS = 0x1d00ffff;
+    public static final String MAX_BITS_STRING = "1d00ffff";
+    public static final BigInteger MAX_TARGET = Utils.decodeCompactBits(MAX_BITS);
 
     /**
      * The number that is one greater than the largest representable SHA-256
@@ -53,15 +55,31 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     public AbstractBitcoinNetParams() {
         super();
+        interval = INTERVAL;
+        subsidyDecreaseBlockCount = 210000;
     }
 
     /**
      * Checks if we are at a reward halving point.
-     * @param height The height of the previous stored block
+     * @param previousHeight The height of the previous stored block
      * @return If this is a reward halving point
      */
-    public final boolean isRewardHalvingPoint(final int height) {
-        return ((height + 1) % REWARD_HALVING_INTERVAL) == 0;
+    public final boolean isRewardHalvingPoint(final int previousHeight) {
+        return ((previousHeight + 1) % REWARD_HALVING_INTERVAL) == 0;
+    }
+
+    /**
+     * <p>A utility method that calculates how much new Bitcoin would be created by the block at the given height.
+     * The inflation of Bitcoin is predictable and drops roughly every 4 years (210,000 blocks). At the dawn of
+     * the system it was 50 coins per block, in late 2012 it went to 25 coins per block, and so on. The size of
+     * a coinbase transaction is inflation plus fees.</p>
+     *
+     * <p>The half-life is controlled by {@link NetworkParameters#getSubsidyDecreaseBlockCount()}.</p>
+     *
+     * @param height the height of the block to calculate inflation for
+     */
+    public Coin getBlockInflation(int height) {
+        return Coin.FIFTY_COINS.shiftRight(height / getSubsidyDecreaseBlockCount());
     }
 
     /**
@@ -72,6 +90,10 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
      */
     public static boolean isDifficultyTransitionPoint(StoredBlock storedPrev, NetworkParameters parameters) {
         return ((storedPrev.getHeight() + 1) % parameters.getInterval()) == 0;
+    }
+
+    public static boolean isDifficultyTransitionPoint(int height, NetworkParameters parameters) {
+        return ((height + 1) % parameters.getInterval()) == 0;
     }
 
     /**
@@ -131,6 +153,74 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     }
 
     /**
+     * Compute aserti-2d DAA target
+     */
+    public static BigInteger computeAsertTarget(final NetworkParameters networkParameters, BigInteger refTarget, BigInteger referenceBlockAncestorTime, BigInteger referenceBlockHeight,
+                                                BigInteger evalBlockTime, BigInteger evalBlockHeight, StoredBlock storedPrev, Block nextBlock) {
+        Preconditions.checkState(evalBlockHeight.compareTo(referenceBlockHeight) >= 0);
+
+        if(storedPrev != null && nextBlock != null) {
+            if (networkParameters.allowMinDifficultyBlocks() &&
+                    (nextBlock.getTimeSeconds() >
+                            storedPrev.getHeader().getTimeSeconds() + 2 * TARGET_SPACING)) {
+                return new BigInteger(MAX_BITS_STRING, 16);
+            }
+        }
+
+        BigInteger heightDiff = evalBlockHeight.subtract(referenceBlockHeight);
+        BigInteger timeDiff = evalBlockTime.subtract(referenceBlockAncestorTime);
+        //used by asert. two days in seconds.
+        BigInteger halfLife = BigInteger.valueOf(networkParameters.getAsertHalfLife());
+        BigInteger rbits = BigInteger.valueOf(16L);
+        BigInteger radix = BigInteger.ONE.shiftLeft(rbits.intValue());
+
+        BigInteger target = refTarget;
+        BigInteger exponent;
+        BigInteger heightDiffWithOffset = heightDiff.add(BigInteger.ONE);
+        BigInteger targetHeightOffsetMultiple = TARGET_SPACING_BIGINT.multiply(heightDiffWithOffset);
+        exponent = timeDiff.subtract(targetHeightOffsetMultiple);
+        exponent = exponent.shiftLeft(rbits.intValue());
+        exponent = exponent.divide(halfLife);
+        BigInteger numShifts = exponent.shiftRight(rbits.intValue());
+        exponent = exponent.subtract(numShifts.shiftLeft(rbits.intValue()));
+
+        BigInteger factor = BigInteger.valueOf(195766423245049L).multiply(exponent);
+        factor = factor.add(BigInteger.valueOf(971821376L).multiply(exponent.pow(2)));
+        factor = factor.add(BigInteger.valueOf(5127L).multiply(exponent.pow(3)));
+        factor = factor.add(BigInteger.valueOf(2L).pow(47));
+        factor = factor.shiftRight(48);
+        target = target.multiply(radix.add(factor));
+
+        if(numShifts.compareTo(BigInteger.ZERO) < 0) {
+            target = target.shiftRight(-numShifts.intValue());
+        } else {
+            target = target.shiftLeft(numShifts.intValue());
+        }
+
+        target = target.shiftRight(16);
+
+        if(target.equals(BigInteger.ZERO)) {
+            return BigInteger.valueOf(Utils.encodeCompactBits(BigInteger.ONE));
+        }
+        if(target.compareTo(MAX_TARGET) > 0) {
+            return new BigInteger(MAX_BITS_STRING, 16);
+        }
+
+        return BigInteger.valueOf(Utils.encodeCompactBits(target));
+    }
+
+    public static BigInteger computeAsertTarget(NetworkParameters networkParameters, BigInteger refTarget, BigInteger referenceBlockAncestorTime, BigInteger referenceBlockHeight,
+                                                BigInteger evalBlockTime, BigInteger evalBlockHeight) {
+        return computeAsertTarget(networkParameters, refTarget, referenceBlockAncestorTime, referenceBlockHeight, evalBlockTime, evalBlockHeight, null, null);
+    }
+
+    public static BigInteger computeAsertTarget(NetworkParameters networkParameters, int referenceBlockBits, BigInteger referenceBlockAncestorTime, BigInteger referenceBlockHeight,
+                                                BigInteger evalBlockTime, BigInteger evalBlockHeight) {
+        BigInteger refTarget = Utils.decodeCompactBits(referenceBlockBits);
+        return computeAsertTarget(networkParameters, refTarget, referenceBlockAncestorTime, referenceBlockHeight, evalBlockTime, evalBlockHeight);
+    }
+
+    /**
      * determines whether monolith upgrade is activated based on the given MTP.  Useful for overriding MTP for testing.
      * @param medianTimePast
      * @param parameters The network parameters
@@ -140,14 +230,22 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         return medianTimePast >= parameters.getMonolithActivationTime();
     }
 
+    public static boolean isAsertEnabled(StoredBlock storedPrev, BlockStore blockStore, NetworkParameters parameters) {
+        try {
+            long mtp = BlockChain.getMedianTimestampOfRecentBlocks(storedPrev, blockStore);
+            return mtp >= parameters.getAsertUpdateTime();
+        } catch (BlockStoreException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     @Override
     public Coin getMaxMoney() {
         return MAX_MONEY;
     }
 
-    /** @deprecated use {@link TransactionOutput#getMinNonDustValue()} */
     @Override
-    @Deprecated
     public Coin getMinNonDustOutput() {
         return Transaction.MIN_NONDUST_OUTPUT;
     }
@@ -165,11 +263,6 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     @Override
     public BitcoinSerializer getSerializer(boolean parseRetain) {
         return new BitcoinSerializer(this, parseRetain);
-    }
-
-    @Override
-    public String getUriScheme() {
-        return BITCOIN_SCHEME;
     }
 
     @Override

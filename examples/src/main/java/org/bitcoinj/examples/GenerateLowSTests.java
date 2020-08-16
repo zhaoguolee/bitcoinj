@@ -95,7 +95,7 @@ public class GenerateLowSTests {
         addOutputs(outputTransaction, bag);
 
         // Sign the transaction
-        final ProposedTransaction proposedTransaction = new ProposedTransaction(outputTransaction);
+        final ProposedTransaction proposedTransaction = new ProposedTransaction(outputTransaction, true);
         signer.signInputs(proposedTransaction, bag);
         final TransactionInput input = proposedTransaction.partialTx.getInput(0);
 

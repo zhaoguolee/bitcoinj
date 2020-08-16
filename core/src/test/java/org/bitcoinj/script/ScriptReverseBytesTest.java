@@ -94,7 +94,7 @@ public class ScriptReverseBytesTest {
         String scriptHex = Integer.toHexString(ScriptOpCodes.OP_DUP) + Integer.toHexString(ScriptOpCodes.OP_REVERSEBYTES) + Integer.toHexString(ScriptOpCodes.OP_EQUAL);
         ScriptBuilder redeemScriptBuilder = new ScriptBuilder().data(Hex.decode("616e7574666f72616a61726f6674756e61")).data(Hex.decode(scriptHex));
         Script redeemScript = redeemScriptBuilder.build();
-        spendTx.addOutput(utxo.getMinNonDustValue(), CashAddress.fromCashAddress(params, "bitcoincash:qzznfgmmxznnhdngj0564mqfezu33wcps577em9prn"));
+        spendTx.addOutput(utxo.getMinNonDustValue(), CashAddressFactory.create().getFromFormattedAddress(params, "bitcoincash:qzznfgmmxznnhdngj0564mqfezu33wcps577em9prn"));
         input.setScriptSig(redeemScript);
         byte[] serializedTx = spendTx.bitcoinSerialize();
         byte[] hexEncodedTx = Hex.encode(serializedTx);

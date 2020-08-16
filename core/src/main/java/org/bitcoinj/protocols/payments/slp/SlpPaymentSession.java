@@ -379,7 +379,7 @@ public class SlpPaymentSession {
                 }
 
                 if(address != null) {
-                    CashAddress cashAddress = CashAddress.fromBase58(params, address.toBase58());
+                    CashAddress cashAddress = CashAddressFactory.create().getFromBase58(params, address.toBase58());
                     SlpAddress slpAddress = SlpAddress.fromCashAddr(params, cashAddress.toString());
                     slpAddresses.add(slpAddress.toString());
                 }

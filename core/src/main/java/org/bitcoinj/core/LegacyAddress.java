@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import com.github.kiulian.converter.AddressConverter;
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script.ScriptType;
 
@@ -145,8 +144,12 @@ public class LegacyAddress extends Address {
 
     public static LegacyAddress fromCashAddress(NetworkParameters params, String cashAddr) {
         if(Address.isValidCashAddr(params, cashAddr)) {
-            String legacy = AddressConverter.toLegacyAddress(cashAddr);
-            return fromBase58(params, legacy);
+            CashAddress cashAddress = CashAddressFactory.create().getFromFormattedAddress(params, cashAddr);
+            if(cashAddress.isP2SHAddress()) {
+                return LegacyAddress.fromScriptHash(params, cashAddress.getHash());
+            } else {
+                return LegacyAddress.fromPubKeyHash(params, cashAddress.getHash());
+            }
         } else {
             throw new AddressFormatException("Invalid address!");
         }

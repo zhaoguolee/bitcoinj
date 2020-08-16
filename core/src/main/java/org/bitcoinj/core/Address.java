@@ -19,6 +19,8 @@ package org.bitcoinj.core;
 import javax.annotation.Nullable;
 
 import org.bitcoinj.core.bip47.BIP47PaymentCode;
+import org.bitcoinj.core.slp.SlpAddress;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.ScriptType;
 
@@ -57,7 +59,7 @@ public abstract class Address extends PrefixedChecksummedBytes {
         if(isValidLegacyAddress(params, str)) {
             return LegacyAddress.fromBase58(params, str);
         } else if(isValidCashAddr(params, str)) {
-            return CashAddress.fromCashAddress(params, str);
+            return CashAddressFactory.create().getFromFormattedAddress(params, str);
         } else {
             return null;
         }
@@ -83,10 +85,21 @@ public abstract class Address extends PrefixedChecksummedBytes {
         }
     }
 
+    public static boolean isValidSlpAddress(NetworkParameters params, String slpAddress)
+    {
+        try {
+            SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getSimpleledgerPrefix(), slpAddress);
+            new CashAddress(params, addrData.version, addrData.bytes);
+            return true;
+        } catch(Exception e) {
+            return false;
+        }
+    }
+
     public static boolean isValidCashAddr(NetworkParameters params, String cashAddress)
     {
         try {
-            CashAddress.fromCashAddress(params, cashAddress);
+            CashAddressFactory.create().getFromFormattedAddress(params, cashAddress);
             return true;
         } catch(Exception e) {
             return false;
@@ -114,6 +127,15 @@ public abstract class Address extends PrefixedChecksummedBytes {
         }
     }
 
+    public static boolean isAcceptableVersion(NetworkParameters params, int version) {
+        for (int v : params.getAcceptableAddressCodes()) {
+            if (version == v) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Construct an {@link Address} that represents the public part of the given {@link ECKey}.
      * 
@@ -127,7 +149,7 @@ public abstract class Address extends PrefixedChecksummedBytes {
      */
     public static Address fromKey(final NetworkParameters params, final ECKey key, final ScriptType outputScriptType) {
         if (outputScriptType == Script.ScriptType.P2PKH)
-            return LegacyAddress.fromKey(params, key);
+            return CashAddressFactory.create().getFromBase58(params, LegacyAddress.fromKey(params, key).toBase58());
         else
             throw new IllegalArgumentException(outputScriptType.toString());
     }

@@ -17,19 +17,11 @@
 
 package org.bitcoinj.params;
 
-import java.math.BigInteger;
-import java.net.URI;
-import java.util.Date;
-
 import org.bitcoinj.core.Block;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
-import org.bitcoinj.net.discovery.HttpDiscovery;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
+
+import java.math.BigInteger;
+import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -37,18 +29,18 @@ import static com.google.common.base.Preconditions.checkState;
  * Parameters for the testnet, a separate public instance of Bitcoin that has relaxed rules suitable for development
  * and testing of applications and new Bitcoin versions.
  */
-public class TestNet3Params extends AbstractBitcoinNetParams {
+public class TestNetAsertParams extends AbstractBitcoinNetParams {
     public static final int TESTNET_MAJORITY_WINDOW = 100;
     public static final int TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED = 75;
     public static final int TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE = 51;
 
-    public TestNet3Params() {
+    public TestNetAsertParams() {
         super();
         id = ID_TESTNET;
         packetMagic = 0xf4e5f3f4L;
         targetTimespan = TARGET_TIMESPAN;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
-        port = 18333;
+        port = 10333;
         addressHeader = 111;
         p2shHeader = 196;
         slpP2shHeader = 8;
@@ -67,7 +59,7 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
                 "testnet-seed.bitcoinabc.org",
                 "testnet-seed-abc.bitcoinforks.org",
                 "testnet-seed.bitprim.org",
-                "testnet-seed.deadalnix.me"           // Matt Corallo
+                "testnet-seed.deadalnix.me"
         };
         httpSeeds = null;
         addrSeeds = null;
@@ -77,25 +69,23 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         majorityEnforceBlockUpgrade = TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE;
         majorityRejectBlockOutdated = TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = TESTNET_MAJORITY_WINDOW;
-        asertReferenceBlockBits = 0x00000000;
-        asertReferenceBlockHeight = BigInteger.ZERO;
-        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertReferenceBlockBits = 0x1d00923b;
+        asertReferenceBlockHeight = BigInteger.valueOf(1400614L);
+        asertReferenceBlockAncestorTime = BigInteger.valueOf(1597096679L);
         asertUpdateTime = 1597096200L;
         // Aug, 1 hard fork
         uahfHeight = 1155876;
         // Nov, 13 hard fork
         daaUpdateHeight = 1188697;
         cashAddrPrefix = "bchtest";
-        simpleledgerPrefix = "slptest";
-
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
     }
 
-    private static TestNet3Params instance;
-    public static synchronized TestNet3Params get() {
+    private static TestNetAsertParams instance;
+    public static synchronized TestNetAsertParams get() {
         if (instance == null) {
-            instance = new TestNet3Params();
+            instance = new TestNetAsertParams();
         }
         return instance;
     }

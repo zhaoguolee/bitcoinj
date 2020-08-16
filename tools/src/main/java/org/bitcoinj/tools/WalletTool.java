@@ -352,7 +352,7 @@ public class WalletTool {
             if (options.has("ignore-mandatory-extensions"))
                 loader.setRequireMandatoryExtensions(false);
             walletInputStream = new BufferedInputStream(new FileInputStream(walletFile));
-            wallet = loader.readWallet(walletInputStream, forceReset, (WalletExtension[])(null));
+            wallet = loader.readWallet(walletInputStream, HDPath.M(), forceReset, (WalletExtension[])(null));
             if (!wallet.getParams().equals(params)) {
                 System.err.println("Wallet does not match requested network parameters: " +
                         wallet.getParams().getId() + " vs " + params.getId());
@@ -1069,7 +1069,7 @@ public class WalletTool {
         wallet.importKey(key);
         System.out.print("Addresses: " + LegacyAddress.fromKey(params, key));
         if (key.isCompressed())
-            System.out.print("," + SegwitAddress.fromKey(params, key));
+            System.out.print("," + LegacyAddress.fromKey(params, key));
         System.out.println();
     }
 
