@@ -405,7 +405,7 @@ public class SlpAppKit extends AbstractIdleService {
             for (TransactionOutput utxo : utxos) {
                 Transaction tx = utxo.getParentTransaction();
                 if (tx != null) {
-                    if (SlpTransaction.isSlpTx(tx)) {
+                    if (SlpOpReturn.isSlpTx(tx)) {
                         SlpOpReturn slpOpReturn = new SlpOpReturn(tx);
                         String tokenId = slpOpReturn.getTokenId();
 
@@ -439,11 +439,6 @@ public class SlpAppKit extends AbstractIdleService {
 
             this.slpUtxos.addAll(slpUtxosToAdd);
             this.saveVerifiedTxs(this.verifiedSlpTxs);
-
-            for(SlpTokenBalance slpTokenBalance : this.slpBalances) {
-                System.out.println(slpTokenBalance.getTokenId() + " /// " + slpTokenBalance.getBalance());
-            }
-
             recalculatingTokens = false;
         }
     }

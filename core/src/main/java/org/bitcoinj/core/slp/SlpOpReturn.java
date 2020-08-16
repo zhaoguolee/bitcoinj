@@ -13,20 +13,21 @@ import java.util.List;
 import java.util.Objects;
 
 public class SlpOpReturn {
-    private static final String slpProtocolId = "534c5000";
-    private static final String genesisTxTypeId = "47454e45534953";
-    private static final String mintTxTypeId = "4d494e54";
-    private static final String sendTxTypeId = "53454e44";
-    private static final int opReturnLocation = 0;
-    private static final int protocolChunkLocation = 1;
-    private static final int slpTokenTypeChunkLocation = 2;
-    private static final int slpTxTypeChunkLocation = 3;
-    private static final int tokenIdChunkLocation = 4;
-    private static final int mintBatonVoutGenesisChunkLocation = 9;
-    private static final int mintBatonVoutMintChunkLocation = 5;
-    private static final int tokenOutputsStartLocation = 5;
+    public static final String slpProtocolId = "534c5000";
+    public static final String tokenTypeId = "01";
+    public static final String genesisTxTypeId = "47454e45534953";
+    public static final String mintTxTypeId = "4d494e54";
+    public static final String sendTxTypeId = "53454e44";
+    public static final int opReturnLocation = 0;
+    public static final int protocolChunkLocation = 1;
+    public static final int slpTokenTypeChunkLocation = 2;
+    public static final int slpTxTypeChunkLocation = 3;
+    public static final int tokenIdChunkLocation = 4;
+    public static final int mintBatonVoutGenesisChunkLocation = 9;
+    public static final int mintBatonVoutMintChunkLocation = 5;
+    public static final int tokenOutputsStartLocation = 5;
 
-    private enum SlpTxType {
+    public enum SlpTxType {
         GENESIS,
         MINT,
         SEND
@@ -38,6 +39,7 @@ public class SlpOpReturn {
     private SlpTxType slpTxType;
     private int slpUtxos;
     private boolean hasMintingBaton = false;
+    private TransactionOutput mintingBatonUtxo = null;
     private int mintingBatonVout = 0;
 
     public SlpOpReturn(Transaction tx) {
@@ -64,6 +66,27 @@ public class SlpOpReturn {
                 this.tokenId = this.tx.getTxId().toString();
             }
         }
+    }
+
+    public static boolean isSlpTx(Transaction tx) {
+        List<TransactionOutput> outputs = tx.getOutputs();
+        TransactionOutput opReturnUtxo = outputs.get(0);
+        Script opReturn = opReturnUtxo.getScriptPubKey();
+        if (ScriptPattern.isOpReturn(opReturn)) {
+            ScriptChunk protocolChunk = opReturn.getChunks().get(protocolChunkLocation);
+            if (protocolChunk != null && protocolChunk.data != null) {
+                String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
+                if(protocolId.equals(slpProtocolId)) {
+                    ScriptChunk tokenTypeChunk = opReturn.getChunks().get(slpTokenTypeChunkLocation);
+                    if (tokenTypeChunk != null && tokenTypeChunk.data != null) {
+                        String tokenType = new String(Hex.encode(tokenTypeChunk.data), StandardCharsets.UTF_8);
+                        return tokenType.equals(tokenTypeId);
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private void setSlpTxType(Script opReturn) {
@@ -122,6 +145,7 @@ public class SlpOpReturn {
             if(!voutHex.equals("")) {
                 int vout = Integer.parseInt(voutHex, 16);
                 this.hasMintingBaton = true;
+                this.mintingBatonUtxo = this.getTx().getOutput(vout);
                 this.mintingBatonVout = vout;
             }
         }
@@ -167,5 +191,13 @@ public class SlpOpReturn {
 
     public Transaction getTx() {
         return this.tx;
+    }
+
+    public Script getOpReturn() {
+        return this.opReturn;
+    }
+
+    public TransactionOutput getMintingBatonUtxo() {
+        return this.mintingBatonUtxo;
     }
 }
