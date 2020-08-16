@@ -388,12 +388,6 @@ public class SlpPaymentSession {
         return slpAddresses;
     }
 
-    public SendRequest replaceOpReturn(Script newScript) {
-        SendRequest sendRequest = this.getSendRequest();
-
-        return sendRequest;
-    }
-
     public Script getSlpOpReturn() {
         Script opReturn = null;
 
