@@ -5,11 +5,18 @@ import org.bitcoinj.core.*;
 public class SlpAddress {
     private NetworkParameters params;
     private String address;
+    private CashAddress.CashAddressType addressType;
 
     public SlpAddress(NetworkParameters params, String address) {
         if(Address.isValidSlpAddress(params, address)) {
             this.params = params;
             this.address = address;
+            SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getSimpleledgerPrefix(), this.address);
+            if (addrData.version == params.getAddressHeader() || addrData.version == params.getSlpP2pkhHeader()) {
+                this.addressType = CashAddress.CashAddressType.PubKey;
+            } else if (addrData.version == params.getP2SHHeader() || addrData.version == params.getSlpP2shHeader()) {
+                this.addressType = CashAddress.CashAddressType.Script;
+            }
         } else {
             throw new AddressFormatException("Invalid Slp address!");
         }
@@ -25,14 +32,16 @@ public class SlpAddress {
         return LegacyAddress.fromCashAddress(this.params, this.toCashAddress()).toBase58();
     }
 
-    public static SlpAddress fromCashAddr(NetworkParameters params, String address) {
-        SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getCashAddrPrefix(), address);
-        String slpAddress = SlpAddress.Util.encodeCashAddress(params.getSimpleledgerPrefix(), SlpAddress.Util.packAddressData(addrData.getBytes(), addrData.getVersion()));
-        return new SlpAddress(params, slpAddress);
-    }
-
     public String toString() {
         return this.address;
+    }
+
+    public boolean isP2SHAddress() {
+        return addressType == CashAddress.CashAddressType.Script;
+    }
+
+    public CashAddress.CashAddressType getAddressType() {
+        return addressType;
     }
 
     public static class Util {

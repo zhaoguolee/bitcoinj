@@ -687,7 +687,7 @@ public class Wallet extends BaseTaggableObject
             for (final DeterministicKeyChain chain : keyChainGroup.getActiveKeyChains(keyRotationTimeSecs)) {
                 Script.ScriptType outputScriptType = chain.getOutputScriptType();
                 for (ECKey key : chain.getIssuedReceiveKeys())
-                    addresses.add(Address.fromKey(getParams(), key, outputScriptType));
+                    addresses.add(AddressFactory.create().fromKey(getParams(), key, outputScriptType));
             }
             return addresses;
         } finally {

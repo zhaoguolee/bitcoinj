@@ -20,12 +20,7 @@ package org.bitcoinj.wallet;
 import com.google.common.collect.*;
 import com.google.protobuf.*;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.BloomFilter;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Utils;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.*;
 import org.bitcoinj.script.*;
 import org.bitcoinj.script.Script.ScriptType;
@@ -314,7 +309,7 @@ public class KeyChainGroup implements KeyBag {
             }
             return current;
         } else if (outputScriptType == Script.ScriptType.P2PKH) {
-            return Address.fromKey(params, currentKey(purpose), outputScriptType);
+            return AddressFactory.create().fromKey(params, currentKey(purpose), outputScriptType);
         } else {
             throw new IllegalStateException(chain.getOutputScriptType().toString());
         }
@@ -366,7 +361,7 @@ public class KeyChainGroup implements KeyBag {
      */
     public Address freshAddress(KeyChain.KeyPurpose purpose, Script.ScriptType outputScriptType, long keyRotationTimeSecs) {
         DeterministicKeyChain chain = getActiveKeyChain(outputScriptType, keyRotationTimeSecs);
-        return Address.fromKey(params, chain.getKey(purpose), outputScriptType);
+        return AddressFactory.create().fromKey(params, chain.getKey(purpose), outputScriptType);
     }
 
     /**
@@ -384,7 +379,7 @@ public class KeyChainGroup implements KeyBag {
             currentAddresses.put(purpose, freshAddress);
             return freshAddress;
         } else if (outputScriptType == Script.ScriptType.P2PKH) {
-            return Address.fromKey(params, freshKey(purpose), outputScriptType);
+            return AddressFactory.create().fromKey(params, freshKey(purpose), outputScriptType);
         } else {
             throw new IllegalStateException(chain.getOutputScriptType().toString());
         }

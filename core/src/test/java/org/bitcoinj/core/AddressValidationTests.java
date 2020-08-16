@@ -93,4 +93,17 @@ public class AddressValidationTests {
         assertTrue(Address.isValidCashAddr(TestNet3Params.get(), legacyToCashAddrValid));
         assertEquals("bchtest:qz0e574avqxqe2srnqa80jxrm78qvt9jlgkt79xh6k", legacyToCashAddrValid);
     }
+
+    @Test
+    public void validateSlpType() {
+        String slpP2PKHValid = "simpleledger:qrnfkj0ya6sju73qf2m0cn05j23d5ztlyqteejq984";
+        String slpP2SHValid = "simpleledger:pphd9qsajfgwlcx706ed8d7l650f6q36c57lleqapv";
+
+        SlpAddress validSlpP2PKH = new SlpAddress(MainNetParams.get(), slpP2PKHValid);
+        SlpAddress validSlpP2SH = new SlpAddress(MainNetParams.get(), slpP2SHValid);
+
+        assertFalse(validSlpP2PKH.isP2SHAddress());
+        assertTrue(validSlpP2SH.isP2SHAddress());
+        assertEquals("bitcoincash:pphd9qsajfgwlcx706ed8d7l650f6q36c5jy5z4alj", validSlpP2SH.toCashAddress());
+    }
 }

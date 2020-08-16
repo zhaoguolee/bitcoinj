@@ -1293,7 +1293,7 @@ public class ECKey implements EncryptableItem {
             NetworkParameters params, Script.ScriptType outputScriptType, @Nullable String comment) {
         builder.append("  addr:");
         if (outputScriptType != null) {
-            builder.append(Address.fromKey(params, this, outputScriptType));
+            builder.append(AddressFactory.create().fromKey(params, this, outputScriptType));
         } else {
             builder.append(LegacyAddress.fromKey(params, this));
             if (isCompressed())
@@ -1340,6 +1340,6 @@ public class ECKey implements EncryptableItem {
     }
 
     public Address toAddress(NetworkParameters params) {
-        return Address.fromKey(params, this, Script.ScriptType.P2PKH);
+        return AddressFactory.create().fromKey(params, this, Script.ScriptType.P2PKH);
     }
 }

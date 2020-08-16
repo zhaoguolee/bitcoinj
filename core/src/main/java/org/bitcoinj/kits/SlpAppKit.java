@@ -558,19 +558,19 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public SlpAddress currentSlpReceiveAddress() {
-        return SlpAddress.fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString());
+        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString());
     }
 
     public SlpAddress currentSlpChangeAddress() {
-        return SlpAddress.fromCashAddr(this.wallet.getParams(), this.wallet.currentChangeAddress().toString());
+        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.currentChangeAddress().toString());
     }
 
     public SlpAddress freshSlpReceiveAddress() {
-        return SlpAddress.fromCashAddr(this.wallet.getParams(), this.wallet.freshReceiveAddress().toString());
+        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.freshReceiveAddress().toString());
     }
 
     public SlpAddress freshSlpChangeAddress() {
-        return SlpAddress.fromCashAddr(this.wallet.getParams(), this.wallet.freshChangeAddress().toString());
+        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.freshChangeAddress().toString());
     }
 
     public void setDiscovery(@Nullable PeerDiscovery discovery) {

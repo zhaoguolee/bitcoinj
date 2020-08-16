@@ -15,6 +15,11 @@
  */
 
 package org.bitcoinj.core;
+
+import org.bitcoinj.script.Script;
+
+import javax.annotation.Nullable;
+
 /**
  * This is a factory class that creates Address or CashAddress objects from strings.
  * It will create an Address object from Base58 strings or a CashAddress object from
@@ -42,10 +47,54 @@ public class AddressFactory {
             return CashAddressFactory.create().getFromFormattedAddress(params, plainAddress);
         } catch (AddressFormatException x) {
             try {
-                return Address.fromString(params, plainAddress);
+                return fromString(params, plainAddress);
             } catch (AddressFormatException x2) {
                 throw new AddressFormatException("Address " + plainAddress + " does not match cash (" + x.getMessage() + ") or legacy formats (" + x2.getMessage());
             }
         }
+    }
+
+    /**
+     * Construct an address from its textual form.
+     *
+     * @param params
+     *            the expected network this address is valid for, or null if the network should be derived from the
+     *            textual form
+     * @param str
+     *            the textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL" or
+     *            "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+     * @return constructed address
+     * @throws AddressFormatException
+     *             if the given string doesn't parse or the checksum is invalid
+     * @throws AddressFormatException.WrongNetwork
+     *             if the given string is valid but not for the expected network (eg testnet vs mainnet)
+     */
+    public Address fromString(@Nullable NetworkParameters params, String str)
+            throws AddressFormatException {
+        if(Address.isValidLegacyAddress(params, str)) {
+            return LegacyAddress.fromBase58(params, str);
+        } else if(Address.isValidCashAddr(params, str)) {
+            return CashAddressFactory.create().getFromFormattedAddress(params, str);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Construct an {@link Address} that represents the public part of the given {@link ECKey}.
+     *
+     * @param params
+     *            network this address is valid for
+     * @param key
+     *            only the public part is used
+     * @param outputScriptType
+     *            script type the address should use
+     * @return constructed address
+     */
+    public Address fromKey(final NetworkParameters params, final ECKey key, final Script.ScriptType outputScriptType) {
+        if (outputScriptType == Script.ScriptType.P2PKH)
+            return CashAddressFactory.create().getFromBase58(params, LegacyAddress.fromKey(params, key).toBase58());
+        else
+            throw new IllegalArgumentException(outputScriptType.toString());
     }
 }

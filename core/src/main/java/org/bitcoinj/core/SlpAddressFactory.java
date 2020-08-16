@@ -16,6 +16,7 @@
 package org.bitcoinj.core;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.bitcoinj.core.slp.SlpAddress;
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script;
 
@@ -28,25 +29,30 @@ import static org.bitcoinj.core.CashAddressHelper.ConvertBits;
 /**
  * This is a factory class that creates CashAddress objects from several types of inputs.
  */
-public class CashAddressFactory {
+public class SlpAddressFactory {
 
-    public static CashAddressFactory create() {
-        return new CashAddressFactory();
+    public static SlpAddressFactory create() {
+        return new SlpAddressFactory();
     }
 
-    /** Returns an Address that represents the given P2SH script hash. */
-    public CashAddress fromScriptHash(NetworkParameters params, byte[] hash160) {
-        return new CashAddress(params, CashAddress.CashAddressType.Script, hash160);
+    public SlpAddress fromSlpAddress(NetworkParameters params, String address) {
+        return new SlpAddress(params, address);
     }
 
-    public CashAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) {
-        return new CashAddress(params, CashAddress.CashAddressType.PubKey, hash160);
+    public SlpAddress fromCashAddr(NetworkParameters params, String address) {
+        SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getCashAddrPrefix(), address);
+        String slpAddress = SlpAddress.Util.encodeCashAddress(params.getSimpleledgerPrefix(), SlpAddress.Util.packAddressData(addrData.getBytes(), addrData.getVersion()));
+        return new SlpAddress(params, slpAddress);
     }
 
-    /** Returns an Address that represents the script hash extracted from the given scriptPubKey */
-    public CashAddress fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
-        checkArgument(scriptPubKey.isPayToScriptHash(), "Not a P2SH script");
-        return fromScriptHash(params, scriptPubKey.getPubKeyHash());
+    public SlpAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) {
+        CashAddress cashAddress = CashAddressFactory.create().fromPubKeyHash(params, hash160);
+        return fromCashAddr(params, cashAddress.toString());
+    }
+
+    public SlpAddress fromScriptHash(NetworkParameters params, byte[] hash160) {
+        CashAddress cashAddress = CashAddressFactory.create().fromScriptHash(params, hash160);
+        return fromCashAddr(params, cashAddress.toString());
     }
 
     /**

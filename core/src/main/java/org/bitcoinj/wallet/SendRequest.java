@@ -202,9 +202,9 @@ public class SendRequest {
         if(recipient.contains("#"))
         {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
-            destination = Address.fromString(params, cashAcctAddress);
+            destination = AddressFactory.create().fromString(params, cashAcctAddress);
         } else {
-            destination = Address.fromString(params, recipient);
+            destination = AddressFactory.create().fromString(params, recipient);
         }
 
         checkNotNull(params, "Address is for an unknown network");
@@ -253,9 +253,9 @@ public class SendRequest {
         if(recipient.contains("#"))
         {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
-            destination = Address.fromString(params, cashAcctAddress);
+            destination = AddressFactory.create().fromString(params, cashAcctAddress);
         } else {
-            destination = Address.fromString(params, recipient);
+            destination = AddressFactory.create().fromString(params, recipient);
         }
 
         checkNotNull(params, "Address is for an unknown network");
@@ -270,7 +270,7 @@ public class SendRequest {
         SendRequest req = new SendRequest();
         Address destination = null;
 
-        destination = Address.fromString(params, desiredAddressForCashAccount);
+        destination = AddressFactory.create().fromString(params, desiredAddressForCashAccount);
 
         checkNotNull(params, "Address is for an unknown network");
         assert destination != null;

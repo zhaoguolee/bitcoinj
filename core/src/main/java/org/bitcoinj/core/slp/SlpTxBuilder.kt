@@ -20,7 +20,7 @@ class SlpTxBuilder {
         fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?, allowUnconfirmed: Boolean): Single<Transaction> {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
-                        val cashAddr = SlpAddress(slpAppKit.wallet.params, toAddress).toCashAddress()
+                        val cashAddr = SlpAddressFactory.create().fromSlpAddress(slpAppKit.wallet.params, toAddress).toCashAddress()
                         val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, cashAddr)
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
@@ -98,7 +98,7 @@ class SlpTxBuilder {
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
                         for(x in addresses.indices) {
-                            val cashAddr = SlpAddress(slpAppKit.wallet.params, addresses[x]).toCashAddress()
+                            val cashAddr = SlpAddressFactory.create().fromSlpAddress(slpAppKit.wallet.params, addresses[x]).toCashAddress()
                             val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, cashAddr)
                             req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, addrTo)
                         }
