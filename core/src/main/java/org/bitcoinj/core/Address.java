@@ -110,7 +110,7 @@ public abstract class Address extends PrefixedChecksummedBytes {
     }
 
     public String toBase58() {
-        return new LegacyAddress(params, getOutputScriptType() == ScriptType.P2PKH, getHash()).toString();
+        return new LegacyAddress(params, getOutputScriptType() != ScriptType.P2PKH, getHash()).toString();
     }
 
     public String toCashAddr() {
