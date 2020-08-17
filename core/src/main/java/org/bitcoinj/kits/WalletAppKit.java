@@ -540,6 +540,16 @@ public class WalletAppKit extends AbstractIdleService {
         return vPeerGroup;
     }
 
+    public Wallet getvWallet() {
+        checkState(state() == State.STARTING || state() == State.RUNNING, "Cannot call until startup is complete");
+        return vWallet;
+    }
+
+    public PeerGroup getPeerGroup() {
+        checkState(state() == State.STARTING || state() == State.RUNNING, "Cannot call until startup is complete");
+        return vPeerGroup;
+    }
+
     public File directory() {
         return directory;
     }

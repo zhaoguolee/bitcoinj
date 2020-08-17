@@ -26,6 +26,9 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.HDPath;
+import org.bitcoinj.crypto.MultisigSignature;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.BlockingClientManager;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.net.discovery.PeerDiscovery;
@@ -44,6 +47,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -101,29 +105,30 @@ public class MultisigAppKit extends AbstractIdleService {
     private String torProxyIp = "127.0.0.1";
     private String torProxyPort = "9050";
     private List<DeterministicKey> followingKeys;
+    private int m;
 
     protected volatile Context context;
 
     /**
      * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
      */
-    public MultisigAppKit(NetworkParameters params, File directory, String filePrefix, List<DeterministicKey> followingKeys) {
-        this(new Context(params), Script.ScriptType.P2PKH, null, directory, filePrefix, followingKeys);
+    public MultisigAppKit(NetworkParameters params, File directory, String filePrefix, List<DeterministicKey> followingKeys, int m) {
+        this(new Context(params), Script.ScriptType.P2PKH, null, directory, filePrefix, followingKeys, m);
     }
 
     /**
      * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
      */
     public MultisigAppKit(NetworkParameters params, Script.ScriptType preferredOutputScriptType,
-                          @Nullable KeyChainGroupStructure structure, File directory, String filePrefix, List<DeterministicKey> followingKeys) {
-        this(new Context(params), preferredOutputScriptType, structure, directory, filePrefix, followingKeys);
+                          @Nullable KeyChainGroupStructure structure, File directory, String filePrefix, List<DeterministicKey> followingKeys, int m) {
+        this(new Context(params), preferredOutputScriptType, structure, directory, filePrefix, followingKeys, m);
     }
 
     /**
      * Creates a new WalletAppKit, with the given {@link Context}. Files will be stored in the given directory.
      */
     public MultisigAppKit(Context context, Script.ScriptType preferredOutputScriptType,
-                          @Nullable KeyChainGroupStructure structure, File directory, String filePrefix, List<DeterministicKey> followingKeys) {
+                          @Nullable KeyChainGroupStructure structure, File directory, String filePrefix, List<DeterministicKey> followingKeys, int m) {
         this.context = context;
         this.params = checkNotNull(context.getParams());
         this.preferredOutputScriptType = checkNotNull(preferredOutputScriptType);
@@ -131,6 +136,7 @@ public class MultisigAppKit extends AbstractIdleService {
         this.directory = checkNotNull(directory);
         this.filePrefix = checkNotNull(filePrefix);
         this.followingKeys = followingKeys;
+        this.m = m;
     }
 
     /** Will only connect to the given addresses. Cannot be called after startup. */
@@ -308,9 +314,9 @@ public class MultisigAppKit extends AbstractIdleService {
             boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null || restoreFromKey != null;
             vWallet = createOrLoadWallet(shouldReplayWallet);
             MarriedKeyChain marriedKeyChain = MarriedKeyChain.builder()
-                    .random(new SecureRandom())
+                    .seed(this.restoreFromSeed == null ? this.getvWallet().getKeyChainSeed() : this.restoreFromSeed)
                     .followingKeys(followingKeys)
-                    .threshold(0).build();
+                    .threshold(this.m).build();
             vWallet.addAndActivateHDChain(marriedKeyChain);
             // Initiate Bitcoin network objects (block store, blockchain and peer group)
             vStore = new SPVBlockStore(params, chainFile);
@@ -564,6 +570,36 @@ public class MultisigAppKit extends AbstractIdleService {
     public PeerGroup getPeerGroup() {
         checkState(state() == State.STARTING || state() == State.RUNNING, "Cannot call until startup is complete");
         return vPeerGroup;
+    }
+
+    public Transaction makeIndividualMultisigTransaction(Address address, Coin amount) throws InsufficientMoneyException {
+        Transaction spendTx = wallet().createSendDontSign(address, amount, true);
+        for(TransactionInput input : spendTx.getInputs()) {
+            RedeemData redeemData = input.getConnectedRedeemData(wallet());
+            if(redeemData != null) {
+                TransactionOutput utxo = input.getConnectedOutput();
+                Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+                input.setScriptSig(script.createEmptyInputScript(null, redeemData.redeemScript));
+            }
+        }
+
+        return spendTx;
+    }
+
+    public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigSignature> multisigSignatures) throws SignatureDecodeException {
+        int index = 0;
+        for(TransactionInput input : tx.getInputs()) {
+            MultisigSignature multisigSignature = multisigSignatures.get(index);
+            TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
+            TransactionOutput utxo = input.getConnectedOutput();
+            Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+            Script inputScript = input.getScriptSig();
+            inputScript = script.getScriptSigWithSignature(inputScript, previousCosignerSig.encodeToBitcoin(), multisigSignature.getIndex());
+            input.setScriptSig(inputScript);
+            index++;
+        }
+
+        return tx;
     }
 
     public File directory() {

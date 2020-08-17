@@ -16,8 +16,18 @@
 
 package wallettemplate;
 
+import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import javafx.scene.layout.HBox;
 import org.bitcoinj.core.*;
+import org.bitcoinj.crypto.MultisigSignature;
+import org.bitcoinj.crypto.TransactionSignature;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.utils.MultisigPayload;
+import org.bitcoinj.wallet.MarriedKeyChain;
+import org.bitcoinj.wallet.RedeemData;
 import org.bitcoinj.wallet.SendRequest;
 import org.bitcoinj.wallet.Wallet;
 
@@ -30,6 +40,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.encoders.Hex;
 import wallettemplate.controls.BitcoinAddressValidator;
 import wallettemplate.utils.TextFieldValidator;
 import wallettemplate.utils.WTUtils;
@@ -38,6 +49,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static wallettemplate.utils.GuiUtils.*;
 
 import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class SendMoneyController {
     public Button sendBtn;
@@ -68,7 +82,7 @@ public class SendMoneyController {
     }
 
     public void send(ActionEvent event) {
-        // Address exception cannot happen as we validated it beforehand.
+        /*// Address exception cannot happen as we validated it beforehand.
         try {
             Coin amount = Coin.parseCoin(amountEdit.getText());
             SendRequest req;
@@ -109,7 +123,113 @@ public class SendMoneyController {
             overlayUI.done();
         } catch (ECKey.KeyIsEncryptedException e) {
             askForPasswordAndRetry();
+        }*/
+        Address toAddress = AddressFactory.create().getAddress(Main.bitcoin.params(), address.getText());
+        Coin amount = Coin.parseCoin(amountEdit.getText());
+        sendUsingMultisig(toAddress, amount);
+    }
+
+    public void sendUsingMultisig(Address address, Coin amount) {
+        try {
+            Transaction cosigner0Tx = Main.bitcoinCosigner2.makeIndividualMultisigTransaction(address, amount);
+            System.out.println(cosigner0Tx.toString());
+            ArrayList<MultisigSignature> cosigner0TxSignatures = new ArrayList<>();
+            for(TransactionInput input : cosigner0Tx.getInputs()) {
+                RedeemData bitcoinRedeemData = input.getConnectedRedeemData(Main.bitcoinCosigner2.getvWallet());
+                if(bitcoinRedeemData != null) {
+                    byte[] redeemScriptProgram = bitcoinRedeemData.redeemScript.getProgram();
+                    Sha256Hash sigHash = cosigner0Tx.hashForSignatureWitness(input.getIndex(), bitcoinRedeemData.redeemScript, input.getConnectedOutput().getValue(), Transaction.SigHash.ALL, false);
+                    TransactionSignature cosigner0Signature = cosigner0Tx.calculateWitnessSignature(input.getIndex(), bitcoinRedeemData.getFullKey(), redeemScriptProgram, input.getConnectedOutput().getValue(), Transaction.SigHash.ALL, false);
+                    int cosigner1SignatureIndex = input.getScriptSig().getSigInsertionIndex(sigHash, bitcoinRedeemData.getFullKey());
+                    cosigner0TxSignatures.add(new MultisigSignature(cosigner1SignatureIndex, cosigner0Signature.encodeToBitcoin()));
+                }
+            }
+
+            MultisigPayload payload = new MultisigPayload();
+            payload.address = address.toString();
+            payload.amount = amount.toPlainString();
+            payload.signatures = cosigner0TxSignatures;
+            String json = new Gson().toJson(payload);
+            System.out.println("Please give the following payload to the next signer:");
+            System.out.println(json);
+
+
+            //Next signer receives payload:
+            MultisigPayload multisigPayload = new Gson().fromJson(json, MultisigPayload.class);
+            Address payloadAddress = Address.fromString(Main.params, multisigPayload.address);
+            Coin payloadAmount = Coin.parseCoin(multisigPayload.amount);
+
+            //Create cosigner's individual tx based on payload data.
+            Transaction cosigner1Tx = Main.bitcoinCosigner1.makeIndividualMultisigTransaction(payloadAddress, payloadAmount);
+
+            //Add the payload signatures to the tx.
+            cosigner1Tx = Main.bitcoinCosigner1.addSignaturesToMultisigTransaction(cosigner1Tx, multisigPayload.signatures);
+
+            for(TransactionInput input : cosigner1Tx.getInputs()) {
+                RedeemData cosigner1RedeemData = input.getConnectedRedeemData(Main.bitcoinCosigner1.getvWallet());
+                if(cosigner1RedeemData != null) {
+                    System.out.println(cosigner1RedeemData.redeemScript.toString());
+                    TransactionOutput utxo = input.getConnectedOutput();
+                    Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+                    byte[] redeemScriptProgram = cosigner1RedeemData.redeemScript.getProgram();
+                    Sha256Hash sigHash = cosigner1Tx.hashForSignatureWitness(input.getIndex(), cosigner1RedeemData.redeemScript, input.getConnectedOutput().getValue(), Transaction.SigHash.ALL, false);
+                    Script inputScript = input.getScriptSig();
+
+                    //Make our signature then add
+                    TransactionSignature cosigner1Signature = cosigner1Tx.calculateWitnessSignature(input.getIndex(), cosigner1RedeemData.getFullKey(), redeemScriptProgram, input.getConnectedOutput().getValue(), Transaction.SigHash.ALL, false);
+                    int cosigner1SignatureIndex = input.getScriptSig().getSigInsertionIndex(sigHash, cosigner1RedeemData.getFullKey());
+                    System.out.println(cosigner1SignatureIndex);
+                    inputScript = script.getScriptSigWithSignature(inputScript, cosigner1Signature.encodeToBitcoin(), cosigner1SignatureIndex);
+                    input.setScriptSig(inputScript);
+
+                    input.verify(input.getConnectedOutput());
+                    System.out.println("Verified!");
+                }
+            }
+
+            System.out.println(cosigner1Tx.toString());
+            /*sendResult = Main.bitcoin.getvWallet().sendMultisigTx(req);
+            Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<Transaction>() {
+                @Override
+                public void onSuccess(@Nullable Transaction result) {
+                    checkGuiThread();
+                    overlayUI.done();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    // We died trying to empty the wallet.
+                    crashAlert(t);
+                }
+            }, MoreExecutors.directExecutor());
+            sendResult.tx.getConfidence().addEventListener((tx, reason) -> {
+                if (reason == TransactionConfidence.Listener.ChangeReason.SEEN_PEERS)
+                    updateTitleForBroadcast();
+            });
+            sendBtn.setDisable(true);
+            this.address.setDisable(true);
+            ((HBox)amountEdit.getParent()).getChildren().remove(amountEdit);
+            ((HBox)btcLabel.getParent()).getChildren().remove(btcLabel);
+            updateTitleForBroadcast();*/
+        } catch (InsufficientMoneyException e) {
+            e.printStackTrace();
+        } catch (SignatureDecodeException e) {
+            e.printStackTrace();
         }
+    }
+
+    private Transaction makeIndividualMultisigTx(Wallet wallet, Address address, Coin amount) throws InsufficientMoneyException {
+        Transaction spendTx = wallet.createSendDontSign(address, amount, true);
+        for(TransactionInput input : spendTx.getInputs()) {
+            RedeemData redeemData = input.getConnectedRedeemData(wallet);
+            if(redeemData != null) {
+                TransactionOutput utxo = input.getConnectedOutput();
+                Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+                input.setScriptSig(script.createEmptyInputScript(null, redeemData.redeemScript));
+            }
+        }
+
+        return spendTx;
     }
 
     private void askForPasswordAndRetry() {

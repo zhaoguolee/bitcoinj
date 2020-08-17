@@ -3998,6 +3998,18 @@ public class Wallet extends BaseTaggableObject
         return req.tx;
     }
 
+    public Transaction createSendDontSign(Address address, Coin value, boolean allowUnconfirmed)
+            throws InsufficientMoneyException, BadWalletEncryptionKeyException {
+        SendRequest req = SendRequest.to(this.getParams(), address.toString(), value);
+        req.feePerKb = Coin.valueOf(1000L);
+        req.signInputs = false;
+        req.shuffleOutputs = false;
+        if (allowUnconfirmed)
+            req.allowUnconfirmed();
+        completeTx(req);
+        return req.tx;
+    }
+
     /**
      * Sends coins to the given address but does not broadcast the resulting pending transaction. It is still stored
      * in the wallet, so when the wallet is added to a {@link PeerGroup} or {@link Peer} the transaction will be
@@ -4097,6 +4109,27 @@ public class Wallet extends BaseTaggableObject
         // txConfidenceListener which will in turn invoke the wallets event listener onTransactionConfidenceChanged
         // method.
         result.broadcast = broadcaster.broadcastTransaction(tx);
+        result.broadcastComplete = result.broadcast.future();
+        return result;
+    }
+
+    public SendResult sendMultisigTx(SendRequest request)
+            throws InsufficientMoneyException, BadWalletEncryptionKeyException {
+        TransactionBroadcaster broadcaster = vTransactionBroadcaster;
+        // Should not be locked here, as we're going to call into the broadcaster and that might want to hold its
+        // own lock. sendCoinsOffline handles everything that needs to be locked.
+        checkState(!lock.isHeldByCurrentThread());
+
+        // Commit the TX to the wallet immediately so the spent coins won't be reused.
+        // TODO: We should probably allow the request to specify tx commit only after the network has accepted it.
+        SendResult result = new SendResult();
+        result.tx = request.tx;
+        // The tx has been committed to the pending pool by this point (via sendCoinsOffline -> commitTx), so it has
+        // a txConfidenceListener registered. Once the tx is broadcast the peers will update the memory pool with the
+        // count of seen peers, the memory pool will update the transaction confidence object, that will invoke the
+        // txConfidenceListener which will in turn invoke the wallets event listener onTransactionConfidenceChanged
+        // method.
+        result.broadcast = broadcaster.broadcastTransaction(result.tx);
         result.broadcastComplete = result.broadcast.future();
         return result;
     }
