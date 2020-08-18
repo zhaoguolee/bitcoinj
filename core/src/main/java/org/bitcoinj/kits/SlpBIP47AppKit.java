@@ -543,7 +543,7 @@ public class SlpBIP47AppKit extends AbstractIdleService {
             @Override
             public void run() {
                 ArrayList<String> txids = new ArrayList<String>();
-                String apiUrl = "http://rest.bitcoin.com/v2/address/utxo/" + cashAddr;
+                String apiUrl = "https://rest.bitcoin.com/v2/address/utxo/" + cashAddr;
                 JSONObject utxosJson = getJSONObject(apiUrl);
                 try {
                     JSONArray utxos = utxosJson.getJSONArray("utxos");
@@ -564,7 +564,7 @@ public class SlpBIP47AppKit extends AbstractIdleService {
     }
 
     private void grabTransactionAndProcessNotificationTransaction(String txid) {
-        String url = "http://rest.bitcoin.com/v2/rawtransactions/getRawTransaction/" + txid + "?verbose=true";
+        String url = "https://rest.bitcoin.com/v2/rawtransactions/getRawTransaction/" + txid + "?verbose=true";
 
         JSONObject txJson = getJSONObject(url);
         if(txJson != null) {
