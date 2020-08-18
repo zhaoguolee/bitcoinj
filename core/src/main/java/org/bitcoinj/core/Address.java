@@ -117,6 +117,10 @@ public abstract class Address extends PrefixedChecksummedBytes {
         return new CashAddress(params, getOutputScriptType() == ScriptType.P2PKH ? CashAddress.CashAddressType.PubKey : CashAddress.CashAddressType.Script, getHash()).toString();
     }
 
+    public String toString() {
+        return toCashAddr();
+    }
+
     /**
      * Get either the public key hash or script hash that is encoded in the address.
      *
