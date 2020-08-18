@@ -123,11 +123,6 @@ public class LegacyAddress extends Address {
     }
 
     @Override
-    public String toString() {
-        return toBase58();
-    }
-
-    @Override
     public LegacyAddress clone() throws CloneNotSupportedException {
         return (LegacyAddress) super.clone();
     }
