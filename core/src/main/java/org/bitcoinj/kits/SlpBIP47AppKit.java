@@ -1211,7 +1211,7 @@ public class SlpBIP47AppKit extends AbstractIdleService {
     public String getCurrentOutgoingAddress(BIP47Channel bip47Channel) {
         try {
             ECKey key = getSendAddress(this, new BIP47PaymentCode(bip47Channel.getPaymentCode()), bip47Channel.getCurrentOutgoingIndex()).getSendECKey();
-            return key.toAddress(getParams()).toString();
+            return SlpAddressFactory.create().fromCashAddr(params, key.toAddress(getParams()).toString()).toString();
         } catch (Exception e) {
             e.printStackTrace();
         }
