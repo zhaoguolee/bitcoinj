@@ -110,15 +110,16 @@ public abstract class Address extends PrefixedChecksummedBytes {
     }
 
     public String toBase58() {
-        return new LegacyAddress(params, getOutputScriptType() != ScriptType.P2PKH, getHash()).toString();
+        return Base58.encodeChecked(getOutputScriptType() == ScriptType.P2SH ? params.getP2SHHeader() : params.getAddressHeader(), bytes);
     }
 
     public String toCashAddr() {
-        return new CashAddress(params, getOutputScriptType() == ScriptType.P2PKH ? CashAddress.CashAddressType.PubKey : CashAddress.CashAddressType.Script, getHash()).toString();
+        return toString();
     }
 
     public String toString() {
-        return toCashAddr();
+        return CashAddressHelper.encodeCashAddress(getParameters().getCashAddrPrefix(),
+                CashAddressHelper.packAddressData(getHash(), getOutputScriptType() == ScriptType.P2PKH ? CashAddress.CashAddressType.PubKey.getValue() : CashAddress.CashAddressType.Script.getValue()));
     }
 
     /**
