@@ -313,7 +313,7 @@ public class MultisigAppKit extends AbstractIdleService {
             vWalletFile = new File(directory, filePrefix + ".wallet");
             boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null || restoreFromKey != null;
             vWallet = createOrLoadWallet(shouldReplayWallet);
-            if(!vWalletFile.exists() || shouldReplayWallet) {
+            if(!vWalletFile.exists() || restoreFromSeed != null || restoreFromKey != null) {
                 MarriedKeyChain marriedKeyChain = MarriedKeyChain.builder()
                         .seed(this.restoreFromSeed == null ? this.getvWallet().getKeyChainSeed() : this.restoreFromSeed)
                         .followingKeys(followingKeys)
