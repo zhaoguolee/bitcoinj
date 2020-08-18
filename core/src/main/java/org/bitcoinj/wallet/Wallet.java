@@ -4000,7 +4000,12 @@ public class Wallet extends BaseTaggableObject
 
     public Transaction createSendDontSign(Address address, Coin value, boolean allowUnconfirmed)
             throws InsufficientMoneyException, BadWalletEncryptionKeyException {
-        SendRequest req = SendRequest.to(this.getParams(), address.toString(), value);
+        SendRequest req = null;
+        if(value.equals(this.getBalance(BalanceType.ESTIMATED))) {
+            req = SendRequest.emptyWallet(this.getParams(), address.toString());
+        } else {
+            req = SendRequest.to(this.getParams(), address.toString(), value);
+        }
         req.feePerKb = Coin.valueOf(1000L);
         req.signInputs = false;
         req.shuffleOutputs = false;
