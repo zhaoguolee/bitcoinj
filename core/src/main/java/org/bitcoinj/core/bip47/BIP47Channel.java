@@ -10,6 +10,7 @@ import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.kits.BIP47AppKit;
+import org.bitcoinj.kits.SlpBIP47AppKit;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.wallet.bip47.NotSecp256k1Exception;
 import org.slf4j.Logger;
@@ -78,6 +79,20 @@ public class BIP47Channel {
     }
 
     public void generateKeys(BIP47AppKit wallet) throws NotSecp256k1Exception, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
+        for (int i = 0; i < LOOKAHEAD; i++) {
+            ECKey key = getReceiveAddress(wallet, paymentCode, i).getReceiveECKey();
+            Address address = wallet.getAddressOfKey(key);
+
+            System.out.println("New address generated");
+            System.out.println(address.toString());
+            wallet.importKey(key);
+            incomingAddresses.add(i, new BIP47Address(address.toString(), i));
+        }
+
+        currentIncomingIndex = LOOKAHEAD - 1;
+    }
+
+    public void generateKeys(SlpBIP47AppKit wallet) throws NotSecp256k1Exception, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
         for (int i = 0; i < LOOKAHEAD; i++) {
             ECKey key = getReceiveAddress(wallet, paymentCode, i).getReceiveECKey();
             Address address = wallet.getAddressOfKey(key);

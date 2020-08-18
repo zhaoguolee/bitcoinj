@@ -22,6 +22,7 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.core.slp.SlpToken;
 import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.SlpAppKit;
+import org.bitcoinj.kits.SlpBIP47AppKit;
 import org.bitcoinj.utils.AppDataDirectory;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.*;
@@ -54,11 +55,11 @@ import static wallettemplate.utils.GuiUtils.*;
 public class Main extends Application {
     public static NetworkParameters params = MainNetParams.get();
     public static final Script.ScriptType PREFERRED_OUTPUT_SCRIPT_TYPE = Script.ScriptType.P2PKH;
-    public static final String APP_NAME = "WalletTemplate";
+    public static final String APP_NAME = "SlpBip47";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static SlpAppKit bitcoin;
+    public static SlpBIP47AppKit bitcoin;
     public static Main instance;
 
     private StackPane uiStack;
@@ -136,7 +137,7 @@ public class Main extends Application {
         // If seed is non-null it means we are restoring from backup.
         File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
-        bitcoin = new SlpAppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
+        bitcoin = new SlpBIP47AppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
         Platform.runLater(controller::onBitcoinSetup);
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
