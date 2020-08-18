@@ -660,7 +660,7 @@ public class SlpBIP47AppKit extends AbstractIdleService {
 
         DeterministicKey mKey = HDKeyDerivation.createMasterPrivateKey(hd_seed);
         DeterministicKey purposeKey = HDKeyDerivation.deriveChildKey(mKey, 47 | ChildNumber.HARDENED_BIT);
-        DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, ChildNumber.HARDENED_BIT);
+        DeterministicKey coinKey = HDKeyDerivation.deriveChildKey(purposeKey, 245 | ChildNumber.HARDENED_BIT);
 
         BIP47Account account = new BIP47Account(params, coinKey, 0);
 
