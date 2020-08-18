@@ -313,11 +313,13 @@ public class MultisigAppKit extends AbstractIdleService {
             vWalletFile = new File(directory, filePrefix + ".wallet");
             boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null || restoreFromKey != null;
             vWallet = createOrLoadWallet(shouldReplayWallet);
-            MarriedKeyChain marriedKeyChain = MarriedKeyChain.builder()
-                    .seed(this.restoreFromSeed == null ? this.getvWallet().getKeyChainSeed() : this.restoreFromSeed)
-                    .followingKeys(followingKeys)
-                    .threshold(this.m).build();
-            vWallet.addAndActivateHDChain(marriedKeyChain);
+            if(!vWalletFile.exists() || shouldReplayWallet) {
+                MarriedKeyChain marriedKeyChain = MarriedKeyChain.builder()
+                        .seed(this.restoreFromSeed == null ? this.getvWallet().getKeyChainSeed() : this.restoreFromSeed)
+                        .followingKeys(followingKeys)
+                        .threshold(this.m).build();
+                vWallet.addAndActivateHDChain(marriedKeyChain);
+            }
             // Initiate Bitcoin network objects (block store, blockchain and peer group)
             vStore = new SPVBlockStore(params, chainFile);
             if (!chainFileExists || restoreFromSeed != null || restoreFromKey != null) {
