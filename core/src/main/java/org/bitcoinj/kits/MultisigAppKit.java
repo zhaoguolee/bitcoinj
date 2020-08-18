@@ -586,17 +586,17 @@ public class MultisigAppKit extends AbstractIdleService {
         return spendTx;
     }
 
-    public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigSignature> multisigSignatures) throws SignatureDecodeException {
-        int index = 0;
+    public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {
         for(TransactionInput input : tx.getInputs()) {
-            MultisigSignature multisigSignature = multisigSignatures.get(index);
-            TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
-            TransactionOutput utxo = input.getConnectedOutput();
-            Script script = Objects.requireNonNull(utxo).getScriptPubKey();
-            Script inputScript = input.getScriptSig();
-            inputScript = script.getScriptSigWithSignature(inputScript, previousCosignerSig.encodeToBitcoin(), multisigSignature.getIndex());
-            input.setScriptSig(inputScript);
-            index++;
+            MultisigInput multisigInput = multisigInputs.get(input.getIndex());
+            for(MultisigSignature multisigSignature : multisigInput.signatures) {
+                TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
+                TransactionOutput utxo = input.getConnectedOutput();
+                Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+                Script inputScript = input.getScriptSig();
+                inputScript = script.getScriptSigWithSignature(inputScript, previousCosignerSig.encodeToBitcoin(), multisigSignature.getIndex());
+                input.setScriptSig(inputScript);
+            }
         }
 
         return tx;

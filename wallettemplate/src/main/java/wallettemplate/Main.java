@@ -127,14 +127,18 @@ public class Main extends Application {
         // a future version.
         Threading.USER_THREAD = Platform::runLater;
         // Create the app kit. It won't do any heavyweight initialization until after we start it.
-        //setupWalletKit(new DeterministicSeed("armor found urban where kind label weird daring until brother swap smoke", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
+
+        //setupWalletKit(new DeterministicSeed("stuff select coin rib then cargo elite whale jealous person turn notice", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
         setupWalletKit(null);
+
         //setupCosigner1(new DeterministicSeed("glimpse grunt power pig math auto save region wasp pact sleep opera", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
-        //setupWalletKit(new DeterministicSeed("glimpse grunt power pig math auto save region wasp pact sleep opera", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
-        //setupCosigner2(new DeterministicSeed("cruise apology smart pottery avocado asthma fever able cheap prevent token cupboard", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
         setupCosigner1(null);
+
+        //setupCosigner2(new DeterministicSeed("cruise apology smart pottery avocado asthma fever able cheap prevent token cupboard", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
         setupCosigner2(null);
+
         setupP2PKH(null);
+
         mainWindow.show();
 
         WalletSetPasswordController.estimateKeyDerivationTimeMsec();
@@ -162,7 +166,7 @@ public class Main extends Application {
         DeterministicKey cosigner2 = DeterministicKey.deserializeB58("tpubDCq12vdZJ6thJWoRjjPtWZntuqpwf8L9Vf9UZyFPRYFfLNHJB8VsCobD2hKvzMPHWaRQcqkiFQCYVdowXXiDrziv8Kbuuf9ZGny6yLXwEsb", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
         followingKeys.add(cosigner1);
         followingKeys.add(cosigner2);
-        int m = 0; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
+        int m = 3; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
         bitcoin = new MultisigAppKit(params, new File("."), WALLET_FILE_NAME, followingKeys, m) {
             @Override
             public void onSetupCompleted() {
@@ -197,7 +201,7 @@ public class Main extends Application {
         DeterministicKey cosigner2 = DeterministicKey.deserializeB58("tpubDCq12vdZJ6thJWoRjjPtWZntuqpwf8L9Vf9UZyFPRYFfLNHJB8VsCobD2hKvzMPHWaRQcqkiFQCYVdowXXiDrziv8Kbuuf9ZGny6yLXwEsb", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
         followingKeys.add(cosigner1);
         followingKeys.add(cosigner2);
-        int m = 0; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
+        int m = 3; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
         bitcoinCosigner1 = new MultisigAppKit(params, new File("."), WALLET_FILE_NAME+"_cosigner1", followingKeys, m) {
             @Override
             public void onSetupCompleted() {
@@ -260,7 +264,7 @@ public class Main extends Application {
         DeterministicKey cosigner2 = DeterministicKey.deserializeB58("tpubDDCUxGJ6KbriHKanzx9a1LDCZTm63rhf2b6ZMgnVUbePKAk7UxsMoxVy371eLkobw9BEwAW39gBKWkkCygTZ1SDpqQZBnQ3cxaZ1woJWjtC", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
         followingKeys.add(cosigner1);
         followingKeys.add(cosigner2);
-        int m = 0; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
+        int m = 3; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
         bitcoinCosigner2 = new MultisigAppKit(params, new File("."), WALLET_FILE_NAME+"_cosigner2", followingKeys, m) {
             @Override
             public void onSetupCompleted() {
