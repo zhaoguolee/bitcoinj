@@ -249,7 +249,7 @@ class SlpTxBuilder {
                         .takeWhile {
                             val amountTooLow = inputTokensRaw < sendTokensRaw
                             if (amountTooLow) {
-                                inputTokensRaw += toRawAmount(it.tokenAmountRaw.toBigDecimal(), tokenDetails)
+                                inputTokensRaw += it.tokenAmountRaw.toULong()
                                 inputSatoshi += (it.txUtxo.value.value - 148) // Deduct input fee
                             }
                             amountTooLow
@@ -312,7 +312,7 @@ class SlpTxBuilder {
                         .takeWhile {
                             val amountTooLow = inputTokensRaw < sendTokensRaw
                             if (amountTooLow) {
-                                inputTokensRaw += toRawAmount(it.tokenAmountRaw.toBigDecimal(), tokenDetails)
+                                inputTokensRaw += it.tokenAmountRaw.toULong()
                                 inputSatoshi += (it.txUtxo.value.value - 148) // Deduct input fee
                             }
                             amountTooLow
@@ -380,7 +380,7 @@ class SlpTxBuilder {
                         .takeWhile {
                             val amountTooLow = inputTokensRaw < sendTokensRaw
                             if (amountTooLow) {
-                                inputTokensRaw += toRawAmount(it.tokenAmountRaw.toBigDecimal(), tokenDetails)
+                                inputTokensRaw += it.tokenAmountRaw.toULong()
                                 inputSatoshi += (it.txUtxo.value.value - 148) // Deduct input fee
                             }
                             amountTooLow
@@ -448,7 +448,7 @@ class SlpTxBuilder {
                         .takeWhile {
                             val amountTooLow = inputTokensRaw < sendTokensRaw
                             if (amountTooLow) {
-                                inputTokensRaw += toRawAmount(it.tokenAmountRaw.toBigDecimal(), tokenDetails)
+                                inputTokensRaw += it.tokenAmountRaw.toULong()
                                 inputSatoshi += (it.txUtxo.value.value - 148) // Deduct input fee
                             }
                             amountTooLow
