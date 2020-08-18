@@ -20,12 +20,7 @@ package org.bitcoinj.wallet;
 import com.google.common.collect.*;
 import com.google.protobuf.*;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.BloomFilter;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.LegacyAddress;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Utils;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.*;
 import org.bitcoinj.script.*;
 import org.bitcoinj.script.Script.ScriptType;
@@ -378,7 +373,7 @@ public class KeyChainGroup implements KeyBag {
         if (chain.isMarried()) {
             Script outputScript = chain.freshOutputScript(purpose);
             checkState(ScriptPattern.isP2SH(outputScript)); // Only handle P2SH for now
-            Address freshAddress = LegacyAddress.fromScriptHash(params,
+            Address freshAddress = CashAddress.fromScriptHash(params,
                     ScriptPattern.extractHashFromP2SH(outputScript));
             maybeLookaheadScripts();
             currentAddresses.put(purpose, freshAddress);
