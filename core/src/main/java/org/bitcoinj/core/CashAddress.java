@@ -117,37 +117,6 @@ public class CashAddress extends Address {
                 CashAddressHelper.packAddressData(getHash(), addressType.getValue()));
     }
 
-    public static CashAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
-        return new CashAddress(params, CashAddressType.PubKey, hash160);
-    }
-
-    /**
-     * Construct a {@link LegacyAddress} that represents the public part of the given {@link ECKey}. Note that an address is
-     * derived from a hash of the public key and is not the public key itself.
-     *
-     * @param params
-     *            network this address is valid for
-     * @param key
-     *            only the public part is used
-     * @return constructed address
-     */
-    public static CashAddress fromKey(NetworkParameters params, ECKey key) {
-        return fromPubKeyHash(params, key.getPubKeyHash());
-    }
-
-    /**
-     * Construct a {@link LegacyAddress} that represents the given P2SH script hash.
-     *
-     * @param params
-     *            network this address is valid for
-     * @param hash160
-     *            P2SH script hash
-     * @return constructed address
-     */
-    public static CashAddress fromScriptHash(NetworkParameters params, byte[] hash160) throws AddressFormatException {
-        return new CashAddress(params, CashAddressType.Script, hash160);
-    }
-
     /**
      * Given an address, examines the version byte and attempts to find a matching NetworkParameters. If you aren't sure
      * which network the address is intended for (eg, it was provided by a user), you can use this to decide if it is
