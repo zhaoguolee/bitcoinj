@@ -21,10 +21,10 @@ class SlpTxBuilder {
         fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?, allowUnconfirmed: Boolean): Single<Transaction> {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
-                        val cashAddr = SlpAddressFactory.create().fromSlpAddress(slpAppKit.wallet.params, toAddress).toCashAddress()
-                        val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, cashAddr)
+                        val cashAddr = SlpAddressFactory.create().fromSlpAddress(slpAppKit.wallet().params, toAddress).toCashAddress()
+                        val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, cashAddr)
                         // Add OP RETURN and receiver output
-                        val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
+                        val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
                         if(allowUnconfirmed)
                             req.allowUnconfirmed()
@@ -41,21 +41,21 @@ class SlpTxBuilder {
                         }
 
                         req.tx.addOutput(Coin.ZERO, opReturn.script)
-                        req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, addrTo)
+                        req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, addrTo)
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
                         }
 
                         // Send our BCH change back to our BCH address
                         if (it.changeSatoshi >= DUST_LIMIT) {
-                            req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet.freshChangeAddress())
+                            req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet().freshChangeAddress())
                         }
 
                         it.selectedUtxos.forEach { req.tx.addInput(it) }
-                        slpAppKit.wallet.signTransaction(req)
-                        slpAppKit.wallet.commitTx(req.tx)
+                        slpAppKit.wallet().signTransaction(req)
+                        slpAppKit.wallet().commitTx(req.tx)
                         val tx = req.tx
                         tx
                     }
@@ -110,7 +110,7 @@ class SlpTxBuilder {
             return sendTokenUtxoSelectionBip70(tokenId, rawTokens, slpAppKit)
                     .map {
                         // Add OP RETURN and receiver output
-                        val req = SendRequest.createSlpTransaction(slpAppKit.wallet.params)
+                        val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
                         if(allowUnconfirmed)
                             req.allowUnconfirmed()
@@ -143,24 +143,24 @@ class SlpTxBuilder {
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
                         for(x in addresses.indices) {
-                            val cashAddr = SlpAddressFactory.create().fromSlpAddress(slpAppKit.wallet.params, addresses[x]).toCashAddress()
-                            val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, cashAddr)
-                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, addrTo)
+                            val cashAddr = SlpAddressFactory.create().fromSlpAddress(slpAppKit.wallet().params, addresses[x]).toCashAddress()
+                            val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, cashAddr)
+                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, addrTo)
                         }
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet.params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet.params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
                         }
 
                         // Send our BCH change back to our BCH address
                         if (it.changeSatoshi >= DUST_LIMIT) {
-                            req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet.freshChangeAddress())
+                            req.tx.addOutput(Coin.valueOf(it.changeSatoshi), slpAppKit.wallet().freshChangeAddress())
                         }
 
                         it.selectedUtxos.forEach { req.tx.addInput(it) }
-                        slpAppKit.wallet.signTransaction(req)
-                        slpAppKit.wallet.commitTx(req.tx)
+                        slpAppKit.wallet().signTransaction(req)
+                        slpAppKit.wallet().commitTx(req.tx)
                         val tx = req.tx
                         tx
                     }
@@ -238,7 +238,7 @@ class SlpTxBuilder {
                 val sendTokensRaw =  toRawAmount(numTokens.toBigDecimal(), tokenDetails)
                 var sendSatoshi = DUST_LIMIT // At least one dust limit output to the token receiver
 
-                val utxos = slpAppKit.wallet.utxos
+                val utxos = slpAppKit.wallet().utxos
 
                 // First select enough token utxo's and just take what we get in terms of BCH
                 var inputTokensRaw = ULong.MIN_VALUE
@@ -369,7 +369,7 @@ class SlpTxBuilder {
 
                 }
                 val sendTokensRaw =  numTokens.toULong()
-                val utxos = slpAppKit.wallet.utxos
+                val utxos = slpAppKit.wallet().utxos
 
                 // First select enough token utxo's and just take what we get in terms of BCH
                 var inputTokensRaw = ULong.MIN_VALUE

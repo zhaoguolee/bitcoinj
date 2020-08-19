@@ -1,7 +1,6 @@
 package org.bitcoinj.core.slp;
 
 import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.kits.SlpAppKit;
 
 public class SlpUTXO {
     public enum SlpUtxoType {

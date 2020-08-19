@@ -413,7 +413,7 @@ public class WalletKitCore extends AbstractIdleService {
                 serializer = new WalletProtobufSerializer(walletFactory);
             else
                 serializer = new WalletProtobufSerializer();
-            wallet = serializer.readWallet(params, extArray, proto);
+            wallet = serializer.readWallet(params, this.structure.accountPathFor(this.preferredOutputScriptType), extArray, proto);
             if (shouldReplayWallet)
                 wallet.reset();
         } finally {

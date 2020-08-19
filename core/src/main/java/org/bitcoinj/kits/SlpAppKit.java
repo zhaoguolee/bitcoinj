@@ -1,147 +1,116 @@
+/*
+ * Copyright 2013 Google Inc.
+ * Copyright 2014 Andreas Schildbach
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.bitcoinj.kits;
 
-import com.google.common.io.Closeables;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
-import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.core.slp.*;
-import org.bitcoinj.net.BlockingClientManager;
 import org.bitcoinj.net.SlpDbProcessor;
 import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.SlpDbValidTransaction;
-import org.bitcoinj.net.discovery.DnsDiscovery;
-import org.bitcoinj.net.discovery.PeerDiscovery;
 import org.bitcoinj.protocols.payments.slp.SlpPaymentSession;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.script.ScriptChunk;
-import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.store.SPVBlockStore;
+import org.bitcoinj.store.*;
 import org.bitcoinj.wallet.*;
-import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.bouncycastle.crypto.params.KeyParameter;
 
-import javax.annotation.Nullable;
+import javax.annotation.*;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 
-public class SlpAppKit extends AbstractIdleService {
-    public Wallet wallet;
-    private SPVBlockStore spvBlockStore;
-    private BlockChain blockChain;
-    private PeerGroup peerGroup;
-    protected PeerAddress[] peerAddresses;
-    private File baseDirectory;
-    private String walletName;
-    private File walletFile;
+/**
+ * <p>Utility class that wraps the boilerplate needed to set up a new SPV bitcoinj app. Instantiate it with a directory
+ * and file prefix, optionally configure a few things, then use startAsync and optionally awaitRunning. The object will
+ * construct and configure a {@link BlockChain}, {@link SPVBlockStore}, {@link Wallet} and {@link PeerGroup}. Depending
+ * on the value of the blockingStartup property, startup will be considered complete once the block chain has fully
+ * synchronized, so it can take a while.</p>
+ *
+ * <p>To add listeners and modify the objects that are constructed, you can either do that by overriding the
+ * {@link #onSetupCompleted()} method (which will run on a background thread) and make your changes there,
+ * or by waiting for the service to start and then accessing the objects from wherever you want. However, you cannot
+ * access the objects this class creates until startup is complete.</p>
+ *
+ * <p>The asynchronous design of this class may seem puzzling (just use {@link #awaitRunning()} if you don't want that).
+ * It is to make it easier to fit bitcoinj into GUI apps, which require a high degree of responsiveness on their main
+ * thread which handles all the animation and user interaction. Even when blockingStart is false, initializing bitcoinj
+ * means doing potentially blocking file IO, generating keys and other potentially intensive operations. By running it
+ * on a background thread, there's no risk of accidentally causing UI lag.</p>
+ *
+ * <p>Note that {@link #awaitRunning()} can throw an unchecked {@link IllegalStateException}
+ * if anything goes wrong during startup - you should probably handle it and use {@link Exception#getCause()} to figure
+ * out what went wrong more precisely. Same thing if you just use the {@link #startAsync()} method.</p>
+ */
+public class SlpAppKit extends WalletKitCore {
     private File tokensFile;
-    private DownloadProgressTracker progressTracker;
     private long MIN_DUST = 546L;
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<>();
     private ArrayList<SlpToken> slpTokens = new ArrayList<>();
     private ArrayList<SlpTokenBalance> slpBalances = new ArrayList<>();
     private ArrayList<String> verifiedSlpTxs = new ArrayList<>();
     private SlpDbProcessor slpDbProcessor;
-    private InputStream checkpoints;
-    private NetworkParameters params;
-    private final String genesisTxType = "47454e45534953";
-    private final String mintTxType = "4d494e54";
-    private final String sendTxType = "53454e44";
-    private boolean useTor = false;
-    private String torProxyIp = "127.0.0.1";
-    private String torProxyPort = "9050";
     private boolean recalculatingTokens = false;
 
-    @Nullable protected DeterministicSeed restoreFromSeed;
-    @Nullable protected PeerDiscovery discovery;
-
-    protected volatile Context context;
-
-    public SlpAppKit() {
-
+    /**
+     * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
+     */
+    public SlpAppKit(NetworkParameters params, File directory, String filePrefix) {
+        this(new Context(params), Script.ScriptType.P2PKH, null, directory, filePrefix);
     }
 
-    @Override
-    protected void startUp() throws Exception {
-        Context.propagate(context);
-        this.startWallet();
+    /**
+     * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
+     */
+    public SlpAppKit(NetworkParameters params, Script.ScriptType preferredOutputScriptType,
+                     @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
+        this(new Context(params), preferredOutputScriptType, structure, directory, filePrefix);
     }
 
-    @Override
-    protected void shutDown() throws Exception {
-        Context.propagate(context);
-        this.saveTokens(this.slpTokens);
-        this.peerGroup.stop();
-        this.wallet.saveToFile(this.walletFile);
-        this.spvBlockStore.close();
-
-        this.peerGroup = null;
-        this.wallet = null;
-        this.spvBlockStore = null;
-        this.blockChain = null;
-    }
-
-    public SlpAppKit(NetworkParameters params, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params, KeyChainGroupStructure.SLP).fromRandom(Script.ScriptType.P2PKH).build(), file, walletName);
-    }
-
-    public SlpAppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params, KeyChainGroupStructure.SLP).fromSeed(seed, Script.ScriptType.P2PKH).build(), file, walletName);
-    }
-
-    public SlpAppKit(Wallet wallet, File file, String walletName) {
-        this.wallet = wallet;
-        this.params = this.wallet.getParams();
-        this.context = new Context(this.wallet.getParams());
-        this.baseDirectory = file;
-        this.walletName = walletName;
-        this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
-        this.completeSetupOfWallet();
-    }
-
-    private SlpAppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        this.setupWallet(params, keyChainGroup, file, walletName);
-    }
-
-    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        wallet = new Wallet(params, keyChainGroup);
-        this.context = new Context(params);
-        this.params = params;
-        this.baseDirectory = file;
-        this.walletName = walletName;
-        this.walletFile = new File(this.baseDirectory, walletName + ".wallet");
-        this.completeSetupOfWallet();
-    }
-
-    public SlpAppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
-        File tmpWalletFile = new File(baseDir, walletName + ".wallet");
-        if(tmpWalletFile.exists()) {
-            return loadFromFile(baseDir, walletName);
-        } else {
-            if(seed != null) {
-                this.restoreFromSeed = seed;
-                return new SlpAppKit(params, seed, baseDir, walletName);
-            } else {
-                return new SlpAppKit(params, baseDir, walletName);
-            }
+    /**
+     * Creates a new WalletAppKit, with the given {@link Context}. Files will be stored in the given directory.
+     */
+    public SlpAppKit(Context context, Script.ScriptType preferredOutputScriptType,
+                     @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
+        this.context = context;
+        this.params = checkNotNull(context.getParams());
+        this.preferredOutputScriptType = checkNotNull(preferredOutputScriptType);
+        this.structure = structure != null ? structure : KeyChainGroupStructure.SLP;
+        this.directory = checkNotNull(directory);
+        this.filePrefix = checkNotNull(filePrefix);
+        File txsDataFile = new File(this.directory(), this.filePrefix + ".txs");
+        if(txsDataFile.exists()) {
+            this.loadRecordedTxs();
         }
+        File tokenDataFile = new File(this.directory(), this.filePrefix + ".tokens");
+        this.tokensFile = tokenDataFile;
+        if(tokenDataFile.exists()) {
+            this.loadTokens();
+        }
+
+        this.slpDbProcessor = new SlpDbProcessor();
     }
 
     private void saveTokens(ArrayList<SlpToken> slpTokens) {
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.baseDirectory, tokensFile.getName())), StandardCharsets.UTF_8))) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.directory(), tokensFile.getName())), StandardCharsets.UTF_8))) {
             JSONArray json = new JSONArray();
             for(SlpToken slpToken : slpTokens) {
                 JSONObject tokenObj = new JSONObject();
@@ -160,7 +129,7 @@ public class SlpAppKit extends AbstractIdleService {
     private void loadTokens() {
         BufferedReader br = null;
         try {
-            FileInputStream is = new FileInputStream(new File(this.baseDirectory, this.tokensFile.getName()));
+            FileInputStream is = new FileInputStream(new File(this.directory(), this.tokensFile.getName()));
             br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
@@ -200,7 +169,7 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     private void saveVerifiedTxs(ArrayList<String> recordedSlpTxs) {
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.baseDirectory, this.walletName + ".txs")), StandardCharsets.UTF_8))) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.directory(), this.filePrefix + ".txs")), StandardCharsets.UTF_8))) {
             StringBuilder text = new StringBuilder();
             for(String txHash : recordedSlpTxs) {
                 text.append(txHash).append("\n");
@@ -215,7 +184,7 @@ public class SlpAppKit extends AbstractIdleService {
     private void loadRecordedTxs() {
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(new File(this.baseDirectory, this.walletName + ".txs")));
+            br = new BufferedReader(new FileReader(new File(this.directory(), this.filePrefix + ".txs")));
             String line = br.readLine();
             while (line != null) {
                 String txHash = line;
@@ -234,116 +203,30 @@ public class SlpAppKit extends AbstractIdleService {
         }
     }
 
-    private static SlpAppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        try {
-            FileInputStream stream = null;
-            try {
-                stream = new FileInputStream(new File(baseDir, walletName + ".wallet"));
-                Wallet wallet = Wallet.loadFromFileStream(stream, DeterministicKeyChain.BIP44_ACCOUNT_SLP_PATH, walletExtensions);
-                return new SlpAppKit(wallet, baseDir, walletName);
-            } finally {
-                if (stream != null) stream.close();
-            }
-        } catch (IOException e) {
-            throw new UnreadableWalletException("Could not open file", e);
-        }
+    public ArrayList<SlpTokenBalance> getSlpBalances() {
+        return this.slpBalances;
+    }
+    public ArrayList<SlpToken> getSlpTokens() {
+        return this.slpTokens;
+    }
+    public ArrayList<SlpUTXO> getSlpUtxos() {
+        return this.slpUtxos;
     }
 
-    public void startWallet() throws BlockStoreException, IOException {
-        File chainFile = new File(this.baseDirectory, this.walletName + ".spvchain");
-        boolean chainFileExists = chainFile.exists();
-        this.spvBlockStore = new SPVBlockStore(this.wallet.getParams(), chainFile);
-        if (!chainFileExists || this.restoreFromSeed != null) {
-            if (this.checkpoints == null && !Utils.isAndroidRuntime()) {
-                this.checkpoints = CheckpointManager.openStream(params);
-            }
-
-            if (this.checkpoints != null) {
-                // Initialize the chain file with a checkpoint to speed up first-run sync.
-                long time;
-                if (this.restoreFromSeed != null) {
-                    time = this.restoreFromSeed.getCreationTimeSeconds();
-                    if (chainFileExists) {
-                        this.spvBlockStore.close();
-                        if (!chainFile.delete())
-                            throw new IOException("Failed to delete chain file in preparation for restore.");
-                        this.spvBlockStore = new SPVBlockStore(params, chainFile);
-                    }
-                } else {
-                    time = this.wallet.getEarliestKeyCreationTime();
-                }
-                if (time > 0) {
-                    CheckpointManager.checkpoint(params, checkpoints, this.spvBlockStore, time);
-                }
-            } else if (chainFileExists) {
-                this.spvBlockStore.close();
-                if (!chainFile.delete())
-                    throw new IOException("Failed to delete chain file in preparation for restore.");
-                this.spvBlockStore = new SPVBlockStore(params, chainFile);
-            }
-        }
-
-        this.blockChain = new BlockChain(this.wallet.getParams(), this.spvBlockStore);
-        if(useTor) {
-            System.setProperty("socksProxyHost", torProxyIp);
-            System.setProperty("socksProxyPort", torProxyPort);
-            this.peerGroup = new PeerGroup(this.wallet.getParams(), this.blockChain, new BlockingClientManager());
-        } else {
-            this.peerGroup = new PeerGroup(this.wallet.getParams(), this.blockChain);
-        }
-
-        if (peerAddresses != null) {
-            for (PeerAddress addr : peerAddresses) this.peerGroup.addAddress(addr);
-            this.peerGroup.setMaxConnections(peerAddresses.length);
-            peerAddresses = null;
-        } else if (!params.getId().equals(NetworkParameters.ID_REGTEST)) {
-            this.peerGroup.addPeerDiscovery(new DnsDiscovery(this.wallet.getParams()));
-        }
-
-        this.blockChain.addWallet(this.wallet);
-        this.peerGroup.addWallet(this.wallet);
-        this.wallet.autosaveToFile(new File(this.baseDirectory, this.walletName + ".wallet"), 5, TimeUnit.SECONDS, null);
-        this.wallet.saveToFile(new File(this.baseDirectory, this.walletName + ".wallet"));
-
-        Futures.addCallback(peerGroup.startAsync(), new FutureCallback() {
-            @Override
-            public void onSuccess(@Nullable Object result) {
-                final DownloadProgressTracker l = progressTracker == null ? new DownloadProgressTracker() : progressTracker;
-                peerGroup.startBlockChainDownload(l);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                throw new RuntimeException(t);
-
-            }
-        }, MoreExecutors.directExecutor());
-
-        new Thread() {
-            @Override
-            public void run() {
-                recalculateSlpUtxos();
-            }
-        }.start();
+    public SlpAddress currentSlpReceiveAddress() {
+        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().currentReceiveAddress().toString());
     }
 
-    public SlpAppKit setCheckpoints(InputStream checkpoints) {
-        if (this.checkpoints != null)
-            Closeables.closeQuietly(checkpoints);
-        this.checkpoints = checkNotNull(checkpoints);
-        return this;
+    public SlpAddress currentSlpChangeAddress() {
+        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().currentChangeAddress().toString());
     }
 
-    public void setUseTor(boolean status) {
-        this.useTor = status;
+    public SlpAddress freshSlpReceiveAddress() {
+        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().freshReceiveAddress().toString());
     }
 
-    public void setTorProxyIp(String ip) {
-        this.torProxyIp = ip;
-    }
-
-    public void setTorProxyPort(String port) {
-        this.torProxyPort = port;
+    public SlpAddress freshSlpChangeAddress() {
+        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().freshChangeAddress().toString());
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
@@ -363,35 +246,14 @@ public class SlpAppKit extends AbstractIdleService {
     }
 
     public Transaction createSlpGenesisTransaction(String ticker, String name, String url, int decimals, long tokenQuantity, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
-        SendRequest req = SendRequest.createSlpTransaction(this.wallet.getParams());
+        SendRequest req = SendRequest.createSlpTransaction(this.params());
         req.aesKey = aesKey;
         req.shuffleOutputs = false;
         req.feePerKb = Coin.valueOf(1000L);
         SlpOpReturnOutputGenesis slpOpReturn = new SlpOpReturnOutputGenesis(ticker, name, url, decimals, tokenQuantity);
         req.tx.addOutput(Coin.ZERO, slpOpReturn.getScript());
-        req.tx.addOutput(this.wallet.getParams().getMinNonDustOutput(), this.wallet.currentChangeAddress());
-        return wallet.sendCoinsOffline(req);
-    }
-
-    public void broadcastSlpTransaction(Transaction tx) {
-        for(Peer peer : this.peerGroup.getConnectedPeers()) {
-            peer.sendMessage(tx);
-        }
-    }
-
-    private void completeSetupOfWallet() {
-        File txsDataFile = new File(this.baseDirectory, this.walletName + ".txs");
-        if(txsDataFile.exists()) {
-            this.loadRecordedTxs();
-        }
-        File tokenDataFile = new File(this.baseDirectory, this.walletName + ".tokens");
-        this.tokensFile = tokenDataFile;
-        if(tokenDataFile.exists()) {
-            this.loadTokens();
-        }
-
-        this.wallet.setAcceptRiskyTransactions(true);
-        this.slpDbProcessor = new SlpDbProcessor();
+        req.tx.addOutput(this.wallet().getParams().getMinNonDustOutput(), this.wallet().currentChangeAddress());
+        return wallet().sendCoinsOffline(req);
     }
 
     public void recalculateSlpUtxos() {
@@ -399,7 +261,7 @@ public class SlpAppKit extends AbstractIdleService {
             recalculatingTokens = true;
             this.slpUtxos.clear();
             this.slpBalances.clear();
-            List<TransactionOutput> utxos = this.wallet.getAllDustUtxos(false, false);
+            List<TransactionOutput> utxos = this.wallet().getAllDustUtxos(false, false);
             ArrayList<SlpUTXO> slpUtxosToAdd = new ArrayList<>();
 
             for (TransactionOutput utxo : utxos) {
@@ -521,59 +383,5 @@ public class SlpAppKit extends AbstractIdleService {
 
     public boolean hasTransactionBeenRecorded(String txid) {
         return this.verifiedSlpTxs.contains(txid);
-    }
-
-    public Wallet getvWallet() {
-        return this.wallet;
-    }
-
-    public SPVBlockStore getSpvBlockStore() {
-        return this.spvBlockStore;
-    }
-
-    public BlockChain getBlockchain() {
-        return this.blockChain;
-    }
-
-    public PeerGroup getPeerGroup() {
-        return this.peerGroup;
-    }
-
-    public void setDownloadProgressTracker(DownloadProgressTracker progressTracker) {
-        this.progressTracker = progressTracker;
-    }
-    public ArrayList<SlpTokenBalance> getSlpBalances() {
-        return this.slpBalances;
-    }
-    public ArrayList<SlpToken> getSlpTokens() {
-        return this.slpTokens;
-    }
-    public ArrayList<SlpUTXO> getSlpUtxos() {
-        return this.slpUtxos;
-    }
-
-    public SlpAddress currentSlpReceiveAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.currentReceiveAddress().toString());
-    }
-
-    public SlpAddress currentSlpChangeAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.currentChangeAddress().toString());
-    }
-
-    public SlpAddress freshSlpReceiveAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.freshReceiveAddress().toString());
-    }
-
-    public SlpAddress freshSlpChangeAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet.getParams(), this.wallet.freshChangeAddress().toString());
-    }
-
-    public void setDiscovery(@Nullable PeerDiscovery discovery) {
-        this.discovery = discovery;
-    }
-
-    public void setPeerNodes(PeerAddress... addresses) {
-        checkState(state() == State.NEW, "Cannot call after startup");
-        this.peerAddresses = addresses;
     }
 }

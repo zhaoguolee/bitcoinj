@@ -465,6 +465,11 @@ public class WalletProtobufSerializer {
         return readWallet(params, extensions, walletProto, false);
     }
 
+    public Wallet readWallet(NetworkParameters params, HDPath accountPath, @Nullable WalletExtension[] extensions,
+                             Protos.Wallet walletProto) throws UnreadableWalletException {
+        return readWallet(params, accountPath, extensions, walletProto, false);
+    }
+
     /**
      * <p>Loads wallet data from the given protocol buffer and inserts it into the given Wallet object. This is primarily
      * useful when you wish to pre-register extension objects. Note that if loading fails the provided Wallet object
