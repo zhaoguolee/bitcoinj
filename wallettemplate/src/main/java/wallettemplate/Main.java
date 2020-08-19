@@ -154,7 +154,7 @@ public class Main extends Application {
         bitcoinCosigner2.startAsync();
         p2pkh.startAsync();
 
-        scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.getPeerGroup().getDownloadPeer().close());
+        scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.peerGroup().getDownloadPeer().close());
     }
 
     public void setupWalletKit(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
@@ -230,7 +230,7 @@ public class Main extends Application {
         p2pkh = new WalletAppKit(params, new File("."), p2pkh_name) {
             @Override
             public void onSetupCompleted() {
-                p2pkh.getvWallet().addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
+                p2pkh.wallet().addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
                     @Override
                     public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
                         System.out.println("Received coins, new balance is: " + newBalance.toPlainString());
@@ -241,7 +241,7 @@ public class Main extends Application {
         };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        //bitcoinCosigner1.setDownloadListener(controller.progressBarUpdater());
+        p2pkh.setDownloadListener(controller.progressBarUpdater());
         p2pkh.setBlockingStartup(false);
 
         if(seed != null) {

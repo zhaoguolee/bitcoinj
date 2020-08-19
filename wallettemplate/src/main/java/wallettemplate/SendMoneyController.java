@@ -68,7 +68,7 @@ public class SendMoneyController {
 
     // Called by FXMLLoader
     public void initialize() {
-        Coin balance = Main.bitcoin.getvWallet().getBalance(Wallet.BalanceType.ESTIMATED);
+        Coin balance = Main.bitcoin.wallet().getBalance(Wallet.BalanceType.ESTIMATED);
         checkState(!balance.isZero());
         new BitcoinAddressValidator(Main.params, address, sendBtn);
         new TextFieldValidator(amountEdit, text ->
@@ -136,7 +136,7 @@ public class SendMoneyController {
             ArrayList<MultisigInput> multisigInputs = new ArrayList<>();
 
             for(TransactionInput input : cosigner0Tx.getInputs()) {
-                RedeemData bitcoinRedeemData = input.getConnectedRedeemData(Main.bitcoinCosigner2.getvWallet());
+                RedeemData bitcoinRedeemData = input.getConnectedRedeemData(Main.bitcoinCosigner2.wallet());
                 if(bitcoinRedeemData != null) {
                     TransactionOutput utxo = input.getConnectedOutput();
                     Script script = Objects.requireNonNull(utxo).getScriptPubKey();
@@ -183,7 +183,7 @@ public class SendMoneyController {
             System.out.println(cosigner1Tx.toString());
 
             for(TransactionInput input : cosigner1Tx.getInputs()) {
-                RedeemData bitcoinRedeemData = input.getConnectedRedeemData(Main.bitcoinCosigner1.getvWallet());
+                RedeemData bitcoinRedeemData = input.getConnectedRedeemData(Main.bitcoinCosigner1.wallet());
                 if(bitcoinRedeemData != null) {
                     TransactionOutput utxo = input.getConnectedOutput();
                     Script script = Objects.requireNonNull(utxo).getScriptPubKey();
@@ -226,7 +226,7 @@ public class SendMoneyController {
             System.out.println(cosigner2Tx.toString());
 
             for(TransactionInput input : cosigner2Tx.getInputs()) {
-                RedeemData bitcoinRedeemData = input.getConnectedRedeemData(Main.bitcoin.getvWallet());
+                RedeemData bitcoinRedeemData = input.getConnectedRedeemData(Main.bitcoin.wallet());
                 if(bitcoinRedeemData != null) {
                     TransactionOutput utxo = input.getConnectedOutput();
                     Script script = Objects.requireNonNull(utxo).getScriptPubKey();
