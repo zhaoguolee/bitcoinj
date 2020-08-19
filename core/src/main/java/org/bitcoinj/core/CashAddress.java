@@ -21,6 +21,8 @@ package org.bitcoinj.core;
 
 import org.bitcoinj.script.Script;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * <p>A Bitcoin Cash address looks like bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h and is derived from
  * an elliptic curve public key plus a set of network parameters. Not to be confused with a {@link PeerAddress}
@@ -34,23 +36,6 @@ import org.bitcoinj.script.Script;
  */
 
 public class CashAddress extends Address {
-    private byte[] hash160;
-
-    @Override
-    public byte[] getHash() {
-        return hash160;
-    }
-
-    @Override
-    public Script.ScriptType getOutputScriptType() {
-        if(addressType == CashAddressType.PubKey) {
-            return Script.ScriptType.P2PKH;
-        } else if(addressType == CashAddressType.Script) {
-            return Script.ScriptType.P2SH;
-        }
-
-        return null;
-    }
 
     public enum CashAddressType {
         PubKey(0),
@@ -89,15 +74,29 @@ public class CashAddress extends Address {
     }
 
     public CashAddress(NetworkParameters params, CashAddressType addressType, byte[] hash) {
-        super(params, hash);
+        super(params, getLegacyVersion(params, addressType), hash);
         this.addressType = addressType;
-        this.hash160 = hash;
     }
 
     public CashAddress(NetworkParameters params, int version, byte[] hash160) {
-        super(params, hash160);
+        super(params, version, hash160);
         this.addressType = getType(params, version);
-        this.hash160 = hash160;
+    }
+
+    /** Returns an Address that represents the given P2SH script hash. */
+    public static CashAddress fromP2PKHHash(NetworkParameters params, byte[] hash160) {
+        return new CashAddress(params, CashAddress.CashAddressType.PubKey, hash160);
+    }
+
+    /** Returns an Address that represents the given P2SH script hash. */
+    public static CashAddress fromP2SHHash(NetworkParameters params, byte[] hash160) {
+        return new CashAddress(params, CashAddress.CashAddressType.Script, hash160);
+    }
+
+    /** Returns an Address that represents the script hash extracted from the given scriptPubKey */
+    public static CashAddress fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
+        checkArgument(scriptPubKey.isPayToScriptHash(), "Not a P2SH script");
+        return fromP2SHHash(params, scriptPubKey.getPubKeyHash());
     }
 
     /**
@@ -112,6 +111,15 @@ public class CashAddress extends Address {
         return addressType;
     }
 
+    public String toString() {
+        return CashAddressHelper.encodeCashAddress(getParameters().getCashAddrPrefix(),
+                CashAddressHelper.packAddressData(getHash160(), addressType.getValue()));
+    }
+
+    @Override
+    public Address clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
     /**
      * Given an address, examines the version byte and attempts to find a matching NetworkParameters. If you aren't sure
      * which network the address is intended for (eg, it was provided by a user), you can use this to decide if it is

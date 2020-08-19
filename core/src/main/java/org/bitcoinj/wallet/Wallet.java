@@ -640,25 +640,6 @@ public class Wallet extends BaseTaggableObject
     }
 
     /**
-     * <p>Returns a fresh receive address for a given {@link Script.ScriptType}.</p>
-     * <p>This method is meant for when you really need a fallback address. Normally, you should be
-     * using {@link #freshAddress(KeyChain.KeyPurpose)} or
-     * {@link #currentAddress(KeyChain.KeyPurpose)}.</p>
-     */
-    public Address freshReceiveAddress(Script.ScriptType scriptType) {
-        Address address;
-        keyChainGroupLock.lock();
-        try {
-            long keyRotationTimeSecs = vKeyRotationTimestamp;
-            address = keyChainGroup.freshAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS, scriptType, keyRotationTimeSecs);
-        } finally {
-            keyChainGroupLock.unlock();
-        }
-        saveNow();
-        return address;
-    }
-
-    /**
      * Returns only the keys that have been issued by {@link #freshReceiveKey()}, {@link #freshReceiveAddress()},
      * {@link #currentReceiveKey()} or {@link #currentReceiveAddress()}.
      */
@@ -687,7 +668,7 @@ public class Wallet extends BaseTaggableObject
             for (final DeterministicKeyChain chain : keyChainGroup.getActiveKeyChains(keyRotationTimeSecs)) {
                 Script.ScriptType outputScriptType = chain.getOutputScriptType();
                 for (ECKey key : chain.getIssuedReceiveKeys())
-                    addresses.add(AddressFactory.create().fromKey(getParams(), key, outputScriptType));
+                    addresses.add(Address.fromKey(getParams(), key));
             }
             return addresses;
         } finally {
@@ -1139,13 +1120,10 @@ public class Wallet extends BaseTaggableObject
      * Returns true if the address is belongs to this wallet.
      */
     public boolean isAddressMine(Address address) {
-        final ScriptType scriptType = address.getOutputScriptType();
-        if (scriptType == ScriptType.P2PKH)
-            return isPubKeyHashMine(address.getHash(), scriptType);
-        else if (scriptType == ScriptType.P2SH)
-            return isPayToScriptHashMine(address.getHash());
+        if (address.isP2SHAddress())
+            return isPayToScriptHashMine(address.getHash160());
         else
-            throw new IllegalArgumentException(address.toString());
+            return isPubKeyHashMine(address.getHash160());
     }
 
     /** @deprecated Use {@link #isPubKeyHashMine(byte[], ScriptType)} */
@@ -1176,7 +1154,7 @@ public class Wallet extends BaseTaggableObject
     public ECKey findKeyFromAddress(Address address) {
         final ScriptType scriptType = address.getOutputScriptType();
         if (scriptType == ScriptType.P2PKH)
-            return findKeyFromPubKeyHash(address.getHash(), scriptType);
+            return findKeyFromPubKeyHash(address.getHash160(), scriptType);
         else
             return null;
     }
@@ -1238,7 +1216,7 @@ public class Wallet extends BaseTaggableObject
                         byte[] pubkeyHash = ScriptPattern.extractHashFromP2PKH(script);
                         keyChainGroup.markPubKeyHashAsUsed(pubkeyHash);
                     } else if (ScriptPattern.isP2SH(script)) {
-                        Address a = AddressFactory.create().fromScriptHash(tx.getParams(),
+                        Address a = Address.fromP2SHHash(tx.getParams(),
                                 ScriptPattern.extractHashFromP2SH(script));
                         keyChainGroup.markP2SHAddressAsUsed(a);
                     }

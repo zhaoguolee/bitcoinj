@@ -1291,16 +1291,9 @@ public class ECKey implements EncryptableItem {
 
     public void formatKeyWithAddress(boolean includePrivateKeys, @Nullable KeyParameter aesKey, StringBuilder builder,
             NetworkParameters params, Script.ScriptType outputScriptType, @Nullable String comment) {
+        Address address = toAddress(params);
         builder.append("  addr:");
-        if (outputScriptType != null) {
-            builder.append(AddressFactory.create().fromKey(params, this, outputScriptType));
-        } else {
-            builder.append(AddressFactory.create().fromKey(params, this));
-            if (isCompressed())
-                builder.append(',').append(AddressFactory.create().fromKey(params, this));
-        }
-        if (!isCompressed())
-            builder.append("  UNCOMPRESSED");
+        builder.append(address.toString());
         builder.append("  hash160:");
         builder.append(Utils.HEX.encode(getPubKeyHash()));
         if (creationTimeSeconds > 0)
@@ -1340,6 +1333,6 @@ public class ECKey implements EncryptableItem {
     }
 
     public Address toAddress(NetworkParameters params) {
-        return AddressFactory.create().fromKey(params, this, Script.ScriptType.P2PKH);
+        return new Address(params, getPubKeyHash());
     }
 }

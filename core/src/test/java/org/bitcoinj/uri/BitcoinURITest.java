@@ -18,7 +18,6 @@ package org.bitcoinj.uri;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFactory;
-import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import com.google.common.collect.ImmutableList;
@@ -42,7 +41,7 @@ public class BitcoinURITest {
 
     @Test
     public void testConvertToBitcoinURI() throws Exception {
-        Address goodAddress = AddressFactory.create().fromBase58(MAINNET, MAINNET_GOOD_ADDRESS);
+        Address goodAddress = Address.fromBase58(MAINNET, MAINNET_GOOD_ADDRESS);
         
         // simple example
         assertEquals("bitcoincash:" + MAINNET_GOOD_ADDRESS + "?amount=12.34&label=Hello&message=AMessage", BitcoinURI.convertToBitcoinURI(goodAddress, parseCoin("12.34"), "Hello", "AMessage"));
@@ -85,7 +84,7 @@ public class BitcoinURITest {
         };
 
         assertEquals("test:" + MAINNET_GOOD_ADDRESS + "?amount=12.34&label=Hello&message=AMessage",
-             BitcoinURI.convertToBitcoinURI(AddressFactory.create().fromBase58(alternativeParameters, MAINNET_GOOD_ADDRESS), parseCoin("12.34"), "Hello", "AMessage"));
+             BitcoinURI.convertToBitcoinURI(Address.fromBase58(alternativeParameters, MAINNET_GOOD_ADDRESS), parseCoin("12.34"), "Hello", "AMessage"));
     }
 
     @Test
@@ -94,7 +93,7 @@ public class BitcoinURITest {
         assertEquals(MAINNET_GOOD_ADDRESS, testObject.getAddress().toString());
         assertNull("Unexpected amount", testObject.getAmount());
         assertNull("Unexpected label", testObject.getLabel());
-        assertEquals("Unexpected label", 20, testObject.getAddress().getHash().length);
+        assertEquals("Unexpected label", 20, testObject.getAddress().getHash160().length);
     }
 
     @Test
@@ -103,7 +102,7 @@ public class BitcoinURITest {
         assertEquals(MAINNET_GOOD_ADDRESS, testObject.getAddress().toString());
         assertNull("Unexpected amount", testObject.getAmount());
         assertNull("Unexpected label", testObject.getLabel());
-        assertEquals("Unexpected label", 20, testObject.getAddress().getHash().length);
+        assertEquals("Unexpected label", 20, testObject.getAddress().getHash160().length);
     }
 
     /**

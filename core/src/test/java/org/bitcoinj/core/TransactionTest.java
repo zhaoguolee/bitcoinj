@@ -44,7 +44,7 @@ import static org.junit.Assert.*;
 public class TransactionTest {
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
     private static final NetworkParameters TESTNET = TestNet3Params.get();
-    private static final Address ADDRESS = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+    private static final Address ADDRESS = Address.fromKey(UNITTEST, new ECKey());
 
     private Transaction tx;
 
@@ -243,7 +243,7 @@ public class TransactionTest {
     @Test(expected = ScriptException.class)
     public void testAddSignedInputThrowsExceptionWhenScriptIsNotToRawPubKeyAndIsNotToAddress() {
         ECKey key = new ECKey();
-        Address addr = AddressFactory.create().fromKey(UNITTEST, key);
+        Address addr = Address.fromKey(UNITTEST, key);
         Transaction fakeTx = FakeTxBuilder.createFakeTx(UNITTEST, Coin.COIN, addr);
 
         Transaction tx = new Transaction(UNITTEST);
@@ -308,7 +308,7 @@ public class TransactionTest {
     @Test
     public void testHashForSignatureThreadSafety() {
         Block genesis = UNITTEST.getGenesisBlock();
-        Block block1 = genesis.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()),
+        Block block1 = genesis.createNextBlock(Address.fromKey(UNITTEST, new ECKey()),
                     genesis.getTransactions().get(0).getOutput(0).getOutPointFor());
 
         final Transaction tx = block1.getTransactions().get(1);
@@ -371,10 +371,10 @@ public class TransactionTest {
             setSerializer(serializer.withProtocolVersion(
                     NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111.getBitcoinProtocolVersion()));
             Transaction inputTx = new Transaction(params);
-            inputTx.addOutput(Coin.FIFTY_COINS, AddressFactory.create().fromKey(params, ECKey.fromPrivate(BigInteger.valueOf(123456))));
+            inputTx.addOutput(Coin.FIFTY_COINS, Address.fromKey(params, ECKey.fromPrivate(BigInteger.valueOf(123456))));
             this.addInput(inputTx.getOutput(0));
             this.getInput(0).disconnect();
-            Address to = AddressFactory.create().fromKey(params, ECKey.fromPrivate(BigInteger.valueOf(1000)));
+            Address to = Address.fromKey(params, ECKey.fromPrivate(BigInteger.valueOf(1000)));
             this.addOutput(Coin.COIN, to);
 
             this.hackInputsSize = hackInputsSize;

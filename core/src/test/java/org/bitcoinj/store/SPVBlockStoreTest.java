@@ -48,7 +48,7 @@ public class SPVBlockStoreTest {
     public void basics() throws Exception {
         SPVBlockStore store = new SPVBlockStore(UNITTEST, blockStoreFile);
 
-        Address to = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        Address to = Address.fromKey(UNITTEST, new ECKey());
         // Check the first block in a new store is the genesis block.
         StoredBlock genesis = store.getChainHead();
         assertEquals(UNITTEST.getGenesisBlock(), genesis.getHeader());
@@ -92,7 +92,7 @@ public class SPVBlockStoreTest {
 
     @Test
     public void twoStores_sequentially_grow() throws Exception {
-        Address to = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        Address to = Address.fromKey(UNITTEST, new ECKey());
         SPVBlockStore store = new SPVBlockStore(UNITTEST, blockStoreFile, 10, true);
         final StoredBlock block0 = store.getChainHead();
         final StoredBlock block1 = block0.build(block0.getHeader().createNextBlock(to).cloneAsHeader());
@@ -146,7 +146,7 @@ public class SPVBlockStoreTest {
         SPVBlockStore store = new SPVBlockStore(UNITTEST, blockStoreFile);
 
         // Build a new block.
-        Address to = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        Address to = Address.fromKey(UNITTEST, new ECKey());
         StoredBlock genesis = store.getChainHead();
         StoredBlock b1 = genesis.build(genesis.getHeader().createNextBlock(to).cloneAsHeader());
         store.put(b1);

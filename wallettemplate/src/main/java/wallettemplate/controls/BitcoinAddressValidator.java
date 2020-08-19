@@ -57,7 +57,7 @@ public class BitcoinAddressValidator {
     private boolean testAddr(String text) {
         if(!text.isEmpty()) {
             try {
-                AddressFactory.create().fromString(params, text);
+                AddressFactory.create().getAddress(params, text);
                 return true;
             } catch (AddressFormatException e) {
                 return false;

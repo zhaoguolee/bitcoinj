@@ -40,6 +40,8 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
     /**
      * Scheme part for Bitcoin URIs.
      */
+    public static final String BITCOIN_SCHEME = "bitcoincash";
+
     public static final int REWARD_HALVING_INTERVAL = 210000;
     public static final int MAX_BITS = 0x1d00ffff;
     public static final String MAX_BITS_STRING = "1d00ffff";

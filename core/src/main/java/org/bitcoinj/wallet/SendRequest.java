@@ -202,9 +202,9 @@ public class SendRequest {
         if(recipient.contains("#"))
         {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
-            destination = AddressFactory.create().fromString(params, cashAcctAddress);
+            destination = AddressFactory.create().getAddress(params, cashAcctAddress);
         } else {
-            destination = AddressFactory.create().fromString(params, recipient);
+            destination = AddressFactory.create().getAddress(params, recipient);
         }
 
         checkNotNull(params, "Address is for an unknown network");
@@ -253,9 +253,9 @@ public class SendRequest {
         if(recipient.contains("#"))
         {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
-            destination = AddressFactory.create().fromString(params, cashAcctAddress);
+            destination = AddressFactory.create().getAddress(params, cashAcctAddress);
         } else {
-            destination = AddressFactory.create().fromString(params, recipient);
+            destination = AddressFactory.create().getAddress(params, recipient);
         }
 
         checkNotNull(params, "Address is for an unknown network");
@@ -270,12 +270,12 @@ public class SendRequest {
         SendRequest req = new SendRequest();
         Address destination = null;
 
-        destination = AddressFactory.create().fromString(params, desiredAddressForCashAccount);
+        destination = AddressFactory.create().getAddress(params, desiredAddressForCashAccount);
 
         checkNotNull(params, "Address is for an unknown network");
         assert destination != null;
         checkNotNull(destination, "No address set!");
-        String hash160 = new String(Hex.encode(destination.getHash()), StandardCharsets.UTF_8);
+        String hash160 = new String(Hex.encode(destination.getHash160()), StandardCharsets.UTF_8);
         req.tx = new Transaction(params);
         req.tx.addOutput(Coin.parseCoin("0.00001"), destination);
         ScriptBuilder scriptBuilder = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN)

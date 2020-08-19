@@ -34,53 +34,6 @@ public class CashAddressFactory {
         return new CashAddressFactory();
     }
 
-    /** Returns an Address that represents the given P2SH script hash. */
-    public CashAddress fromScriptHash(NetworkParameters params, byte[] hash160) {
-        return new CashAddress(params, CashAddress.CashAddressType.Script, hash160);
-    }
-
-    public CashAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) {
-        return new CashAddress(params, CashAddress.CashAddressType.PubKey, hash160);
-    }
-
-    /** Returns an Address that represents the script hash extracted from the given scriptPubKey */
-    public CashAddress fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
-        checkArgument(scriptPubKey.isPayToScriptHash(), "Not a P2SH script");
-        return fromScriptHash(params, scriptPubKey.getPubKeyHash());
-    }
-
-    /**
-     * Construct a {@link LegacyAddress} that represents the public part of the given {@link ECKey}. Note that an address is
-     * derived from a hash of the public key and is not the public key itself.
-     *
-     * @param params
-     *            network this address is valid for
-     * @param key
-     *            only the public part is used
-     * @return constructed address
-     */
-    public CashAddress fromKey(NetworkParameters params, ECKey key) {
-        return fromPubKeyHash(params, key.getPubKeyHash());
-    }
-
-    /**
-     * Construct an {@link Address} that represents the public part of the given {@link ECKey}.
-     *
-     * @param params
-     *            network this address is valid for
-     * @param key
-     *            only the public part is used
-     * @param outputScriptType
-     *            script type the address should use
-     * @return constructed address
-     */
-    public Address fromKey(final NetworkParameters params, final ECKey key, final Script.ScriptType outputScriptType) {
-        if (outputScriptType == Script.ScriptType.P2PKH)
-            return fromKey(params, key);
-        else
-            throw new IllegalArgumentException(outputScriptType.toString());
-    }
-
     /**
      * Construct an address from its Base58 representation.
      * @param params
@@ -89,6 +42,8 @@ public class CashAddressFactory {
      *            The textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL".
      * @throws AddressFormatException
      *             if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException
+     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
      */
     public CashAddress getFromBase58(@Nullable NetworkParameters params, String base58)
             throws AddressFormatException {

@@ -66,9 +66,9 @@ public class ChainSplitTest {
         ECKey key1 = wallet.freshReceiveKey();
         ECKey key2 = wallet.freshReceiveKey();
         chain = new BlockChain(UNITTEST, wallet, blockStore);
-        coinsTo = AddressFactory.create().fromKey(UNITTEST, key1);
-        coinsTo2 = AddressFactory.create().fromKey(UNITTEST, key2);
-        someOtherGuy = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        coinsTo = Address.fromKey(UNITTEST, key1);
+        coinsTo2 = Address.fromKey(UNITTEST, key2);
+        someOtherGuy = Address.fromKey(UNITTEST, new ECKey());
     }
 
     @Test
@@ -187,7 +187,7 @@ public class ChainSplitTest {
         Block b1 = UNITTEST.getGenesisBlock().createNextBlock(coinsTo);
         chain.add(b1);
         assertEquals(FIFTY_COINS, wallet.getBalance());
-        Address dest = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        Address dest = Address.fromKey(UNITTEST, new ECKey());
         Transaction spend = wallet.createSend(dest, valueOf(10, 0));
         wallet.commitTx(spend);
         // Waiting for confirmation ... make it eligible for selection.
@@ -221,7 +221,7 @@ public class ChainSplitTest {
         Block b1 = UNITTEST.getGenesisBlock().createNextBlock(coinsTo);
         chain.add(b1);
         assertEquals(FIFTY_COINS, wallet.getBalance());
-        Address dest = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        Address dest = Address.fromKey(UNITTEST, new ECKey());
         Transaction spend = wallet.createSend(dest, FIFTY_COINS);
         // We do NOT confirm the spend here. That means it's not considered to be pending because createSend is
         // stateless. For our purposes it is as if some other program with our keys created the tx.
@@ -312,21 +312,21 @@ public class ChainSplitTest {
         chain.add(b1);
 
         Transaction t1 = wallet.createSend(someOtherGuy, valueOf(10, 0));
-        Address yetAnotherGuy = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        Address yetAnotherGuy = Address.fromKey(UNITTEST, new ECKey());
         Transaction t2 = wallet.createSend(yetAnotherGuy, valueOf(20, 0));
         wallet.commitTx(t1);
         // Receive t1 as confirmed by the network.
-        Block b2 = b1.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b2 = b1.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         b2.addTransaction(t1);
         b2.solve();
         chain.add(roundtrip(b2));
 
         // Now we make a double spend become active after a re-org.
-        Block b3 = b1.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b3 = b1.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         b3.addTransaction(t2);
         b3.solve();
         chain.add(roundtrip(b3));  // Side chain.
-        Block b4 = b3.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b4 = b3.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         chain.add(b4);  // New best chain.
         Threading.waitForUserCode();
         // Should have seen a double spend.
@@ -355,11 +355,11 @@ public class ChainSplitTest {
         chain.add(b1);
 
         Transaction t1 = checkNotNull(wallet.createSend(someOtherGuy, valueOf(10, 0)));
-        Address yetAnotherGuy = AddressFactory.create().fromKey(UNITTEST, new ECKey());
+        Address yetAnotherGuy = Address.fromKey(UNITTEST, new ECKey());
         Transaction t2 = checkNotNull(wallet.createSend(yetAnotherGuy, valueOf(20, 0)));
         wallet.commitTx(t1);
         // t1 is still pending ...
-        Block b2 = b1.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b2 = b1.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         chain.add(b2);
         assertEquals(ZERO, wallet.getBalance());
         assertEquals(valueOf(40, 0), wallet.getBalance(Wallet.BalanceType.ESTIMATED));
@@ -367,11 +367,11 @@ public class ChainSplitTest {
         // Now we make a double spend become active after a re-org.
         // genesis -> b1 -> b2 [t1 pending]
         //              \-> b3 (t2) -> b4
-        Block b3 = b1.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b3 = b1.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         b3.addTransaction(t2);
         b3.solve();
         chain.add(roundtrip(b3));  // Side chain.
-        Block b4 = b3.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b4 = b3.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         chain.add(b4);  // New best chain.
         Threading.waitForUserCode();
         // Should have seen a double spend against the pending pool.
@@ -382,9 +382,9 @@ public class ChainSplitTest {
         assertEquals(valueOf(30, 0), wallet.getBalance());
 
         // ... and back to our own parallel universe.
-        Block b5 = b2.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b5 = b2.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         chain.add(b5);
-        Block b6 = b5.createNextBlock(AddressFactory.create().fromKey(UNITTEST, new ECKey()));
+        Block b6 = b5.createNextBlock(Address.fromKey(UNITTEST, new ECKey()));
         chain.add(b6);
         // genesis -> b1 -> b2 -> b5 -> b6 [t1 still dead]
         //              \-> b3 [t2 resurrected and now pending] -> b4
@@ -530,9 +530,9 @@ public class ChainSplitTest {
         chain.add(b1);
 
         // Send a couple of payments one after the other (so the second depends on the change output of the first).
-        Transaction t2 = checkNotNull(wallet.createSend(AddressFactory.create().fromKey(UNITTEST, new ECKey()), CENT, true));
+        Transaction t2 = checkNotNull(wallet.createSend(Address.fromKey(UNITTEST, new ECKey()), CENT, true));
         wallet.commitTx(t2);
-        Transaction t3 = checkNotNull(wallet.createSend(AddressFactory.create().fromKey(UNITTEST, new ECKey()), CENT, true));
+        Transaction t3 = checkNotNull(wallet.createSend(Address.fromKey(UNITTEST, new ECKey()), CENT, true));
         wallet.commitTx(t3);
         chain.add(FakeTxBuilder.makeSolvedTestBlock(b1, t2, t3));
 
@@ -600,7 +600,7 @@ public class ChainSplitTest {
             chain.add(firstTip);
         }
         // ... and spend.
-        Transaction fodder = wallet.createSend(AddressFactory.create().fromKey(UNITTEST, new ECKey()), FIFTY_COINS);
+        Transaction fodder = wallet.createSend(Address.fromKey(UNITTEST, new ECKey()), FIFTY_COINS);
         wallet.commitTx(fodder);
         final AtomicBoolean fodderIsDead = new AtomicBoolean(false);
         fodder.getConfidence().addEventListener(Threading.SAME_THREAD, new TransactionConfidence.Listener() {

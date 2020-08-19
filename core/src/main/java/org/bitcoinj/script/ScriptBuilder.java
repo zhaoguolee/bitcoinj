@@ -253,17 +253,10 @@ public class ScriptBuilder {
 
     /** Creates a scriptPubKey that encodes payment to the given address. */
     public static Script createOutputScript(Address to) {
-        if (to instanceof LegacyAddress || to instanceof CashAddress) {
-            ScriptType scriptType = to.getOutputScriptType();
-            if (scriptType == ScriptType.P2PKH)
-                return createP2PKHOutputScript(to.getHash());
-            else if (scriptType == ScriptType.P2SH)
-                return createP2SHOutputScript(to.getHash());
-            else
-                throw new IllegalStateException("Cannot handle " + scriptType);
-        } else {
-            throw new IllegalStateException("Cannot handle " + to);
-        }
+        if (to.isP2SHAddress())
+            return createP2SHOutputScript(to.getHash160());
+        else
+            return createP2PKHOutputScript(to.getHash160());
     }
 
     /**
@@ -430,7 +423,7 @@ public class ScriptBuilder {
      * Creates a scriptPubKey that sends to the given public key hash.
      */
     public static Script createP2PKHOutputScript(byte[] hash) {
-        checkArgument(hash.length == LegacyAddress.LENGTH);
+        checkArgument(hash.length == Address.LENGTH);
         ScriptBuilder builder = new ScriptBuilder();
         builder.op(OP_DUP);
         builder.op(OP_HASH160);

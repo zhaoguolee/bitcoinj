@@ -29,7 +29,7 @@ public class SlpAddress {
     }
 
     public String toLegacyAddress() {
-        return AddressFactory.create().fromCashAddress(this.params, this.toCashAddress()).toBase58();
+        return CashAddressFactory.create().getFromFormattedAddress(this.params, this.toCashAddress()).toBase58();
     }
 
     public String toString() {

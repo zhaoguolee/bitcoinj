@@ -74,7 +74,7 @@ public class BloomFilterTest {
 
         DumpedPrivateKey privKey = DumpedPrivateKey.fromBase58(MAINNET, "5Kg1gnAjaLfKiwhhPpGS3QfRg2m6awQvaj98JCZBZQ5SuS2F15C");
 
-        Address addr = AddressFactory.create().fromKey(MAINNET, privKey.getKey());
+        Address addr = Address.fromKey(MAINNET, privKey.getKey());
         assertEquals("17Wx1GQfyPTNWpQMHrTwRSMTCAonSiZx9e", addr.toString());
 
         KeyChainGroup group = KeyChainGroup.builder(MAINNET).build();

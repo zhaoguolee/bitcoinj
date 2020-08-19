@@ -95,7 +95,7 @@ public class TestWithNetworkConnections {
                     .fromRandom(Script.ScriptType.P2PKH).build();
             wallet = new Wallet(UNITTEST, kcg);
             key = wallet.freshReceiveKey();
-            address = AddressFactory.create().fromKey(UNITTEST, key);
+            address = Address.fromKey(UNITTEST, key);
         }
         blockChain = new BlockChain(UNITTEST, wallet, blockStore);
 

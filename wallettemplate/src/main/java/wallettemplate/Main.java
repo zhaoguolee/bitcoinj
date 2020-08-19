@@ -232,7 +232,7 @@ public class Main extends Application {
         };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        //p2pkh.setDownloadListener(controller.progressBarUpdater());
+        p2pkh.setDownloadListener(controller.progressBarUpdater());
         p2pkh.setBlockingStartup(false);
 
         if(seed != null) {

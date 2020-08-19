@@ -45,13 +45,13 @@ public class SlpAddressFactory {
         return new SlpAddress(params, slpAddress);
     }
 
-    public SlpAddress fromPubKeyHash(NetworkParameters params, byte[] hash160) {
-        CashAddress cashAddress = CashAddressFactory.create().fromPubKeyHash(params, hash160);
+    public SlpAddress fromP2PKHHash(NetworkParameters params, byte[] hash160) {
+        CashAddress cashAddress = CashAddress.fromP2PKHHash(params, hash160);
         return fromCashAddr(params, cashAddress.toString());
     }
 
-    public SlpAddress fromScriptHash(NetworkParameters params, byte[] hash160) {
-        CashAddress cashAddress = CashAddressFactory.create().fromScriptHash(params, hash160);
+    public SlpAddress fromP2SHHash(NetworkParameters params, byte[] hash160) {
+        CashAddress cashAddress = CashAddress.fromP2SHHash(params, hash160);
         return fromCashAddr(params, cashAddress.toString());
     }
 

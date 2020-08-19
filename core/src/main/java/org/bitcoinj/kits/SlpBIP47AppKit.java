@@ -239,20 +239,22 @@ public class SlpBIP47AppKit extends BIP47AppKit {
         return this.slpUtxos;
     }
 
+    SlpAddressFactory slpAddressFactory = SlpAddressFactory.create();
+
     public SlpAddress currentSlpReceiveAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().currentReceiveAddress().toString());
+        return slpAddressFactory.fromP2PKHHash(this.wallet().getParams(), this.wallet().currentReceiveAddress().getHash160());
     }
 
     public SlpAddress currentSlpChangeAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().currentChangeAddress().toString());
+        return slpAddressFactory.fromP2PKHHash(this.wallet().getParams(), this.wallet().currentChangeAddress().getHash160());
     }
 
     public SlpAddress freshSlpReceiveAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().freshReceiveAddress().toString());
+        return slpAddressFactory.fromP2PKHHash(this.wallet().getParams(), this.wallet().freshReceiveAddress().getHash160());
     }
 
     public SlpAddress freshSlpChangeAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().freshChangeAddress().toString());
+        return slpAddressFactory.fromP2PKHHash(this.wallet().getParams(), this.wallet().freshChangeAddress().getHash160());
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {

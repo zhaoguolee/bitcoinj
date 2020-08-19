@@ -372,14 +372,15 @@ public class SlpPaymentSession {
         List<TransactionOutput> txUtxos = this.getSendRequest().tx.getOutputs();
         for(TransactionOutput utxo : txUtxos) {
             if(!ScriptPattern.isOpReturn(utxo.getScriptPubKey())) {
-                Address address = null;
+                Address address;
                 address = utxo.getAddressFromP2PKHScript(params);
                 if(address == null) {
                     address = utxo.getAddressFromP2SH(params);
                 }
 
                 if(address != null) {
-                    SlpAddress slpAddress = SlpAddressFactory.create().fromCashAddr(params, address.toCashAddr());
+                    CashAddress cashAddress = CashAddressFactory.create().getFromBase58(params, address.toBase58());
+                    SlpAddress slpAddress = SlpAddressFactory.create().fromCashAddr(params, cashAddress.toString());
                     slpAddresses.add(slpAddress.toString());
                 }
             }

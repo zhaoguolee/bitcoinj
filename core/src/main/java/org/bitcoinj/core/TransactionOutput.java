@@ -120,7 +120,7 @@ public class TransactionOutput extends ChildMessage {
     @Nullable
     public Address getAddressFromP2PKHScript(NetworkParameters params) throws ScriptException {
         if (ScriptPattern.isP2PKH(getScriptPubKey()))
-            return AddressFactory.create().fromPubKeyHash(params,
+            return Address.fromP2PKHHash(params,
                     ScriptPattern.extractHashFromP2PKH(getScriptPubKey()));
         return null;
     }
@@ -128,7 +128,7 @@ public class TransactionOutput extends ChildMessage {
     @Nullable
     public Address getAddressFromP2SH(NetworkParameters params) throws ScriptException {
         if (ScriptPattern.isP2SH(getScriptPubKey()))
-            return AddressFactory.create().fromScriptHash(params, ScriptPattern.extractHashFromP2SH(getScriptPubKey()));
+            return Address.fromP2SHHash(params, ScriptPattern.extractHashFromP2SH(getScriptPubKey()));
         return null;
     }
 

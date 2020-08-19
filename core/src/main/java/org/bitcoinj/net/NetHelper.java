@@ -104,9 +104,9 @@ public class NetHelper {
                     if(forceCashAddr) {
                         if (!Address.isValidPaymentCode(hash160)) {
                             do {
-                                address = CashAddressFactory.create().fromPubKeyHash(params, hash160).toString();
+                                address = CashAddress.fromP2PKHHash(params, hash160).toString();
                                 if (expectedAddresses.indexOf(address) == -1) {
-                                    address = CashAddressFactory.create().fromScriptHash(params, hash160).toString();
+                                    address = CashAddress.fromP2SHHash(params, hash160).toString();
                                 }
                             } while (expectedAddresses.indexOf(address) == -1);
                         }
@@ -116,9 +116,9 @@ public class NetHelper {
                             break;
                         } else {
                             do {
-                                address = CashAddressFactory.create().fromPubKeyHash(params, hash160).toString();
+                                address = CashAddress.fromP2PKHHash(params, hash160).toString();
                                 if (expectedAddresses.indexOf(address) == -1) {
-                                    address = CashAddressFactory.create().fromScriptHash(params, hash160).toString();
+                                    address = CashAddress.fromP2SHHash(params, hash160).toString();
                                 }
                             } while (expectedAddresses.indexOf(address) == -1);
                         }

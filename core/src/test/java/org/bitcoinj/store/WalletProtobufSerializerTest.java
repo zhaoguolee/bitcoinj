@@ -82,11 +82,11 @@ public class WalletProtobufSerializerTest {
         myWatchedKey = new ECKey();
         myKey = new ECKey();
         myKey.setCreationTimeSeconds(123456789L);
-        myAddress = AddressFactory.create().fromKey(UNITTEST, myKey);
+        myAddress = Address.fromKey(UNITTEST, myKey);
         myWallet = new Wallet(UNITTEST, KeyChainGroup.builder(UNITTEST).fromRandom(Script.ScriptType.P2PKH).build());
         myWallet.importKey(myKey);
         mScriptCreationTime = new Date().getTime() / 1000 - 1234;
-        myWallet.addWatchedAddress(AddressFactory.create().fromKey(UNITTEST, myWatchedKey), mScriptCreationTime);
+        myWallet.addWatchedAddress(Address.fromKey(UNITTEST, myWatchedKey), mScriptCreationTime);
         myWallet.setDescription(WALLET_DESCRIPTION);
     }
 
@@ -103,7 +103,7 @@ public class WalletProtobufSerializerTest {
         assertEquals(mScriptCreationTime,
                 wallet1.getWatchedScripts().get(0).getCreationTimeSeconds());
         assertEquals(1, wallet1.getWatchedScripts().size());
-        assertEquals(ScriptBuilder.createOutputScript(AddressFactory.create().fromKey(UNITTEST, myWatchedKey)),
+        assertEquals(ScriptBuilder.createOutputScript(Address.fromKey(UNITTEST, myWatchedKey)),
                 wallet1.getWatchedScripts().get(0));
         assertEquals(WALLET_DESCRIPTION, wallet1.getDescription());
     }
@@ -178,7 +178,7 @@ public class WalletProtobufSerializerTest {
     public void testKeys() throws Exception {
         for (int i = 0 ; i < 20 ; i++) {
             myKey = new ECKey();
-            myAddress = AddressFactory.create().fromKey(UNITTEST, myKey);
+            myAddress = Address.fromKey(UNITTEST, myKey);
             myWallet = Wallet.createDeterministic(UNITTEST, Script.ScriptType.P2PKH);
             myWallet.importKey(myKey);
             Wallet wallet1 = roundTrip(myWallet);

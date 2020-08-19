@@ -297,14 +297,14 @@ public class Script {
      *            showing addresses rather than pubkeys.
      */
     public Address getToAddress(NetworkParameters params, boolean forcePayToPubKey) throws ScriptException {
-        if (ScriptPattern.isP2PKH(this))
-            return AddressFactory.create().fromPubKeyHash(params, ScriptPattern.extractHashFromP2PKH(this));
-        else if (ScriptPattern.isP2SH(this))
-            return AddressFactory.create().fromScriptHash(params, ScriptPattern.extractHashFromP2SH(this));
-        else if (forcePayToPubKey && ScriptPattern.isP2PK(this))
-            return AddressFactory.create().fromKey(params, ECKey.fromPublicOnly(ScriptPattern.extractKeyFromP2PK(this)));
+        if (isSentToAddress())
+            return new Address(params, getPubKeyHash());
+        else if (isPayToScriptHash())
+            return Address.fromP2SHScript(params, this);
+        else if (forcePayToPubKey && isSentToRawPubKey())
+            return ECKey.fromPublicOnly(getPubKey()).toAddress(params);
         else
-            throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Cannot cast this script to an address");
+            throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Cannot cast this script to a pay-to-address type");
     }
 
     ////////////////////// Interface for writing scripts from scratch ////////////////////////////////

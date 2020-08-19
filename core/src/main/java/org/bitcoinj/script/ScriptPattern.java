@@ -17,7 +17,7 @@
 
 package org.bitcoinj.script;
 
-import org.bitcoinj.core.LegacyAddress;
+import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
 
@@ -48,7 +48,7 @@ public class ScriptPattern {
         byte[] chunk2data = chunks.get(2).data;
         if (chunk2data == null)
             return false;
-        if (chunk2data.length != LegacyAddress.LENGTH)
+        if (chunk2data.length != Address.LENGTH)
             return false;
         if (!chunks.get(3).equalsOpCode(OP_EQUALVERIFY))
             return false;
@@ -92,7 +92,7 @@ public class ScriptPattern {
         byte[] chunk1data = chunk1.data;
         if (chunk1data == null)
             return false;
-        if (chunk1data.length != LegacyAddress.LENGTH)
+        if (chunk1data.length != Address.LENGTH)
             return false;
         if (!chunks.get(2).equalsOpCode(OP_EQUAL))
             return false;

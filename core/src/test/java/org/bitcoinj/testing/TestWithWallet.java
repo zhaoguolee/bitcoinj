@@ -62,7 +62,7 @@ public class TestWithWallet {
         Context.propagate(new Context(UNITTEST, 100, Coin.ZERO, false));
         wallet = Wallet.createDeterministic(UNITTEST, Script.ScriptType.P2PKH);
         myKey = wallet.freshReceiveKey();
-        myAddress = wallet.freshReceiveAddress(Script.ScriptType.P2PKH);
+        myAddress = wallet.freshReceiveAddress();
         blockStore = new MemoryBlockStore(UNITTEST);
         chain = new BlockChain(UNITTEST, wallet, blockStore);
     }

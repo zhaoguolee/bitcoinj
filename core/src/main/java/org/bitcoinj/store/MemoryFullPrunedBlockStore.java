@@ -417,7 +417,7 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
         List<UTXO> outputsList = transactionOutputMap.values();
         for (UTXO output : outputsList) {
             for (ECKey key : keys) {
-                Address address = AddressFactory.create().fromKey(params, key);
+                Address address = Address.fromKey(params, key);
                 if (output.getAddress().equals(address.toString())) {
                     foundOutputs.add(output);
                 }
