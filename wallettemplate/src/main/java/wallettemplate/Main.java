@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.*;
 import javafx.scene.input.*;
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.MultisigAppKit;
 import org.bitcoinj.utils.AppDataDirectory;
 import org.bitcoinj.kits.WalletAppKit;
@@ -63,7 +64,7 @@ public class Main extends Application {
     private static final String p2pkh_name = "WalletTemplate".replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static WalletAppKit p2pkh;
+    public static BIP47AppKit p2pkh;
     public static MultisigAppKit bitcoin;
     public static MultisigAppKit bitcoinCosigner1;
     public static MultisigAppKit bitcoinCosigner2;
@@ -223,7 +224,7 @@ public class Main extends Application {
     }
 
     public void setupP2PKH(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
-        p2pkh = new WalletAppKit(params, new File("."), p2pkh_name) {
+        p2pkh = new BIP47AppKit(params, new File("."), p2pkh_name) {
             @Override
             public void onSetupCompleted() {
                 p2pkh.wallet().addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {

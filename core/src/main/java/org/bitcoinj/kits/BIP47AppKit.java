@@ -1,13 +1,23 @@
-/* Copyright (c) 2017 Stash
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ * Copyright 2013 Google Inc.
+ * Copyright 2014 Andreas Schildbach
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.bitcoinj.kits;
 
-
-import com.google.common.io.Closeables;
-import com.google.common.util.concurrent.*;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
@@ -19,30 +29,27 @@ import org.bitcoinj.core.bip47.BIP47Account;
 import org.bitcoinj.core.bip47.BIP47Address;
 import org.bitcoinj.core.bip47.BIP47Channel;
 import org.bitcoinj.core.bip47.BIP47PaymentCode;
-import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.BIP47SecretPoint;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.HDKeyDerivation;
-import org.bitcoinj.net.BlockingClientManager;
-import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.script.ScriptPattern;
-import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.utils.BIP47Util;
-import org.bitcoinj.wallet.*;
+import org.bitcoinj.wallet.KeyChainGroupStructure;
+import org.bitcoinj.wallet.RedeemData;
+import org.bitcoinj.wallet.SendRequest;
+import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.bip47.listeners.BlockchainDownloadProgressTracker;
 import org.bitcoinj.wallet.bip47.listeners.TransactionEventListener;
 import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -50,58 +57,39 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static org.bitcoinj.utils.BIP47Util.getReceiveAddress;
 import static org.bitcoinj.utils.BIP47Util.getSendAddress;
 
 /**
- * Created by jimmy on 9/28/17.
- */
-
-/**
- * <p>Runs a spv wallet and supports BIP 47 payments for coins. You will
- * need to instantiate one wallet per supported coin.</p>
+ * <p>Utility class that wraps the boilerplate needed to set up a new SPV bitcoinj app. Instantiate it with a directory
+ * and file prefix, optionally configure a few things, then use startAsync and optionally awaitRunning. The object will
+ * construct and configure a {@link BlockChain}, {@link SPVBlockStore}, {@link Wallet} and {@link PeerGroup}. Depending
+ * on the value of the blockingStartup property, startup will be considered complete once the block chain has fully
+ * synchronized, so it can take a while.</p>
  *
- * <p>It produces two files in a designated directory. The directory name is the coin name. and is created in workingDirectory: </p>
- * <ul>
- *     <il>The .spvchain (blockstore): maintains a maximum # of headers mapped to memory (5000)</il>
- *     <il>The .wallet: stores the wallet with txs, can be encrypted, storing keys</il>
- * </ul>
+ * <p>To add listeners and modify the objects that are constructed, you can either do that by overriding the
+ * {@link #onSetupCompleted()} method (which will run on a background thread) and make your changes there,
+ * or by waiting for the service to start and then accessing the objects from wherever you want. However, you cannot
+ * access the objects this class creates until startup is complete.</p>
  *
- * <p>By using this kit, your wallet will import keys for bip 47 payment addresses, when a BIP 47
- * notification transaction is received.</p>
+ * <p>The asynchronous design of this class may seem puzzling (just use {@link #awaitRunning()} if you don't want that).
+ * It is to make it easier to fit bitcoinj into GUI apps, which require a high degree of responsiveness on their main
+ * thread which handles all the animation and user interaction. Even when blockingStart is false, initializing bitcoinj
+ * means doing potentially blocking file IO, generating keys and other potentially intensive operations. By running it
+ * on a background thread, there's no risk of accidentally causing UI lag.</p>
+ *
+ * <p>Note that {@link #awaitRunning()} can throw an unchecked {@link IllegalStateException}
+ * if anything goes wrong during startup - you should probably handle it and use {@link Exception#getCause()} to figure
+ * out what went wrong more precisely. Same thing if you just use the {@link #startAsync()} method.</p>
  */
-public class BIP47AppKit extends AbstractIdleService {
-    private static final String TAG = "BIP47AppKit";
-
-    // fee parameters and network metadata
-    private NetworkParameters params;
-    // the blokstore is used by a blockchain as a memory data structure
-    private volatile BlockChain vChain;
-    private volatile BlockStore vStore;
-    private volatile Wallet vWallet;
-    // sync with the blockchain by using a peergroup
-    private volatile PeerGroup vPeerGroup;
-    protected PeerAddress[] peerAddresses;
-    private DownloadProgressTracker progressTracker;
-    private InputStream checkpoints;
-    // the directory will have the spvchain and the wallet files
-    private File directory;
-    private volatile File vWalletFile;
-    private String vWalletFileName;
-    // Wether this wallet is restored from a BIP39 seed and will need to replay the complete blockchain
-    // Will be null if it's not a restored wallet.
-    private DeterministicSeed restoreFromSeed;
-    private Runnable onReceiveRunnable;
-    private boolean useTor = false;
-    private String torProxyIp = "127.0.0.1";
-    private String torProxyPort = "9050";
-
+public class BIP47AppKit extends WalletKitCore {
     // Support for BIP47-type accounts. Only one account is currently handled in this wallet.
     private List<BIP47Account> mAccounts = new ArrayList<BIP47Account>(1);
 
@@ -121,57 +109,46 @@ public class BIP47AppKit extends AbstractIdleService {
     // It doesn't check if the notification transactions are mined before adding a payment code.
     // If you want to know a transaction's confidence, see #{@link Transaction.getConfidence()}
     private ConcurrentHashMap<String, BIP47Channel> bip47MetaData = new ConcurrentHashMap<String, BIP47Channel>();
-    private static final Logger log = LoggerFactory.getLogger(BIP47AppKit.class);
+    private Runnable onReceiveRunnable;
 
-    protected volatile Context context;
-
-    public BIP47AppKit() {
-
+    /**
+     * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
+     */
+    public BIP47AppKit(NetworkParameters params, File directory, String filePrefix) {
+        this(new Context(params), Script.ScriptType.P2PKH, null, directory, filePrefix);
     }
 
-    public BIP47AppKit(NetworkParameters params, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params).fromRandom(Script.ScriptType.P2PKH).build(), file, walletName);
+    /**
+     * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
+     */
+    public BIP47AppKit(NetworkParameters params, Script.ScriptType preferredOutputScriptType,
+                       @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
+        this(new Context(params), preferredOutputScriptType, structure, directory, filePrefix);
     }
 
-    public BIP47AppKit(NetworkParameters params, DeterministicSeed seed, File file, String walletName) {
-        this(params, KeyChainGroup.builder(params).fromSeed(seed, Script.ScriptType.P2PKH).build(), file, walletName);
+    /**
+     * Creates a new WalletAppKit, with the given {@link Context}. Files will be stored in the given directory.
+     */
+    public BIP47AppKit(Context context, Script.ScriptType preferredOutputScriptType,
+                       @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
+        this.context = context;
+        this.params = checkNotNull(context.getParams());
+        this.preferredOutputScriptType = checkNotNull(preferredOutputScriptType);
+        this.structure = structure != null ? structure : KeyChainGroupStructure.DEFAULT;
+        this.directory = checkNotNull(directory);
+        this.filePrefix = checkNotNull(filePrefix);
     }
 
-    private BIP47AppKit(Wallet wallet, File file, String walletName) {
-        this.vWallet = wallet;
-        this.params = this.vWallet.getParams();
-        this.context = new Context(this.vWallet.getParams());
-        this.directory = file;
-        this.vWalletFileName = walletName;
-        this.vWalletFile = new File(this.directory, walletName + ".wallet");
-        this.completeSetupOfWallet();
-    }
-
-    private BIP47AppKit(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        this.setupWallet(params, keyChainGroup, file, walletName);
-    }
-
-    private void setupWallet(NetworkParameters params, KeyChainGroup keyChainGroup, File file, String walletName) {
-        this.vWallet = new Wallet(params, keyChainGroup);
-        this.params = params;
-        this.context = new Context(params);
-        this.directory = file;
-        this.vWalletFileName = walletName;
-        this.vWalletFile = new File(this.directory, walletName + ".wallet");
-        this.completeSetupOfWallet();
-    }
-
-    private void completeSetupOfWallet() {
+    @Override
+    protected void startUp() throws Exception {
+        super.startUp();
         this.setAccount();
         this.loadBip47MetaData();
         Address notificationAddress = this.mAccounts.get(0).getNotificationAddress();
         System.out.println("BIP47AppKit notification address: " + notificationAddress.toString());
 
-        this.vWallet.allowSpendingUnconfirmedTransactions();
-        this.vWallet.setAcceptRiskyTransactions(true);
-
-        if (!this.vWallet.isAddressWatched(notificationAddress)) {
-            this.vWallet.addWatchedAddress(notificationAddress);
+        if (!this.wallet().isAddressWatched(notificationAddress)) {
+            this.wallet().addWatchedAddress(notificationAddress);
         }
 
         String notifAsCashAddr = notificationAddress.toString();
@@ -262,59 +239,6 @@ public class BIP47AppKit extends AbstractIdleService {
         return null;
     }
 
-    public BIP47AppKit initialize(NetworkParameters params, File baseDir, String walletName, @Nullable DeterministicSeed seed) throws UnreadableWalletException {
-        File tmpWalletFile = new File(baseDir, walletName + ".wallet");
-        if (tmpWalletFile.exists()) {
-            return loadFromFile(baseDir, walletName);
-        } else {
-            if (seed != null) {
-                this.restoreFromSeed = seed;
-                return new BIP47AppKit(params, seed, baseDir, walletName);
-            } else {
-                return new BIP47AppKit(params, baseDir, walletName);
-            }
-        }
-    }
-
-    private static BIP47AppKit loadFromFile(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        try (FileInputStream stream = new FileInputStream(new File(baseDir, walletName + ".wallet"))) {
-            Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-            return new BIP47AppKit(wallet, baseDir, walletName);
-        } catch (IOException e) {
-            throw new UnreadableWalletException("Could not open file", e);
-        }
-    }
-
-    public static boolean isWalletEncrypted(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        try (FileInputStream stream = new FileInputStream(new File(baseDir, walletName + ".wallet"))) {
-            Wallet wallet = Wallet.loadFromFileStream(stream, walletExtensions);
-            return wallet.getKeyChainSeed().isEncrypted();
-        } catch (IOException e) {
-            throw new UnreadableWalletException("Could not open file", e);
-        }
-    }
-
-    public static Wallet getEncryptedWallet(File baseDir, String walletName, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
-        try (FileInputStream stream = new FileInputStream(new File(baseDir, walletName + ".wallet"))) {
-            return Wallet.loadFromFileStream(stream, walletExtensions);
-        } catch (IOException e) {
-            throw new UnreadableWalletException("Could not open file", e);
-        }
-    }
-
-    // create peergroup for the blockchain
-    private void derivePeerGroup() {
-        Context.propagate(new Context(params));
-        if (vPeerGroup == null)
-            vPeerGroup = new PeerGroup(params, vChain);
-
-        // connect to peers in the blockchain network
-        vPeerGroup.addPeerDiscovery(new DnsDiscovery(params));
-
-        // add the wallet to the peers so that every peer listener can find this wallet e.g. to invoke listeners
-        vPeerGroup.addWallet(vWallet);
-    }
-
     // BIP47-specific listener
     // When a new *notification* transaction is received:
     //  - new keys are generated and imported for incoming payments in the bip47 account/contact payment channel
@@ -396,10 +320,6 @@ public class BIP47AppKit extends AbstractIdleService {
         mAccounts.add(account);
     }
 
-    public List<Peer> getConnectedPeers() {
-        return vPeerGroup.getConnectedPeers();
-    }
-
     /**
      * <p>Reads the channels from .bip47 file. Return true if any payment code was loaded. </p>
      */
@@ -417,7 +337,7 @@ public class BIP47AppKit extends AbstractIdleService {
      * <p>Reads the channels from .bip47 file. Return true if any payment code was loaded. </p>
      */
     public String readBip47MetaDataFile() {
-        File file = new File(directory, this.vWalletFileName.concat(".bip47"));
+        File file = new File(directory, this.filePrefix.concat(".bip47"));
         String jsonString;
         try {
             jsonString = FileUtils.readFileToString(file, Charset.defaultCharset());
@@ -443,7 +363,7 @@ public class BIP47AppKit extends AbstractIdleService {
             if (BIP47ChannelList != null) {
                 for (BIP47Channel channel : BIP47ChannelList) {
                     if(channel.getNotificationAddress() == null && channel.getPaymentCode() != null) {
-                        BIP47Account bip47Account = new BIP47Account(getParams(), channel.getPaymentCode());
+                        BIP47Account bip47Account = new BIP47Account(params(), channel.getPaymentCode());
                         channel.setNotificationAddress(bip47Account.getNotificationAddress().toString());
                     }
                     bip47MetaData.put(channel.getNotificationAddress(), channel);
@@ -468,7 +388,7 @@ public class BIP47AppKit extends AbstractIdleService {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(bip47MetaData.values());
 
-        File file = new File(directory, this.vWalletFileName.concat(".bip47"));
+        File file = new File(directory, this.filePrefix.concat(".bip47"));
 
         try {
             FileUtils.writeStringToFile(file, json, Charset.defaultCharset(), false);
@@ -500,7 +420,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public boolean isNotificationTransactionTo(Transaction tx) {
-        if(tx.getValue(getvWallet()).isNegative()) {
+        if(tx.getValue(wallet()).isNegative()) {
             for (TransactionOutput utxo : tx.getOutputs()) {
                 if(ScriptPattern.isOpReturn(utxo.getScriptPubKey()) && BIP47Util.isValidNotificationTransactionOpReturn(utxo)) {
                     return true;
@@ -514,8 +434,8 @@ public class BIP47AppKit extends AbstractIdleService {
     public String getOutgoingNtxAddress(Transaction ntx) {
         if(isNotificationTransactionTo(ntx)) {
             for (TransactionOutput utxo : ntx.getOutputs()) {
-                if (!utxo.isMine(getvWallet()) && !ScriptPattern.isOpReturn(utxo.getScriptPubKey()) && utxo.getValue().value == 546L) {
-                    return Objects.requireNonNull(utxo.getAddressFromP2PKHScript(getParams())).toString();
+                if (!utxo.isMine(wallet()) && !ScriptPattern.isOpReturn(utxo.getScriptPubKey()) && utxo.getValue().value == 546L) {
+                    return Objects.requireNonNull(utxo.getAddressFromP2PKHScript(params())).toString();
                 }
             }
         }
@@ -529,7 +449,7 @@ public class BIP47AppKit extends AbstractIdleService {
     public boolean isToBIP47Address(Transaction transaction) {
         List<ECKey> keys = vWallet.getImportedKeys();
         for (ECKey key : keys) {
-            Address address = key.toAddress(getParams());
+            Address address = key.toAddress(params());
             if (address == null) {
                 continue;
             }
@@ -571,7 +491,7 @@ public class BIP47AppKit extends AbstractIdleService {
     // <p> Receives a payment code and returns true iff there is already an incoming address generated for the channel</p>
     public boolean savePaymentCode(BIP47PaymentCode bip47PaymentCode) {
         boolean save = true;
-        BIP47Account bip47Account = new BIP47Account(getParams(), bip47PaymentCode.toString());
+        BIP47Account bip47Account = new BIP47Account(params(), bip47PaymentCode.toString());
         String notificationAddress = bip47Account.getNotificationAddress().toString();
         for(BIP47Channel channel : bip47MetaData.values()) {
             if (channel.getNotificationAddress().equals(notificationAddress) && channel.getPaymentCode() != null && channel.getIncomingAddresses().size() != 0) {
@@ -665,12 +585,8 @@ public class BIP47AppKit extends AbstractIdleService {
         return mAccounts.get(i);
     }
 
-    public NetworkParameters getParams() {
-        return this.params;
-    }
-
     public Address getAddressOfKey(ECKey key) {
-        return key.toAddress(getParams());
+        return key.toAddress(params());
     }
 
     public void importKey(ECKey key) {
@@ -730,7 +646,7 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public BIP47Channel getBip47MetaForPaymentCode(String paymentCode) {
-        BIP47Account bip47Account = new BIP47Account(getParams(), paymentCode);
+        BIP47Account bip47Account = new BIP47Account(params(), paymentCode);
         return getBip47MetaForNotificationAddress(bip47Account.getNotificationAddress().toString());
     }
 
@@ -747,7 +663,7 @@ public class BIP47AppKit extends AbstractIdleService {
     If false, it means we need to create a ntx.*/
     public boolean canSendToPaymentCode(String paymentCode) {
         if(Address.isValidPaymentCode(paymentCode)) {
-            BIP47Account bip47Account = new BIP47Account(getParams(), paymentCode);
+            BIP47Account bip47Account = new BIP47Account(params(), paymentCode);
             String notificationAddress = bip47Account.getNotificationAddress().toString();
             BIP47Channel bip47Channel = getBip47MetaForNotificationAddress(notificationAddress);
             if (bip47Channel != null && bip47Channel.getPaymentCode() == null) {
@@ -765,73 +681,8 @@ public class BIP47AppKit extends AbstractIdleService {
         }
     }
 
-    public Coin getValueOfTransaction(Transaction transaction) {
-        return transaction.getValue(vWallet);
-    }
-
-    public Coin getValueSentToMe(Transaction transaction) {
-        return transaction.getValueSentToMe(vWallet);
-    }
-
-    public Coin getValueSentFromMe(Transaction transaction) {
-        return transaction.getValueSentFromMe(vWallet);
-    }
-
-    public List<Transaction> getTransactions() {
-        return vWallet.getTransactionsByTime();
-    }
-
-    public long getBalanceValue() {
-        return vWallet.getBalance(org.bitcoinj.wallet.Wallet.BalanceType.ESTIMATED_SPENDABLE).getValue();
-    }
-
-    public Coin getBalance() {
-        return vWallet.getBalance(org.bitcoinj.wallet.Wallet.BalanceType.ESTIMATED_SPENDABLE);
-    }
-
-    public boolean isDownloading() {
-        return mBlockchainDownloadProgressTracker != null && mBlockchainDownloadProgressTracker.isDownloading();
-    }
-
-    public int getBlockchainProgress() {
-        return mBlockchainDownloadProgressTracker != null ? mBlockchainDownloadProgressTracker.getProgress() : -1;
-    }
-
-    public boolean isTransactionEntirelySelf(Transaction tx) {
-        for (final TransactionInput input : tx.getInputs()) {
-            final TransactionOutput connectedOutput = input.getConnectedOutput();
-            if (connectedOutput == null || !connectedOutput.isMine(vWallet))
-                return false;
-        }
-
-        for (final TransactionOutput output : tx.getOutputs()) {
-            if (!output.isMine(vWallet))
-                return false;
-        }
-
-        return true;
-    }
-
     public String getPaymentCode() {
         return getAccount(0).getStringPaymentCode();
-    }
-
-    public void resetBlockchainSync() {
-        File chainFile = new File(directory, this.vWalletFileName + ".spvchain");
-        if (chainFile.exists()) {
-            System.out.println("deleteSpvFile: exits");
-            chainFile.delete();
-        }
-    }
-
-    public String getMnemonicCode() {
-        return StringUtils.join(this.restoreFromSeed != null ?
-                this.restoreFromSeed.getMnemonicCode() :
-                vWallet.getKeyChainSeed().getMnemonicCode());
-    }
-
-    public Address getCurrentAddress() {
-        return vWallet.currentReceiveAddress();
     }
 
     private static Coin getDefaultFee(NetworkParameters params) {
@@ -839,24 +690,24 @@ public class BIP47AppKit extends AbstractIdleService {
     }
 
     public Transaction createSend(Address address, long amount) throws InsufficientMoneyException {
-        SendRequest sendRequest = SendRequest.to(this.getParams(), address.toString(), Coin.valueOf(amount));
+        SendRequest sendRequest = SendRequest.to(this.params(), address.toString(), Coin.valueOf(amount));
 
-        sendRequest.feePerKb = getDefaultFee(getParams());
+        sendRequest.feePerKb = getDefaultFee(params());
 
         vWallet.completeTx(sendRequest);
         return sendRequest.tx;
     }
 
     public SendRequest makeNotificationTransaction(String paymentCode, boolean allowUnconfirmedSpends) throws InsufficientMoneyException {
-        BIP47Account toAccount = new BIP47Account(getParams(), paymentCode);
-        Coin ntValue = getParams().getMinNonDustOutput();
+        BIP47Account toAccount = new BIP47Account(params(), paymentCode);
+        Coin ntValue = params().getMinNonDustOutput();
         Address ntAddress = toAccount.getNotificationAddress();
 
         System.out.println("Balance: " + vWallet.getBalance());
         System.out.println("To notification address: " + ntAddress.toString());
         System.out.println("Value: " + ntValue.toFriendlyString());
 
-        SendRequest sendRequest = SendRequest.to(this.getParams(), ntAddress.toString(), ntValue);
+        SendRequest sendRequest = SendRequest.to(this.params(), ntAddress.toString(), ntValue);
 
         if(allowUnconfirmedSpends)
             sendRequest.allowUnconfirmed();
@@ -939,7 +790,7 @@ public class BIP47AppKit extends AbstractIdleService {
 
     /* Mark a channel's notification transaction as sent*/
     public void putPaymenCodeStatusSent(String paymentCode, Transaction ntx) {
-        BIP47Account bip47Account = new BIP47Account(getParams(), paymentCode);
+        BIP47Account bip47Account = new BIP47Account(params(), paymentCode);
         String notificationAddress = bip47Account.getNotificationAddress().toString();
         if (bip47MetaData.containsKey(notificationAddress)) {
             BIP47Channel bip47Channel = bip47MetaData.get(notificationAddress);
@@ -955,172 +806,14 @@ public class BIP47AppKit extends AbstractIdleService {
     public String getCurrentOutgoingAddress(BIP47Channel bip47Channel) {
         try {
             ECKey key = getSendAddress(this, new BIP47PaymentCode(bip47Channel.getPaymentCode()), bip47Channel.getCurrentOutgoingIndex()).getSendECKey();
-            return key.toAddress(getParams()).toString();
+            return key.toAddress(params()).toString();
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public void commitTx(Transaction tx) {
-        vWallet.commitTx(tx);
-    }
-
-    public org.bitcoinj.wallet.Wallet.SendResult sendCoins(SendRequest sendRequest) throws InsufficientMoneyException {
-        return vWallet.sendCoins(sendRequest);
-    }
-
-    public File getDirectory() {
-        return directory;
-    }
-
-    public File getvWalletFile() {
-        return this.vWalletFile;
-    }
-
-    public PeerGroup getPeerGroup() {
-        return this.vPeerGroup;
-    }
-
-    public org.bitcoinj.wallet.Wallet getvWallet() {
-        return vWallet;
-    }
-
-    public List<String> getAddresses(int size) {
-        List<DeterministicKey> deterministicKeys = vWallet.getActiveKeyChain().getLeafKeys();
-        List<String> addresses = new ArrayList<String>(size);
-        for (int i = 0; i < size; i++) {
-            addresses.add(deterministicKeys.get(i).toAddress(getParams()).toString());
-        }
-        return addresses;
-    }
-
-    public void setUseTor(boolean status) {
-        this.useTor = status;
-    }
-
-    public void setTorProxyIp(String ip) {
-        this.torProxyIp = ip;
-    }
-
-    public void setTorProxyPort(String port) {
-        this.torProxyPort = port;
-    }
-
-    public int getExternalAddressCount() {
-        return vWallet.getActiveKeyChain().getIssuedReceiveKeys().size();
-    }
-
-    @Override
-    protected void startUp() throws Exception {
-        Context.propagate(context);
-        this.startWallet();
-    }
-
-    @Override
-    protected void shutDown() throws Exception {
-        Context.propagate(context);
-        this.vPeerGroup.stop();
-        this.vWallet.saveToFile(this.vWalletFile);
-        this.vStore.close();
-
-        this.vPeerGroup = null;
-        this.vWallet = null;
-        this.vStore = null;
-        this.vChain = null;
-    }
-
-    public void startWallet() throws BlockStoreException, IOException {
-        File chainFile = new File(this.directory, this.vWalletFileName + ".spvchain");
-        boolean chainFileExists = chainFile.exists();
-        this.vStore = new SPVBlockStore(this.vWallet.getParams(), chainFile);
-        if (!chainFileExists || this.restoreFromSeed != null) {
-            if (this.checkpoints == null && !Utils.isAndroidRuntime()) {
-                this.checkpoints = CheckpointManager.openStream(params);
-            }
-
-            if (this.checkpoints != null) {
-                // Initialize the chain file with a checkpoint to speed up first-run sync.
-                long time;
-                if (this.restoreFromSeed != null) {
-                    time = this.restoreFromSeed.getCreationTimeSeconds();
-                    if (chainFileExists) {
-                        this.vStore.close();
-                        if (!chainFile.delete())
-                            throw new IOException("Failed to delete chain file in preparation for restore.");
-                        this.vStore = new SPVBlockStore(params, chainFile);
-                    }
-                } else {
-                    time = this.vWallet.getEarliestKeyCreationTime();
-                }
-                if (time > 0) {
-                    CheckpointManager.checkpoint(params, checkpoints, this.vStore, time);
-                }
-            } else if (chainFileExists) {
-                this.vStore.close();
-                if (!chainFile.delete())
-                    throw new IOException("Failed to delete chain file in preparation for restore.");
-                this.vStore = new SPVBlockStore(params, chainFile);
-            }
-        }
-
-        this.vChain = new BlockChain(this.vWallet.getParams(), this.vStore);
-
-        if(useTor) {
-            System.setProperty("socksProxyHost", torProxyIp);
-            System.setProperty("socksProxyPort", torProxyPort);
-            this.vPeerGroup = new PeerGroup(this.vWallet.getParams(), this.vChain, new BlockingClientManager());
-        } else {
-            this.vPeerGroup = new PeerGroup(this.vWallet.getParams(), this.vChain);
-        }
-
-        if (peerAddresses != null) {
-            for (PeerAddress addr : peerAddresses) this.vPeerGroup.addAddress(addr);
-            this.vPeerGroup.setMaxConnections(peerAddresses.length);
-            peerAddresses = null;
-        } else if (!params.getId().equals(NetworkParameters.ID_REGTEST)) {
-            this.vPeerGroup.addPeerDiscovery(new DnsDiscovery(this.vWallet.getParams()));
-        }
-
-        this.vChain.addWallet(this.vWallet);
-        this.vPeerGroup.addWallet(this.vWallet);
-        this.vWallet.autosaveToFile(new File(this.directory, this.vWalletFileName + ".wallet"), 5, TimeUnit.SECONDS, null);
-        this.vWallet.saveToFile(new File(this.directory, this.vWalletFileName + ".wallet"));
-
-        Futures.addCallback(vPeerGroup.startAsync(), new FutureCallback() {
-            @Override
-            public void onSuccess(@Nullable Object result) {
-                final DownloadProgressTracker l = progressTracker == null ? new DownloadProgressTracker() : progressTracker;
-                vPeerGroup.startBlockChainDownload(l);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                throw new RuntimeException(t);
-
-            }
-        }, MoreExecutors.directExecutor());
-
-        this.addTransactionsListener(onReceiveRunnable);
-    }
-
     public void setOnReceiveTxRunnable(Runnable runnable) {
         this.onReceiveRunnable = runnable;
-    }
-
-    public BIP47AppKit setCheckpoints(InputStream checkpoints) {
-        if (this.checkpoints != null)
-            Closeables.closeQuietly(checkpoints);
-        this.checkpoints = checkNotNull(checkpoints);
-        return this;
-    }
-
-    public void setPeerNodes(PeerAddress... addresses) {
-        checkState(state() == State.NEW, "Cannot call after startup");
-        this.peerAddresses = addresses;
-    }
-
-    public void setDownloadProgressTracker(DownloadProgressTracker progressTracker) {
-        this.progressTracker = progressTracker;
     }
 }

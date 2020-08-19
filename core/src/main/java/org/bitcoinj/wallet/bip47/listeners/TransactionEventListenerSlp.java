@@ -7,7 +7,6 @@ package org.bitcoinj.wallet.bip47.listeners;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.SlpBIP47AppKit;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
