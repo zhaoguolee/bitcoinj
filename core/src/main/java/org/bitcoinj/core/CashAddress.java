@@ -65,9 +65,9 @@ public class CashAddress extends Address {
     }
 
     static CashAddressType getType(NetworkParameters params, int version) {
-        if (version == params.getAddressHeader() || version == params.getSlpP2pkhHeader()) {
+        if (version == params.getAddressHeader()) {
             return CashAddressType.PubKey;
-        } else if (version == params.getP2SHHeader() || version == params.getSlpP2shHeader()) {
+        } else if (version == params.getP2SHHeader()) {
             return CashAddressType.Script;
         }
         throw new AddressFormatException("Invalid Cash address version: " + version);

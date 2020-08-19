@@ -22,7 +22,9 @@ public class AddressConversionTests {
         System.out.println(cashAddressP2SH);
         assertEquals("bitcoincash:pqeft5ukkg9ew2fgt5axxnrq853nc5cuyvvpusv2nz", cashAddressP2SH);
 
+        System.out.println(SlpAddressFactory.create().getFromCashAddress(params, "bitcoincash:qrnpf0nqkzgxpvjzqlqcqm4h78sg45zyu54rngdxff").toString());
         System.out.println(CashAddressFactory.create().getFromFormattedAddress(params, "bitcoincash:qrnpf0nqkzgxpvjzqlqcqm4h78sg45zyu54rngdxff").getOutputScriptType());
         System.out.println(CashAddressFactory.create().getFromFormattedAddress(params, "bitcoincash:pqeft5ukkg9ew2fgt5axxnrq853nc5cuyvvpusv2nz").getOutputScriptType());
+        System.out.println(CashAddressFactory.create().getFromSlpAddress(params, "simpleledger:qrnpf0nqkzgxpvjzqlqcqm4h78sg45zyu5eccncxhh").toString());
     }
 }

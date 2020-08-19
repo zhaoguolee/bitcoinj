@@ -71,8 +71,6 @@ public abstract class NetworkParameters {
     protected int[] acceptableAddressCodes;
     protected int addressHeader;
     protected int p2shHeader;
-    protected int slpP2shHeader;
-    protected int slpP2pkhHeader;
     protected int dumpedPrivateKeyHeader;
     protected int interval;
     protected int targetTimespan;
@@ -344,14 +342,6 @@ public abstract class NetworkParameters {
      */
     public int getP2SHHeader() {
         return p2shHeader;
-    }
-
-    public int getSlpP2shHeader() {
-        return slpP2shHeader;
-    }
-
-    public int getSlpP2pkhHeader() {
-        return slpP2pkhHeader;
     }
 
     /** First byte of a base58 encoded dumped private key. See {@link DumpedPrivateKey}. */

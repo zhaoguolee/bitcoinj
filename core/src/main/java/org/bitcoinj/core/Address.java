@@ -135,8 +135,7 @@ public class Address extends VersionedChecksummedBytes {
     public static boolean isValidSlpAddress(NetworkParameters params, String slpAddress)
     {
         try {
-            SlpAddress.Util.AddressVersionAndBytes addrData = SlpAddress.Util.decode(params.getSimpleledgerPrefix(), slpAddress);
-            new CashAddress(params, addrData.version, addrData.bytes);
+            SlpAddressFactory.create().getFromFormattedAddress(params, slpAddress);
             return true;
         } catch(Exception e) {
             return false;
@@ -220,7 +219,7 @@ public class Address extends VersionedChecksummedBytes {
      */
     public boolean isP2SHAddress() {
         final NetworkParameters parameters = getParameters();
-        return parameters != null && (this.version == parameters.p2shHeader || this.version == parameters.slpP2shHeader);
+        return parameters != null && this.version == parameters.p2shHeader;
     }
 
     public ScriptType getOutputScriptType() {

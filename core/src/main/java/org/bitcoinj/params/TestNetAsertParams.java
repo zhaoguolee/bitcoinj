@@ -43,9 +43,7 @@ public class TestNetAsertParams extends AbstractBitcoinNetParams {
         port = 10333;
         addressHeader = 111;
         p2shHeader = 196;
-        slpP2shHeader = 8;
-        slpP2pkhHeader = 0;
-        acceptableAddressCodes = new int[] { addressHeader, p2shHeader, slpP2shHeader, slpP2pkhHeader };
+        acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
         dumpedPrivateKeyHeader = 239;
         genesisBlock.setTime(1296688602L);
         genesisBlock.setDifficultyTarget(0x1d00ffffL);

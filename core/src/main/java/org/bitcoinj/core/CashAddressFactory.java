@@ -16,6 +16,7 @@
 package org.bitcoinj.core;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.bitcoinj.core.slp.SlpAddress;
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script;
 
@@ -24,6 +25,7 @@ import javax.annotation.Nullable;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.bitcoinj.core.Address.isAcceptableVersion;
 import static org.bitcoinj.core.CashAddressHelper.ConvertBits;
+import static org.bitcoinj.core.SlpAddressHelper.convertBits;
 
 /**
  * This is a factory class that creates CashAddress objects from several types of inputs.
@@ -129,6 +131,67 @@ public class CashAddressFactory {
         return new CashAddress(params, type, result);
     }
 
+    /**
+     * Construct an address from its slp representation.
+     * @param params
+     *            The expected NetworkParameters or null if you don't want validation.
+     * @param addr
+     *            The textual form of the address, such as "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h".
+     * @throws AddressFormatException
+     *             if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException
+     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     */
+    public CashAddress getFromSlpAddress(@Nullable NetworkParameters params, String addr)
+            throws AddressFormatException {
+        String addressPrefix = CashAddressHelper.getPrefix(addr);
+        if (params != null) {
+            if (addressPrefix != null && !isAcceptableSlpPrefix(params, addressPrefix)) {
+                throw new WrongNetworkException(addressPrefix, params.getCashAddrPrefix());
+            }
+        } else {
+            for (NetworkParameters p : Networks.get()) {
+                if (isAcceptableSlpPrefix(p, addressPrefix)) {
+                    params = p;
+                    break;
+                }
+            }
+            if (params == null) {
+                throw new AddressFormatException("No network found for " + addressPrefix);
+            }
+        }
+        SlpAddressValidator slpAddressValidator = SlpAddressValidator.create();
+
+        ImmutablePair<String, byte[]> pair = SlpAddressHelper.decodeCashAddress(addr, params.getSimpleledgerPrefix());
+        String prefix = pair.getKey();
+        byte[] payload = pair.getValue();
+
+        slpAddressValidator.checkValidPrefix(params, prefix);
+        slpAddressValidator.checkNonEmptyPayload(payload);
+
+        byte extraBits = (byte) (payload.length * 5 % 8);
+        slpAddressValidator.checkAllowedPadding(extraBits);
+
+        byte last = payload[payload.length - 1];
+        byte mask = (byte) ((1 << extraBits) - 1);
+        slpAddressValidator.checkNonZeroPadding(last, mask);
+
+        byte[] data = new byte[payload.length * 5 / 8];
+        convertBits(data, payload, 5, 8, false);
+
+        byte versionByte = data[0];
+        slpAddressValidator.checkFirstBitIsZero(versionByte);
+
+        int hashSize = calculateHashSizeFromVersionByte(versionByte);
+        slpAddressValidator.checkDataLength(data, hashSize);
+
+        byte[] result = new byte[data.length - 1];
+        System.arraycopy(data, 1, result, 0, data.length - 1);
+        CashAddress.CashAddressType type = getAddressTypeFromVersionByte(versionByte);
+
+        return new CashAddress(params, type, result);
+    }
+
     private CashAddress.CashAddressType getAddressTypeFromVersionByte(byte versionByte)
             throws AddressFormatException {
         switch (versionByte >> 3 & 0x1f) {
@@ -152,5 +215,10 @@ public class CashAddressFactory {
     private boolean isAcceptablePrefix(NetworkParameters params, String prefix)
     {
         return params.getCashAddrPrefix().equals(prefix.toLowerCase());
+    }
+
+    private boolean isAcceptableSlpPrefix(NetworkParameters params, String prefix)
+    {
+        return params.getSimpleledgerPrefix().equals(prefix.toLowerCase());
     }
 }

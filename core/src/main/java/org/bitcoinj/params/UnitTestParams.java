@@ -36,9 +36,7 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         packetMagic = 0x0b110907;
         addressHeader = 111;
         p2shHeader = 196;
-        slpP2shHeader = 8;
-        slpP2pkhHeader = 0;
-        acceptableAddressCodes = new int[] { addressHeader, p2shHeader, slpP2shHeader, slpP2pkhHeader };
+        acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
         genesisBlock.setTime(Utils.currentTimeSeconds());
         genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);

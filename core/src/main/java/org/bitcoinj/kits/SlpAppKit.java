@@ -214,19 +214,19 @@ public class SlpAppKit extends WalletKitCore {
     }
 
     public SlpAddress currentSlpReceiveAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().currentReceiveAddress().toString());
+        return SlpAddressFactory.create().getFromCashAddress(this.wallet().getParams(), this.wallet().currentReceiveAddress().toString());
     }
 
     public SlpAddress currentSlpChangeAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().currentChangeAddress().toString());
+        return SlpAddressFactory.create().getFromCashAddress(this.wallet().getParams(), this.wallet().currentChangeAddress().toString());
     }
 
     public SlpAddress freshSlpReceiveAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().freshReceiveAddress().toString());
+        return SlpAddressFactory.create().getFromCashAddress(this.wallet().getParams(), this.wallet().freshReceiveAddress().toString());
     }
 
     public SlpAddress freshSlpChangeAddress() {
-        return SlpAddressFactory.create().fromCashAddr(this.wallet().getParams(), this.wallet().freshChangeAddress().toString());
+        return SlpAddressFactory.create().getFromCashAddress(this.wallet().getParams(), this.wallet().freshChangeAddress().toString());
     }
 
     public Transaction createSlpTransaction(String slpDestinationAddress, String tokenId, double numTokens, @Nullable KeyParameter aesKey) throws InsufficientMoneyException {
