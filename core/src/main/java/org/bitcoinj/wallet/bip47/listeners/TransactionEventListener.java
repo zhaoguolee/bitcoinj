@@ -8,6 +8,7 @@ package org.bitcoinj.wallet.bip47.listeners;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.kits.BIP47AppKit;
+import org.bitcoinj.kits.WalletKitCore;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
@@ -17,14 +18,14 @@ import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
  */
 
 public abstract class TransactionEventListener implements WalletCoinsReceivedEventListener, WalletCoinsSentEventListener {
-    protected BIP47AppKit wallet;
+    protected WalletKitCore wallet;
 
-    public void setWallet(BIP47AppKit wallet) {
+    public void setWallet(WalletKitCore wallet) {
         this.wallet = wallet;
     }
 
     @Override
-    public void onCoinsReceived(org.bitcoinj.wallet.Wallet wallet, Transaction transaction, Coin coin, Coin coin1) {
+    public void onCoinsReceived(Wallet wallet, Transaction transaction, Coin coin, Coin coin1) {
         onTransactionReceived(this.wallet, transaction);
     }
 
@@ -33,6 +34,6 @@ public abstract class TransactionEventListener implements WalletCoinsReceivedEve
         onTransactionSent(this.wallet, tx);
     }
 
-    public abstract void onTransactionReceived(BIP47AppKit wallet, Transaction transaction);
-    public abstract void onTransactionSent(BIP47AppKit wallet, Transaction transaction);
+    public abstract void onTransactionReceived(WalletKitCore wallet, Transaction transaction);
+    public abstract void onTransactionSent(WalletKitCore wallet, Transaction transaction);
 }

@@ -91,7 +91,7 @@ import static org.bitcoinj.utils.BIP47Util.getSendAddress;
  */
 public class BIP47AppKit extends WalletKitCore {
     // Support for BIP47-type accounts. Only one account is currently handled in this wallet.
-    private List<BIP47Account> mAccounts = new ArrayList<BIP47Account>(1);
+    protected List<BIP47Account> mAccounts = new ArrayList<BIP47Account>(1);
 
     // The progress tracker will callback the listener with a porcetage of the blockchain that it has downloaded, while downloading..
     private BlockchainDownloadProgressTracker mBlockchainDownloadProgressTracker;
@@ -249,7 +249,7 @@ public class BIP47AppKit extends WalletKitCore {
     private void addTransactionsListener(final Runnable runnable) {
         this.addTransactionEvenListener(new TransactionEventListener() {
             @Override
-            public void onTransactionReceived(BIP47AppKit bip47AppKit, Transaction transaction) {
+            public void onTransactionReceived(WalletKitCore bip47AppKit, Transaction transaction) {
                 if (isNotificationTransaction(transaction)) {
                     BIP47PaymentCode BIP47PaymentCode = getPaymentCodeInNotificationTransaction(transaction);
                     if (BIP47PaymentCode != null) {
@@ -275,7 +275,7 @@ public class BIP47AppKit extends WalletKitCore {
             }
 
             @Override
-            public void onTransactionSent(BIP47AppKit wallet, Transaction transaction) {
+            public void onTransactionSent(WalletKitCore wallet, Transaction transaction) {
                 if(isNotificationTransactionTo(transaction)) {
                     String notificationAddress = getOutgoingNtxAddress(transaction);
 

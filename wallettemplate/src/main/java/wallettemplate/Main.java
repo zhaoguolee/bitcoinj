@@ -20,10 +20,10 @@ import com.google.common.util.concurrent.*;
 import javafx.scene.input.*;
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.DeterministicKey;
-import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.MultisigAppKit;
+import org.bitcoinj.kits.SlpAppKit;
+import org.bitcoinj.kits.SlpBIP47AppKit;
 import org.bitcoinj.utils.AppDataDirectory;
-import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.*;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.utils.BriefLogFormatter;
@@ -64,7 +64,7 @@ public class Main extends Application {
     private static final String p2pkh_name = "WalletTemplate".replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static BIP47AppKit p2pkh;
+    public static SlpBIP47AppKit p2pkh;
     public static MultisigAppKit bitcoin;
     public static MultisigAppKit bitcoinCosigner1;
     public static MultisigAppKit bitcoinCosigner2;
@@ -126,13 +126,13 @@ public class Main extends Application {
         // Create the app kit. It won't do any heavyweight initialization until after we start it.
 
         //setupWalletKit(new DeterministicSeed("stuff select coin rib then cargo elite whale jealous person turn notice", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
-        setupWalletKit(null);
+        //setupWalletKit(null);
 
         //setupCosigner1(new DeterministicSeed("glimpse grunt power pig math auto save region wasp pact sleep opera", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
-        setupCosigner1(null);
+        //setupCosigner1(null);
 
         //setupCosigner2(new DeterministicSeed("cruise apology smart pottery avocado asthma fever able cheap prevent token cupboard", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
-        setupCosigner2(null);
+        //setupCosigner2(null);
 
         setupP2PKH(null);
 
@@ -140,15 +140,15 @@ public class Main extends Application {
 
         WalletSetPasswordController.estimateKeyDerivationTimeMsec();
 
-        bitcoin.addListener(new Service.Listener() {
+        /*bitcoin.addListener(new Service.Listener() {
             @Override
             public void failed(Service.State from, Throwable failure) {
                 GuiUtils.crashAlert(failure);
             }
-        }, Platform::runLater);
-        bitcoin.startAsync();
-        bitcoinCosigner1.startAsync();
-        bitcoinCosigner2.startAsync();
+        }, Platform::runLater);*/
+        //bitcoin.startAsync();
+        //bitcoinCosigner1.startAsync();
+        //bitcoinCosigner2.startAsync();
         p2pkh.startAsync();
 
         scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.peerGroup().getDownloadPeer().close());
@@ -224,21 +224,15 @@ public class Main extends Application {
     }
 
     public void setupP2PKH(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
-        p2pkh = new BIP47AppKit(params, new File("."), p2pkh_name) {
+        p2pkh = new SlpBIP47AppKit(params, new File("."), p2pkh_name) {
             @Override
             public void onSetupCompleted() {
-                p2pkh.wallet().addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
-                    @Override
-                    public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                        System.out.println("Received coins, new balance is: " + newBalance.toPlainString());
-                    }
-                });
-                System.out.println("P2PKH Address:: " + wallet().currentReceiveAddress().toString());
+                System.out.println("P2PKH Address:: " + currentSlpReceiveAddress().toString());
             }
         };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        p2pkh.setDownloadListener(controller.progressBarUpdater());
+        //p2pkh.setDownloadListener(controller.progressBarUpdater());
         p2pkh.setBlockingStartup(false);
 
         if(seed != null) {

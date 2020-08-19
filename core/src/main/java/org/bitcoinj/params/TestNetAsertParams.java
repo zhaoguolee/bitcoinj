@@ -78,6 +78,8 @@ public class TestNetAsertParams extends AbstractBitcoinNetParams {
         // Nov, 13 hard fork
         daaUpdateHeight = 1188697;
         cashAddrPrefix = "bchtest";
+        simpleledgerPrefix = "slptest";
+
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
     }
