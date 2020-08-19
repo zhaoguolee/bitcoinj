@@ -81,16 +81,16 @@ public class AddressValidationTests {
         SlpAddress validSlpFromLegacy = SlpAddressFactory.create().getFromBase58(MainNetParams.get(), legacyP2PKHValid);
         SlpAddress validSlpP2PKH = SlpAddressFactory.create().getFromFormattedAddress(MainNetParams.get(), slpP2PKHValid);
         SlpAddress validSlpP2SH = SlpAddressFactory.create().getFromFormattedAddress(MainNetParams.get(), slpP2SHValid);
-        assertTrue(Address.isValidCashAddr(MainNetParams.get(), validSlpP2PKH.toCashAddress()));
-        assertTrue(Address.isValidCashAddr(MainNetParams.get(), validSlpP2SH.toCashAddress()));
+        assertTrue(Address.isValidCashAddr(MainNetParams.get(), validSlpP2PKH.toCash().toString()));
+        assertTrue(Address.isValidCashAddr(MainNetParams.get(), validSlpP2SH.toCash().toString()));
         assertFalse(Address.isValidSlpAddress(MainNetParams.get(), slpP2PKHInvalid));
-        assertEquals("bitcoincash:qrnfkj0ya6sju73qf2m0cn05j23d5ztlyq8zjf49et", validSlpP2PKH.toCashAddress());
-        assertEquals("bitcoincash:pphd9qsajfgwlcx706ed8d7l650f6q36c5jy5z4alj", validSlpP2SH.toCashAddress());
+        assertEquals("bitcoincash:qrnfkj0ya6sju73qf2m0cn05j23d5ztlyq8zjf49et", validSlpP2PKH.toCash().toString());
+        assertEquals("bitcoincash:pphd9qsajfgwlcx706ed8d7l650f6q36c5jy5z4alj", validSlpP2SH.toCash().toString());
 
         System.out.println(validSlpFromLegacy.toString());
         System.out.println(validSlpP2PKH.toString());
-        System.out.println(validSlpP2PKH.toCashAddress());
-        System.out.println(validSlpP2SH.toCashAddress());
+        System.out.println(validSlpP2PKH.toCash().toString());
+        System.out.println(validSlpP2SH.toCash().toString());
         System.out.println(validSlpP2PKH.getOutputScriptType());
         System.out.println(validSlpP2SH.getOutputScriptType());
     }
@@ -102,11 +102,11 @@ public class AddressValidationTests {
         SlpAddress validSlpP2PKH = SlpAddressFactory.create().getFromFormattedAddress(TestNet3Params.get(), slpP2PKHValid);
         SlpAddress validSlpP2SH = SlpAddressFactory.create().getFromFormattedAddress(TestNet3Params.get(), slpP2SHValid);
         assertTrue(Address.isValidSlpAddress(TestNet3Params.get(), validSlpP2PKH.toString()));
-        assertTrue(Address.isValidCashAddr(TestNet3Params.get(), validSlpP2PKH.toCashAddress()));
+        assertTrue(Address.isValidCashAddr(TestNet3Params.get(), validSlpP2PKH.toCash().toString()));
         assertTrue(Address.isValidSlpAddress(TestNet3Params.get(), slpP2SHValid));
-        assertTrue(Address.isValidCashAddr(TestNet3Params.get(), validSlpP2SH.toCashAddress()));
-        assertEquals("bchtest:qz0e574avqxqe2srnqa80jxrm78qvt9jlgkt79xh6k", validSlpP2PKH.toCashAddress());
-        assertEquals("bchtest:pp2fu0f6tmzrsw48k2n563ecfhgp7ryh3y4r0umnv3", validSlpP2SH.toCashAddress());
+        assertTrue(Address.isValidCashAddr(TestNet3Params.get(), validSlpP2SH.toCash().toString()));
+        assertEquals("bchtest:qz0e574avqxqe2srnqa80jxrm78qvt9jlgkt79xh6k", validSlpP2PKH.toCash().toString());
+        assertEquals("bchtest:pp2fu0f6tmzrsw48k2n563ecfhgp7ryh3y4r0umnv3", validSlpP2SH.toCash().toString());
     }
 
     @Test
@@ -138,6 +138,6 @@ public class AddressValidationTests {
 
         assertFalse(validSlpP2PKH.isP2SHAddress());
         assertTrue(validSlpP2SH.isP2SHAddress());
-        assertEquals("bitcoincash:pphd9qsajfgwlcx706ed8d7l650f6q36c5jy5z4alj", validSlpP2SH.toCashAddress());
+        assertEquals("bitcoincash:pphd9qsajfgwlcx706ed8d7l650f6q36c5jy5z4alj", validSlpP2SH.toCash().toString());
     }
 }

@@ -21,8 +21,7 @@ class SlpTxBuilder {
         fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpAppKit, aesKey: KeyParameter?, allowUnconfirmed: Boolean): Single<Transaction> {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
-                        val cashAddr = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, toAddress).toCashAddress()
-                        val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, cashAddr)
+                        val addrTo = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, toAddress).toCash()
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
@@ -45,7 +44,7 @@ class SlpTxBuilder {
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, slpAppKit.freshSlpChangeAddress().toCash().toString()))
                         }
 
                         // Send our BCH change back to our BCH address
@@ -65,8 +64,7 @@ class SlpTxBuilder {
         fun buildTx(tokenId: String, amount: Double, toAddress: String, slpAppKit: SlpBIP47AppKit, aesKey: KeyParameter?, allowUnconfirmed: Boolean): Single<Transaction> {
             return sendTokenUtxoSelection(tokenId, amount, slpAppKit)
                     .map {
-                        val cashAddr = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, toAddress).toCashAddress()
-                        val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, cashAddr)
+                        val addrTo = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, toAddress).toCash()
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
@@ -89,7 +87,7 @@ class SlpTxBuilder {
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, slpAppKit.freshSlpChangeAddress().toCash())
                         }
 
                         // Send our BCH change back to our BCH address
@@ -143,14 +141,13 @@ class SlpTxBuilder {
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
                         for(x in addresses.indices) {
-                            val cashAddr = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, addresses[x]).toCashAddress()
-                            val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, cashAddr)
+                            val addrTo = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, addresses[x]).toCash()
                             req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, addrTo)
                         }
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, slpAppKit.currentSlpChangeAddress().toCash())
                         }
 
                         // Send our BCH change back to our BCH address
@@ -204,14 +201,13 @@ class SlpTxBuilder {
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
                         for(x in addresses.indices) {
-                            val cashAddr = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.params(), addresses[x]).toCashAddress()
-                            val addrTo = CashAddressFactory.create().getFromFormattedAddress(slpAppKit.params(), cashAddr)
+                            val addrTo = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.params(), addresses[x]).toCash()
                             req.tx.addOutput(slpAppKit.params().minNonDustOutput, addrTo)
                         }
 
                         // Send our token change back to our SLP address
                         if (it.quantities.size == 2) {
-                            req.tx.addOutput(slpAppKit.params().minNonDustOutput, CashAddressFactory.create().getFromFormattedAddress(slpAppKit.params(), slpAppKit.freshSlpChangeAddress().toCashAddress()))
+                            req.tx.addOutput(slpAppKit.params().minNonDustOutput, slpAppKit.currentSlpChangeAddress().toCash())
                         }
 
                         // Send our BCH change back to our BCH address

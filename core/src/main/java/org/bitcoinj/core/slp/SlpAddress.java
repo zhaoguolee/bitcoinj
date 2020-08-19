@@ -48,7 +48,7 @@ public class SlpAddress extends Address {
             this.value = value;
         }
 
-        byte getValue() {
+        public byte getValue() {
             return (byte) value;
         }
     }
@@ -115,11 +115,6 @@ public class SlpAddress extends Address {
     public String toString() {
         return SlpAddressHelper.encodeCashAddress(getParameters().getSimpleledgerPrefix(),
                 SlpAddressHelper.packAddressData(getHash160(), addressType.getValue()));
-    }
-
-    public String toCashAddress() {
-        return CashAddressHelper.encodeCashAddress(getParameters().getCashAddrPrefix(),
-                CashAddressHelper.packAddressData(getHash160(), addressType.getValue()));
     }
 
     @Override

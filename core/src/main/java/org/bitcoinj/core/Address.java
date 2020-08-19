@@ -226,6 +226,18 @@ public class Address extends VersionedChecksummedBytes {
         return isP2SHAddress() ? ScriptType.P2SH : ScriptType.P2PKH;
     }
 
+    public CashAddress toCash() {
+        String cashAddress = CashAddressHelper.encodeCashAddress(getParameters().getCashAddrPrefix(),
+                CashAddressHelper.packAddressData(getHash160(), isP2SHAddress() ? CashAddress.CashAddressType.Script.getValue() : CashAddress.CashAddressType.PubKey.getValue()));
+        return CashAddressFactory.create().getFromFormattedAddress(getParameters(), cashAddress);
+    }
+
+    public SlpAddress toSlp() {
+        String slpAddress = SlpAddressHelper.encodeCashAddress(getParameters().getSimpleledgerPrefix(),
+                SlpAddressHelper.packAddressData(getHash160(), isP2SHAddress() ? SlpAddress.CashAddressType.Script.getValue() : SlpAddress.CashAddressType.PubKey.getValue()));
+        return SlpAddressFactory.create().getFromFormattedAddress(getParameters(), slpAddress);
+    }
+
     /**
      * Examines the version byte of the address and attempts to find a matching NetworkParameters. If you aren't sure
      * which network the address is intended for (eg, it was provided by a user), you can use this to decide if it is

@@ -227,7 +227,8 @@ public class Main extends Application {
         p2pkh = new SlpBIP47AppKit(params, new File("."), p2pkh_name) {
             @Override
             public void onSetupCompleted() {
-                System.out.println("P2PKH Address:: " + currentSlpReceiveAddress().toString());
+                System.out.println("P2PKH Address:: " + currentSlpReceiveAddress());
+                System.out.println("P2PKH Address:: " + currentSlpReceiveAddress().toCash());
             }
         };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
