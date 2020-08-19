@@ -607,4 +607,9 @@ public class MultisigAppKit extends AbstractIdleService {
     public File directory() {
         return directory;
     }
+
+    public int getSigsRequiredToSpend() {
+        MarriedKeyChain marriedKeyChain = (MarriedKeyChain) this.vWallet.getActiveKeyChain();
+        return marriedKeyChain.getSigsRequiredToSpend();
+    }
 }
