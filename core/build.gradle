@@ -8,7 +8,7 @@ plugins {
 
 apply plugin: 'kotlin'
 
-version = '0.22'
+version = '0.22.4'
 
 dependencies {
     api 'org.bouncycastle:bcprov-jdk15on:1.65'
