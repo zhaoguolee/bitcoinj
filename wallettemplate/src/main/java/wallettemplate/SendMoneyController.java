@@ -175,7 +175,7 @@ public class SendMoneyController {
 
             //Next signer receives payload:
             MultisigPayload multisigPayload = new Gson().fromJson(json, MultisigPayload.class);
-            Address payloadAddress = Address.fromString(Main.params, multisigPayload.address);
+            Address payloadAddress = AddressFactory.create().fromString(Main.params, multisigPayload.address);
             Coin payloadAmount = Coin.parseCoin(multisigPayload.amount);
 
             Transaction cosigner1Tx = Main.bitcoinCosigner1.makeIndividualMultisigTransaction(payloadAddress, payloadAmount);
@@ -218,7 +218,7 @@ public class SendMoneyController {
 
             //Next signer receives payload:
             MultisigPayload multisigPayload2 = new Gson().fromJson(json1, MultisigPayload.class);
-            Address payloadAddress2 = Address.fromString(Main.params, multisigPayload2.address);
+            Address payloadAddress2 = AddressFactory.create().fromString(Main.params, multisigPayload2.address);
             Coin payloadAmount2 = Coin.parseCoin(multisigPayload2.amount);
 
             Transaction cosigner2Tx = Main.bitcoin.makeIndividualMultisigTransaction(payloadAddress2, payloadAmount2);

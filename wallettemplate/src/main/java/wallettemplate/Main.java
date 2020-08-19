@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,15 +20,17 @@ import com.google.common.util.concurrent.*;
 import javafx.scene.input.*;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.slp.SlpToken;
+import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.kits.BIP47AppKit;
+import org.bitcoinj.kits.MultisigAppKit;
 import org.bitcoinj.kits.SlpAppKit;
-import org.bitcoinj.kits.SlpBIP47AppKit;
 import org.bitcoinj.utils.AppDataDirectory;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.*;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.DeterministicKeyChain;
 import org.bitcoinj.wallet.DeterministicSeed;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -39,6 +41,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.bitcoinj.wallet.UnreadableWalletException;
+import org.bitcoinj.wallet.Wallet;
+import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import wallettemplate.controls.NotificationBarPane;
 import wallettemplate.utils.GuiUtils;
 import wallettemplate.utils.TextFieldValidator;
@@ -49,17 +53,24 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
 
 import static wallettemplate.utils.GuiUtils.*;
 
 public class Main extends Application {
-    public static NetworkParameters params = MainNetParams.get();
+    public static NetworkParameters params = TestNetAsertParams.get();
     public static final Script.ScriptType PREFERRED_OUTPUT_SCRIPT_TYPE = Script.ScriptType.P2PKH;
-    public static final String APP_NAME = "SlpBip47";
+    public static final String APP_NAME = "Multisig";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
+    private static final String p2pkh_name = "WalletTemplate".replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
+            + params.getPaymentProtocolId();
 
-    public static SlpBIP47AppKit bitcoin;
+    public static WalletAppKit p2pkh;
+    public static MultisigAppKit bitcoin;
+    public static MultisigAppKit bitcoinCosigner1;
+    public static MultisigAppKit bitcoinCosigner2;
     public static Main instance;
 
     private StackPane uiStack;
@@ -116,7 +127,17 @@ public class Main extends Application {
         // a future version.
         Threading.USER_THREAD = Platform::runLater;
         // Create the app kit. It won't do any heavyweight initialization until after we start it.
+
+        //setupWalletKit(new DeterministicSeed("stuff select coin rib then cargo elite whale jealous person turn notice", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
         setupWalletKit(null);
+
+        //setupCosigner1(new DeterministicSeed("glimpse grunt power pig math auto save region wasp pact sleep opera", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
+        setupCosigner1(null);
+
+        //setupCosigner2(new DeterministicSeed("cruise apology smart pottery avocado asthma fever able cheap prevent token cupboard", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
+        setupCosigner2(null);
+
+        setupP2PKH(null);
 
         mainWindow.show();
 
@@ -129,6 +150,9 @@ public class Main extends Application {
             }
         }, Platform::runLater);
         bitcoin.startAsync();
+        bitcoinCosigner1.startAsync();
+        bitcoinCosigner2.startAsync();
+        p2pkh.startAsync();
 
         scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.getPeerGroup().getDownloadPeer().close());
     }
@@ -137,25 +161,132 @@ public class Main extends Application {
         // If seed is non-null it means we are restoring from backup.
         File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
-        bitcoin = new SlpBIP47AppKit().initialize(params, new File("."), WALLET_FILE_NAME, seed);
-        Platform.runLater(controller::onBitcoinSetup);
+        ArrayList<DeterministicKey> followingKeys = new ArrayList<>();
+        DeterministicKey cosigner1 = DeterministicKey.deserializeB58("tpubDDCUxGJ6KbriHKanzx9a1LDCZTm63rhf2b6ZMgnVUbePKAk7UxsMoxVy371eLkobw9BEwAW39gBKWkkCygTZ1SDpqQZBnQ3cxaZ1woJWjtC", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+        DeterministicKey cosigner2 = DeterministicKey.deserializeB58("tpubDCq12vdZJ6thJWoRjjPtWZntuqpwf8L9Vf9UZyFPRYFfLNHJB8VsCobD2hKvzMPHWaRQcqkiFQCYVdowXXiDrziv8Kbuuf9ZGny6yLXwEsb", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+        followingKeys.add(cosigner1);
+        followingKeys.add(cosigner2);
+        int m = 3; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
+        bitcoin = new MultisigAppKit(params, new File("."), WALLET_FILE_NAME, followingKeys, m) {
+            @Override
+            public void onSetupCompleted() {
+                Platform.runLater(controller::onBitcoinSetup);
+
+                System.out.println("Address:: " + wallet().currentReceiveAddress().toString());
+            }
+        };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        bitcoin.setDownloadProgressTracker(controller.progressBarUpdater());
+        bitcoin.setDownloadListener(controller.progressBarUpdater());
+        bitcoin.setBlockingStartup(false);
 
-        new Thread() {
+        if(seed != null) {
+            bitcoin.restoreWalletFromSeed(seed);
+        }
+
+        bitcoin.setPeerNodes(null);
+        try {
+            bitcoin.setPeerNodes(new PeerAddress(params, InetAddress.getByName("78.97.206.149")));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setupCosigner1(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
+        // If seed is non-null it means we are restoring from backup.
+        File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
+        System.out.println(appDataDirectory.getAbsolutePath());
+        ArrayList<DeterministicKey> followingKeys = new ArrayList<>();
+        DeterministicKey cosigner1 = DeterministicKey.deserializeB58("tpubDCq3GCXfqqKE2rRiMsrkBzWvENPZeR8NRk5RHXKShir1XcCCMRr1PF4hvQ1jYUz4ak4PUKxsrGwR54SEyLFvyqmjFUTpoxX5oWm35ypG8GE", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+        DeterministicKey cosigner2 = DeterministicKey.deserializeB58("tpubDCq12vdZJ6thJWoRjjPtWZntuqpwf8L9Vf9UZyFPRYFfLNHJB8VsCobD2hKvzMPHWaRQcqkiFQCYVdowXXiDrziv8Kbuuf9ZGny6yLXwEsb", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+        followingKeys.add(cosigner1);
+        followingKeys.add(cosigner2);
+        int m = 3; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
+        bitcoinCosigner1 = new MultisigAppKit(params, new File("."), WALLET_FILE_NAME+"_cosigner1", followingKeys, m) {
             @Override
-            public void run() {
-                while(true) {
-                    bitcoin.recalculateSlpUtxos();
-                    try {
-                        Thread.sleep(5L * 1000L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+            public void onSetupCompleted() {
+                //Platform.runLater(controller::onBitcoinSetup);
+                System.out.println("Address:: " + wallet().currentReceiveAddress().toString());
             }
-        }.start();
+        };
+        // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
+        // or progress widget to keep the user engaged whilst we initialise, but we don't.
+        bitcoinCosigner1.setDownloadListener(controller.progressBarUpdater());
+        bitcoinCosigner1.setBlockingStartup(false);
+
+        if(seed != null) {
+            bitcoinCosigner1.restoreWalletFromSeed(seed);
+        }
+
+        bitcoinCosigner1.setPeerNodes(null);
+        try {
+            bitcoinCosigner1.setPeerNodes(new PeerAddress(params, InetAddress.getByName("78.97.206.149")));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setupP2PKH(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
+        p2pkh = new WalletAppKit(params, new File("."), p2pkh_name) {
+            @Override
+            public void onSetupCompleted() {
+                p2pkh.getvWallet().addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
+                    @Override
+                    public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+                        System.out.println("Received coins, new balance is: " + newBalance.toPlainString());
+                    }
+                });
+                System.out.println("P2PKH Address:: " + wallet().currentReceiveAddress().toString());
+            }
+        };
+        // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
+        // or progress widget to keep the user engaged whilst we initialise, but we don't.
+        //bitcoinCosigner1.setDownloadListener(controller.progressBarUpdater());
+        p2pkh.setBlockingStartup(false);
+
+        if(seed != null) {
+            p2pkh.restoreWalletFromSeed(seed);
+        }
+
+        p2pkh.setPeerNodes(null);
+        try {
+            p2pkh.setPeerNodes(new PeerAddress(params, InetAddress.getByName("78.97.206.149")));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setupCosigner2(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
+        File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
+        System.out.println(appDataDirectory.getAbsolutePath());
+        ArrayList<DeterministicKey> followingKeys = new ArrayList<>();
+        DeterministicKey cosigner1 = DeterministicKey.deserializeB58("tpubDCq3GCXfqqKE2rRiMsrkBzWvENPZeR8NRk5RHXKShir1XcCCMRr1PF4hvQ1jYUz4ak4PUKxsrGwR54SEyLFvyqmjFUTpoxX5oWm35ypG8GE", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+        DeterministicKey cosigner2 = DeterministicKey.deserializeB58("tpubDDCUxGJ6KbriHKanzx9a1LDCZTm63rhf2b6ZMgnVUbePKAk7UxsMoxVy371eLkobw9BEwAW39gBKWkkCygTZ1SDpqQZBnQ3cxaZ1woJWjtC", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
+        followingKeys.add(cosigner1);
+        followingKeys.add(cosigner2);
+        int m = 3; //How many signatures are required to spend these coins? Setting to 0 means it will be determined automatically using: (cosigners_amount + 1) / 2 + 1
+        bitcoinCosigner2 = new MultisigAppKit(params, new File("."), WALLET_FILE_NAME+"_cosigner2", followingKeys, m) {
+            @Override
+            public void onSetupCompleted() {
+                //Platform.runLater(controller::onBitcoinSetup);
+                System.out.println("Address:: " + wallet().currentReceiveAddress().toString());
+            }
+        };
+        // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
+        // or progress widget to keep the user engaged whilst we initialise, but we don't.
+        bitcoinCosigner2.setDownloadListener(controller.progressBarUpdater());
+        bitcoinCosigner2.setBlockingStartup(false);
+
+        if(seed != null) {
+            bitcoinCosigner2.restoreWalletFromSeed(seed);
+        }
+
+        bitcoinCosigner2.setPeerNodes(null);
+        try {
+            bitcoinCosigner2.setPeerNodes(new PeerAddress(params, InetAddress.getByName("78.97.206.149")));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 
     private Node stopClickPane = new Pane();
