@@ -406,6 +406,8 @@ public class SlpBIP47AppKit extends AbstractIdleService {
                 recalculateSlpUtxos();
             }
         }.start();
+
+        this.addTransactionsListener(onReceiveRunnable);
     }
 
     public SlpBIP47AppKit setCheckpoints(InputStream checkpoints) {
