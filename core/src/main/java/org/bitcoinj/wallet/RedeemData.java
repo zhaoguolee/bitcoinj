@@ -71,6 +71,18 @@ public class RedeemData {
         return null;
     }
 
+    public int getFullKeyIndex() {
+        int index = 0;
+        for (ECKey key : keys) {
+            if (key.hasPrivKey()) {
+                return index;
+            }
+            index++;
+        }
+
+        return -1;
+    }
+
     @Override
     public String toString() {
         final MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this).omitNullValues();

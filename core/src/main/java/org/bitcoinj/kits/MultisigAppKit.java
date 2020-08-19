@@ -17,27 +17,41 @@
 
 package org.bitcoinj.kits;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
-import com.google.common.util.concurrent.*;
-import org.bitcoinj.core.listeners.*;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.HDPath;
+import org.bitcoinj.crypto.MultisigSignature;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.BlockingClientManager;
-import org.bitcoinj.net.discovery.*;
+import org.bitcoinj.net.discovery.DnsDiscovery;
+import org.bitcoinj.net.discovery.PeerDiscovery;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.store.*;
+import org.bitcoinj.store.BlockStore;
+import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.wallet.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import java.io.*;
-import java.net.*;
-import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.channels.FileLock;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * <p>Utility class that wraps the boilerplate needed to set up a new SPV bitcoinj app. Instantiate it with a directory
@@ -61,8 +75,8 @@ import static com.google.common.base.Preconditions.*;
  * if anything goes wrong during startup - you should probably handle it and use {@link Exception#getCause()} to figure
  * out what went wrong more precisely. Same thing if you just use the {@link #startAsync()} method.</p>
  */
-public class WalletAppKit extends AbstractIdleService {
-    protected static final Logger log = LoggerFactory.getLogger(WalletAppKit.class);
+public class MultisigAppKit extends AbstractIdleService {
+    protected static final Logger log = LoggerFactory.getLogger(MultisigAppKit.class);
 
     protected final NetworkParameters params;
     protected final Script.ScriptType preferredOutputScriptType;
@@ -90,46 +104,50 @@ public class WalletAppKit extends AbstractIdleService {
     private boolean useTor = false;
     private String torProxyIp = "127.0.0.1";
     private String torProxyPort = "9050";
+    private List<DeterministicKey> followingKeys;
+    private int m;
 
     protected volatile Context context;
 
     /**
      * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
      */
-    public WalletAppKit(NetworkParameters params, File directory, String filePrefix) {
-        this(new Context(params), Script.ScriptType.P2PKH, null, directory, filePrefix);
+    public MultisigAppKit(NetworkParameters params, File directory, String filePrefix, List<DeterministicKey> followingKeys, int m) {
+        this(new Context(params), Script.ScriptType.P2PKH, null, directory, filePrefix, followingKeys, m);
     }
 
     /**
      * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
      */
-    public WalletAppKit(NetworkParameters params, Script.ScriptType preferredOutputScriptType,
-            @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
-        this(new Context(params), preferredOutputScriptType, structure, directory, filePrefix);
+    public MultisigAppKit(NetworkParameters params, Script.ScriptType preferredOutputScriptType,
+                          @Nullable KeyChainGroupStructure structure, File directory, String filePrefix, List<DeterministicKey> followingKeys, int m) {
+        this(new Context(params), preferredOutputScriptType, structure, directory, filePrefix, followingKeys, m);
     }
 
     /**
      * Creates a new WalletAppKit, with the given {@link Context}. Files will be stored in the given directory.
      */
-    public WalletAppKit(Context context, Script.ScriptType preferredOutputScriptType,
-            @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
+    public MultisigAppKit(Context context, Script.ScriptType preferredOutputScriptType,
+                          @Nullable KeyChainGroupStructure structure, File directory, String filePrefix, List<DeterministicKey> followingKeys, int m) {
         this.context = context;
         this.params = checkNotNull(context.getParams());
         this.preferredOutputScriptType = checkNotNull(preferredOutputScriptType);
         this.structure = structure != null ? structure : KeyChainGroupStructure.DEFAULT;
         this.directory = checkNotNull(directory);
         this.filePrefix = checkNotNull(filePrefix);
+        this.followingKeys = followingKeys;
+        this.m = m;
     }
 
     /** Will only connect to the given addresses. Cannot be called after startup. */
-    public WalletAppKit setPeerNodes(PeerAddress... addresses) {
+    public MultisigAppKit setPeerNodes(PeerAddress... addresses) {
         checkState(state() == State.NEW, "Cannot call after startup");
         this.peerAddresses = addresses;
         return this;
     }
 
     /** Will only connect to localhost. Cannot be called after startup. */
-    public WalletAppKit connectToLocalHost() {
+    public MultisigAppKit connectToLocalHost() {
         try {
             final InetAddress localHost = InetAddress.getLocalHost();
             return setPeerNodes(new PeerAddress(params, localHost, params.getPort()));
@@ -140,7 +158,7 @@ public class WalletAppKit extends AbstractIdleService {
     }
 
     /** If true, the wallet will save itself to disk automatically whenever it changes. */
-    public WalletAppKit setAutoSave(boolean value) {
+    public MultisigAppKit setAutoSave(boolean value) {
         checkState(state() == State.NEW, "Cannot call after startup");
         useAutoSave = value;
         return this;
@@ -151,13 +169,13 @@ public class WalletAppKit extends AbstractIdleService {
      * {@link DownloadProgressTracker} is a good choice. This has no effect unless setBlockingStartup(false) has been called
      * too, due to some missing implementation code.
      */
-    public WalletAppKit setDownloadListener(DownloadProgressTracker listener) {
+    public MultisigAppKit setDownloadListener(DownloadProgressTracker listener) {
         this.downloadListener = listener;
         return this;
     }
 
     /** If true, will register a shutdown hook to stop the library. Defaults to true. */
-    public WalletAppKit setAutoStop(boolean autoStop) {
+    public MultisigAppKit setAutoStop(boolean autoStop) {
         this.autoStop = autoStop;
         return this;
     }
@@ -167,7 +185,7 @@ public class WalletAppKit extends AbstractIdleService {
      * block sync faster for new users - please refer to the documentation on the bitcoinj website
      * (https://bitcoinj.github.io/speeding-up-chain-sync) for further details.
      */
-    public WalletAppKit setCheckpoints(InputStream checkpoints) {
+    public MultisigAppKit setCheckpoints(InputStream checkpoints) {
         if (this.checkpoints != null)
             Closeables.closeQuietly(checkpoints);
         this.checkpoints = checkNotNull(checkpoints);
@@ -180,7 +198,7 @@ public class WalletAppKit extends AbstractIdleService {
      * potentially take a very long time. If false, then startup is considered complete once the network activity
      * begins and peer connections/block chain sync will continue in the background.
      */
-    public WalletAppKit setBlockingStartup(boolean blockingStartup) {
+    public MultisigAppKit setBlockingStartup(boolean blockingStartup) {
         this.blockingStartup = blockingStartup;
         return this;
     }
@@ -190,7 +208,7 @@ public class WalletAppKit extends AbstractIdleService {
      * @param userAgent A short string that should be the name of your app, e.g. "My Wallet"
      * @param version A short string that contains the version number, e.g. "1.0-BETA"
      */
-    public WalletAppKit setUserAgent(String userAgent, String version) {
+    public MultisigAppKit setUserAgent(String userAgent, String version) {
         this.userAgent = checkNotNull(userAgent);
         this.version = checkNotNull(version);
         return this;
@@ -199,7 +217,7 @@ public class WalletAppKit extends AbstractIdleService {
     /**
      * Sets a wallet factory which will be used when the kit creates a new wallet.
      */
-    public WalletAppKit setWalletFactory(WalletProtobufSerializer.WalletFactory walletFactory) {
+    public MultisigAppKit setWalletFactory(WalletProtobufSerializer.WalletFactory walletFactory) {
         this.walletFactory = walletFactory;
         return this;
     }
@@ -212,7 +230,7 @@ public class WalletAppKit extends AbstractIdleService {
      * up the new kit. The next time your app starts it should work as normal (that is, don't keep calling this each
      * time).
      */
-    public WalletAppKit restoreWalletFromSeed(DeterministicSeed seed) {
+    public MultisigAppKit restoreWalletFromSeed(DeterministicSeed seed) {
         this.restoreFromSeed = seed;
         return this;
     }
@@ -225,7 +243,7 @@ public class WalletAppKit extends AbstractIdleService {
      * up the new kit. The next time your app starts it should work as normal (that is, don't keep calling this each
      * time).
      */
-    public WalletAppKit restoreWalletFromKey(DeterministicKey accountKey) {
+    public MultisigAppKit restoreWalletFromKey(DeterministicKey accountKey) {
         this.restoreFromKey = accountKey;
         return this;
     }
@@ -233,7 +251,7 @@ public class WalletAppKit extends AbstractIdleService {
     /**
      * Sets the peer discovery class to use. If none is provided then DNS is used, which is a reasonable default.
      */
-    public WalletAppKit setDiscovery(@Nullable PeerDiscovery discovery) {
+    public MultisigAppKit setDiscovery(@Nullable PeerDiscovery discovery) {
         this.discovery = discovery;
         return this;
     }
@@ -295,7 +313,13 @@ public class WalletAppKit extends AbstractIdleService {
             vWalletFile = new File(directory, filePrefix + ".wallet");
             boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null || restoreFromKey != null;
             vWallet = createOrLoadWallet(shouldReplayWallet);
-
+            if(!vWalletFile.exists() || restoreFromSeed != null || restoreFromKey != null) {
+                MarriedKeyChain marriedKeyChain = MarriedKeyChain.builder()
+                        .seed(this.restoreFromSeed == null ? this.getvWallet().getKeyChainSeed() : this.restoreFromSeed)
+                        .followingKeys(followingKeys)
+                        .threshold(this.m).build();
+                vWallet.addAndActivateHDChain(marriedKeyChain);
+            }
             // Initiate Bitcoin network objects (block store, blockchain and peer group)
             vStore = new SPVBlockStore(params, chainFile);
             if (!chainFileExists || restoreFromSeed != null || restoreFromKey != null) {
@@ -477,8 +501,8 @@ public class WalletAppKit extends AbstractIdleService {
         if (autoStop) Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override public void run() {
                 try {
-                    WalletAppKit.this.stopAsync();
-                    WalletAppKit.this.awaitTerminated();
+                    MultisigAppKit.this.stopAsync();
+                    MultisigAppKit.this.awaitTerminated();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -550,7 +574,42 @@ public class WalletAppKit extends AbstractIdleService {
         return vPeerGroup;
     }
 
+    public Transaction makeIndividualMultisigTransaction(Address address, Coin amount) throws InsufficientMoneyException {
+        Transaction spendTx = wallet().createSendDontSign(address, amount, true);
+        for(TransactionInput input : spendTx.getInputs()) {
+            RedeemData redeemData = input.getConnectedRedeemData(wallet());
+            if(redeemData != null) {
+                TransactionOutput utxo = input.getConnectedOutput();
+                Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+                input.setScriptSig(script.createEmptyInputScript(null, redeemData.redeemScript));
+            }
+        }
+
+        return spendTx;
+    }
+
+    public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {
+        for(TransactionInput input : tx.getInputs()) {
+            MultisigInput multisigInput = multisigInputs.get(input.getIndex());
+            for(MultisigSignature multisigSignature : multisigInput.signatures) {
+                TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
+                TransactionOutput utxo = input.getConnectedOutput();
+                Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+                Script inputScript = input.getScriptSig();
+                inputScript = script.getScriptSigWithSignature(inputScript, previousCosignerSig.encodeToBitcoin(), multisigSignature.getIndex());
+                input.setScriptSig(inputScript);
+            }
+        }
+
+        return tx;
+    }
+
     public File directory() {
         return directory;
+    }
+
+    public int getSigsRequiredToSpend() {
+        MarriedKeyChain marriedKeyChain = (MarriedKeyChain) this.vWallet.getActiveKeyChain();
+        return marriedKeyChain.getSigsRequiredToSpend();
     }
 }

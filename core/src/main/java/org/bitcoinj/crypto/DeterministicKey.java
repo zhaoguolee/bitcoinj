@@ -54,7 +54,7 @@ public class DeterministicKey extends ECKey {
     };
 
     private final DeterministicKey parent;
-    private final HDPath childNumberPath;
+    private HDPath childNumberPath;
     private final int depth;
     private int parentFingerprint; // 0 if this key is root node of key hierarchy
 
@@ -186,6 +186,11 @@ public class DeterministicKey extends ECKey {
      */
     public HDPath getPath() {
         return childNumberPath;
+    }
+
+    public DeterministicKey setPath(HDPath newPath) {
+        childNumberPath = newPath;
+        return this;
     }
 
     /**
