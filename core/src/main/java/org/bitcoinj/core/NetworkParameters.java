@@ -49,6 +49,8 @@ public abstract class NetworkParameters {
     public static final String ID_MAINNET = "org.bitcoin.production";
     /** The string returned by getId() for the testnet. */
     public static final String ID_TESTNET = "org.bitcoin.test";
+    /** The string returned by getId() for the testnet. */
+    public static final String ID_TESTNET4 = "org.bitcoin.test4";
     /** The string returned by getId() for regtest mode. */
     public static final String ID_REGTEST = "org.bitcoin.regtest";
     /** Unit test network. */
@@ -58,6 +60,8 @@ public abstract class NetworkParameters {
     public static final String PAYMENT_PROTOCOL_ID_MAINNET = "main";
     /** The string used by the payment protocol to represent the test net. */
     public static final String PAYMENT_PROTOCOL_ID_TESTNET = "test";
+    /** The string used by the payment protocol to represent the test net. */
+    public static final String PAYMENT_PROTOCOL_ID_TESTNET4 = "test4";
     /** The string used by the payment protocol to represent unit testing (note that this is non-standard). */
     public static final String PAYMENT_PROTOCOL_ID_UNIT_TESTS = "unittest";
     public static final String PAYMENT_PROTOCOL_ID_REGTEST = "regtest";
@@ -196,6 +200,8 @@ public abstract class NetworkParameters {
             return MainNetParams.get();
         } else if (id.equals(ID_TESTNET)) {
             return TestNet3Params.get();
+        } else if (id.equals(ID_TESTNET4)) {
+            return TestNet4Params.get();
         } else if (id.equals(ID_UNITTESTNET)) {
             return UnitTestParams.get();
         } else if (id.equals(ID_REGTEST)) {
@@ -212,7 +218,9 @@ public abstract class NetworkParameters {
             return MainNetParams.get();
         } else if (pmtProtocolId.equals(PAYMENT_PROTOCOL_ID_TESTNET)) {
             return TestNet3Params.get();
-        } else if (pmtProtocolId.equals(PAYMENT_PROTOCOL_ID_UNIT_TESTS)) {
+        } else if (pmtProtocolId.equals(PAYMENT_PROTOCOL_ID_TESTNET4)) {
+            return TestNet4Params.get();
+        }else if (pmtProtocolId.equals(PAYMENT_PROTOCOL_ID_UNIT_TESTS)) {
             return UnitTestParams.get();
         } else if (pmtProtocolId.equals(PAYMENT_PROTOCOL_ID_REGTEST)) {
             return RegTestParams.get();

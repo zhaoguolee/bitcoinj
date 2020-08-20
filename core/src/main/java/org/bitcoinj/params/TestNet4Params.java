@@ -36,7 +36,7 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
 
     public TestNet4Params() {
         super();
-        id = ID_TESTNET;
+        id = ID_TESTNET4;
         packetMagic = 0xe2b7daafL;
         targetTimespan = 60 * 60;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
@@ -87,7 +87,7 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
 
     @Override
     public String getPaymentProtocolId() {
-        return PAYMENT_PROTOCOL_ID_TESTNET;
+        return PAYMENT_PROTOCOL_ID_TESTNET4;
     }
 
     // February 16th 2012

@@ -56,7 +56,7 @@ import java.util.ArrayList;
 import static wallettemplate.utils.GuiUtils.*;
 
 public class Main extends Application {
-    public static NetworkParameters params = TestNetAsertParams.get();
+    public static NetworkParameters params = TestNet4Params.get();
     public static final Script.ScriptType PREFERRED_OUTPUT_SCRIPT_TYPE = Script.ScriptType.P2PKH;
     public static final String APP_NAME = "Multisig";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
@@ -242,7 +242,7 @@ public class Main extends Application {
 
         p2pkh.setPeerNodes(null);
         try {
-            p2pkh.setPeerNodes(new PeerAddress(params, InetAddress.getByName("78.97.206.149")));
+            p2pkh.setPeerNodes(new PeerAddress(params, InetAddress.getByName("rome.toom.im")));
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
