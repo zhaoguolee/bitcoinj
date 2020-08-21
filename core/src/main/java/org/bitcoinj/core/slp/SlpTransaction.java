@@ -81,10 +81,10 @@ public class SlpTransaction {
         return this.slpUtxos;
     }
 
-    public BigDecimal getRawTokensSentFromMe(SlpTransaction slpTransaction, Wallet wallet) throws ScriptException {
+    public BigDecimal getRawTokensSentFromMe(Wallet wallet) throws ScriptException {
         // This is tested in WalletTest.
         long value = 0L;
-        for (TransactionInput input : slpTransaction.tx.getInputs()) {
+        for (TransactionInput input : this.tx.getInputs()) {
             // This input is taking value from a transaction in our wallet. To discover the value,
             // we must find the connected transaction.
             TransactionOutput connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.UNSPENT));
@@ -113,17 +113,17 @@ public class SlpTransaction {
         return BigDecimal.valueOf(value);
     }
 
-    public BigDecimal getRawTokensSentToMe(SlpTransaction slpTransaction, Wallet wallet) {
+    public BigDecimal getRawTokensSentToMe(Wallet wallet) {
         // This is tested in WalletTest.
         long value = 0L;
-        for (SlpUTXO slpUTXO : slpTransaction.getSlpUtxos()) {
+        for (SlpUTXO slpUTXO : this.getSlpUtxos()) {
             if (!slpUTXO.getTxUtxo().isMineOrWatched(wallet)) continue;
             value += slpUTXO.getTokenAmountRaw();
         }
         return BigDecimal.valueOf(value);
     }
 
-    public BigDecimal getRawValue(SlpTransaction slpTransaction, Wallet wallet) throws ScriptException {
-        return getRawTokensSentToMe(slpTransaction, wallet).subtract(getRawTokensSentFromMe(slpTransaction, wallet));
+    public BigDecimal getRawValue(Wallet wallet) throws ScriptException {
+        return getRawTokensSentToMe(wallet).subtract(getRawTokensSentFromMe(wallet));
     }
 }
