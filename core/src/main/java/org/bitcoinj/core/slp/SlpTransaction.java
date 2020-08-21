@@ -1,13 +1,13 @@
 package org.bitcoinj.core.slp;
 
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.core.*;
 import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptChunk;
+import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.wallet.Wallet;
+import org.bitcoinj.wallet.WalletTransaction;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
@@ -78,5 +78,64 @@ public class SlpTransaction {
 
     public List<SlpUTXO> getSlpUtxos() {
         return this.slpUtxos;
+    }
+
+    public SlpUTXO getSlpUtxo(TransactionOutput utxo) {
+        String outpoint = utxo.getOutPointFor().toString();
+        for(SlpUTXO slpUTXO : this.getSlpUtxos()) {
+            String oOutpoint = slpUTXO.getTxUtxo().getOutPointFor().toString();
+            if(outpoint.equals(oOutpoint)) {
+                return slpUTXO;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Calculates the sum of the outputs that are sending coins to a key in the wallet.
+     */
+    public long getTokensSentToMe(TransactionBag transactionBag) {
+        long v = 0;
+        for (SlpUTXO o : this.getSlpUtxos()) {
+            if (!o.getTxUtxo().isMineOrWatched(transactionBag)) continue;
+            v += o.getTokenAmountRaw();
+        }
+        return v;
+    }
+
+    /**
+     * Calculates the sum of the inputs that are spending coins with keys in the wallet. This requires the
+     * transactions sending coins to those keys to be in the wallet. This method will not attempt to download the
+     * blocks containing the input transactions if the key is in the wallet but the transactions are not.
+     *
+     * @return sum of the inputs that are spending coins with keys in the wallet
+     */
+    public long getTokensSentFromMe(TransactionBag wallet) throws ScriptException {
+        // This is tested in WalletTest.
+        long v = 0;
+        for (TransactionInput input : this.getTx().getInputs()) {
+            // This input is taking value from a transaction in our wallet. To discover the value,
+            // we must find the connected transaction.
+            TransactionOutput connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.UNSPENT));
+            if (connected == null)
+                connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.SPENT));
+            if (connected == null)
+                connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.PENDING));
+            if (connected == null)
+                continue;
+            // The connected output may be the change to the sender of a previous input sent to this wallet. In this
+            // case we ignore it.
+            if (!connected.isMineOrWatched(wallet))
+                continue;
+
+            SlpUTXO slpUTXO = getSlpUtxo(connected);
+            v += slpUTXO.getTokenAmountRaw();
+        }
+        return v;
+    }
+
+    public long getValue(TransactionBag wallet) throws ScriptException {
+        return getTokensSentToMe(wallet) - getTokensSentFromMe(wallet);
     }
 }
