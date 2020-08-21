@@ -121,6 +121,6 @@ public class SlpTransaction {
     }
 
     public long getValue(TransactionBag wallet) throws ScriptException {
-        return getTokensSentToMe(wallet) - getTokensSentFromMe(wallet);
+        return getTokensSentFromMe(wallet) - getTokensSentToMe(wallet);
     }
 }
