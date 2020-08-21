@@ -98,8 +98,8 @@ public class SlpTransaction {
     public long getTokensSentToMe(TransactionBag transactionBag) {
         long v = 0;
         for (SlpUTXO o : this.getSlpUtxos()) {
-            if (!o.getTxUtxo().isMineOrWatched(transactionBag)) continue;
-            v += o.getTokenAmountRaw();
+            if (o.getTxUtxo().isMineOrWatched(transactionBag))
+                v += o.getTokenAmountRaw();
         }
         return v;
     }
@@ -111,26 +111,11 @@ public class SlpTransaction {
      *
      * @return sum of the inputs that are spending coins with keys in the wallet
      */
-    public long getTokensSentFromMe(TransactionBag wallet) throws ScriptException {
-        // This is tested in WalletTest.
+    public long getTokensSentFromMe(TransactionBag transactionBag) throws ScriptException {
         long v = 0;
-        for (TransactionInput input : this.getTx().getInputs()) {
-            // This input is taking value from a transaction in our wallet. To discover the value,
-            // we must find the connected transaction.
-            TransactionOutput connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.UNSPENT));
-            if (connected == null)
-                connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.SPENT));
-            if (connected == null)
-                connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.PENDING));
-            if (connected == null)
-                continue;
-            // The connected output may be the change to the sender of a previous input sent to this wallet. In this
-            // case we ignore it.
-            if (!connected.isMineOrWatched(wallet))
-                continue;
-
-            SlpUTXO slpUTXO = getSlpUtxo(connected);
-            v += slpUTXO.getTokenAmountRaw();
+        for (SlpUTXO o : this.getSlpUtxos()) {
+            if (!o.getTxUtxo().isMineOrWatched(transactionBag))
+                v += o.getTokenAmountRaw();
         }
         return v;
     }
