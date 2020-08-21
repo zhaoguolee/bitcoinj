@@ -10,6 +10,7 @@ import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletTransaction;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,5 +79,51 @@ public class SlpTransaction {
 
     public List<SlpUTXO> getSlpUtxos() {
         return this.slpUtxos;
+    }
+
+    public BigDecimal getRawTokensSentFromMe(SlpTransaction slpTransaction, Wallet wallet) throws ScriptException {
+        // This is tested in WalletTest.
+        long value = 0L;
+        for (TransactionInput input : slpTransaction.tx.getInputs()) {
+            // This input is taking value from a transaction in our wallet. To discover the value,
+            // we must find the connected transaction.
+            TransactionOutput connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.UNSPENT));
+            if (connected == null)
+                connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.SPENT));
+            if (connected == null)
+                connected = input.getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.PENDING));
+            if (connected == null)
+                continue;
+            // The connected output may be the change to the sender of a previous input sent to this wallet. In this
+            // case we ignore it.
+            if (!connected.isMineOrWatched(wallet))
+                continue;
+
+            Transaction parentTransaction = connected.getParentTransaction();
+            if(parentTransaction != null) {
+                SlpTransaction parentSlpTransaction = new SlpTransaction(parentTransaction);
+                for(SlpUTXO slpUTXO : parentSlpTransaction.getSlpUtxos()) {
+                    if(slpUTXO.getTxUtxo() == connected) {
+                        value += slpUTXO.getTokenAmountRaw();
+                    }
+                }
+            }
+        }
+
+        return BigDecimal.valueOf(value);
+    }
+
+    public BigDecimal getRawTokensSentToMe(SlpTransaction slpTransaction, Wallet wallet) {
+        // This is tested in WalletTest.
+        long value = 0L;
+        for (SlpUTXO slpUTXO : slpTransaction.getSlpUtxos()) {
+            if (!slpUTXO.getTxUtxo().isMineOrWatched(wallet)) continue;
+            value += slpUTXO.getTokenAmountRaw();
+        }
+        return BigDecimal.valueOf(value);
+    }
+
+    public BigDecimal getRawValue(SlpTransaction slpTransaction, Wallet wallet) throws ScriptException {
+        return getRawTokensSentToMe(slpTransaction, wallet).subtract(getRawTokensSentFromMe(slpTransaction, wallet));
     }
 }
