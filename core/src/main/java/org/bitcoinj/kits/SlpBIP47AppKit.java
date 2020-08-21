@@ -100,6 +100,11 @@ public class SlpBIP47AppKit extends BIP47AppKit {
                           @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
         super(context, preferredOutputScriptType, structure, directory, filePrefix);
         this.structure = structure != null ? structure : KeyChainGroupStructure.SLP;
+    }
+
+    @Override
+    protected void startUp() throws Exception {
+        super.startUp();
         File txsDataFile = new File(this.directory(), this.filePrefix + ".txs");
         if(txsDataFile.exists()) {
             this.loadRecordedTxs();

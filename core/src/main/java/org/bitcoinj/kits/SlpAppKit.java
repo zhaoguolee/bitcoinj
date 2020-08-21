@@ -96,6 +96,11 @@ public class SlpAppKit extends WalletKitCore {
         this.structure = structure != null ? structure : KeyChainGroupStructure.SLP;
         this.directory = checkNotNull(directory);
         this.filePrefix = checkNotNull(filePrefix);
+    }
+
+    @Override
+    protected void startUp() throws Exception {
+        super.startUp();
         File txsDataFile = new File(this.directory(), this.filePrefix + ".txs");
         if(txsDataFile.exists()) {
             this.loadRecordedTxs();

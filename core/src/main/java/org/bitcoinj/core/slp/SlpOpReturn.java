@@ -58,7 +58,7 @@ public class SlpOpReturn {
 
     private void setTokenId(Script opReturn) {
         if (ScriptPattern.isOpReturn(opReturn)) {
-            if(this.getSlpTxType() == SlpTxType.SEND) {
+            if(this.getSlpTxType() == SlpTxType.SEND || this.getSlpTxType() == SlpTxType.MINT) {
                 ScriptChunk tokenIdChunk = opReturn.getChunks().get(tokenIdChunkLocation);
                 assert tokenIdChunk.data != null;
                 this.tokenId = new String(Hex.encode(tokenIdChunk.data));
