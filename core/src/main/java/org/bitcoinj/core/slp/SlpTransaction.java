@@ -100,7 +100,7 @@ public class SlpTransaction {
                 continue;
 
             Transaction parentTransaction = connected.getParentTransaction();
-            if(parentTransaction != null) {
+            if(parentTransaction != null && SlpOpReturn.isSlpTx(parentTransaction)) {
                 SlpTransaction parentSlpTransaction = new SlpTransaction(parentTransaction);
                 for(SlpUTXO slpUTXO : parentSlpTransaction.getSlpUtxos()) {
                     if(slpUTXO.getTxUtxo() == connected) {
