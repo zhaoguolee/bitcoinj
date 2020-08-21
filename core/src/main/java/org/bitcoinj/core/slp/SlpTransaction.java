@@ -19,10 +19,8 @@ public class SlpTransaction {
     private SlpOpReturn slpOpReturn;
     private Transaction tx;
     private ArrayList<SlpUTXO> slpUtxos = new ArrayList<>();
-    private Wallet wallet;
 
-    public SlpTransaction(Transaction tx, Wallet wallet) {
-        this.wallet = wallet;
+    public SlpTransaction(Transaction tx) {
         this.tx = tx;
         this.slpOpReturn = new SlpOpReturn(tx);
 
@@ -52,11 +50,9 @@ public class SlpTransaction {
         for(int x = 0; x < tokenUtxosCount; x++) {
             int tokenUtxoChunkLocation = x + chunkOffset;
             TransactionOutput utxo = utxos.get(x + 1);
-            if(utxo.isMine(this.wallet)) {
-                long tokenAmountRaw = Long.parseLong(new String(Hex.encode(Objects.requireNonNull(opReturn.getChunks().get(tokenUtxoChunkLocation).data))), 16);
-                SlpUTXO slpUtxo = new SlpUTXO(this.slpOpReturn.getTokenId(), tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
-                slpUtxos.add(slpUtxo);
-            }
+            long tokenAmountRaw = Long.parseLong(new String(Hex.encode(Objects.requireNonNull(opReturn.getChunks().get(tokenUtxoChunkLocation).data))), 16);
+            SlpUTXO slpUtxo = new SlpUTXO(this.slpOpReturn.getTokenId(), tokenAmountRaw, utxo, SlpUTXO.SlpUtxoType.NORMAL);
+            slpUtxos.add(slpUtxo);
         }
     }
 
