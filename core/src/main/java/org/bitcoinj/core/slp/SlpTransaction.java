@@ -56,6 +56,10 @@ public class SlpTransaction {
         }
     }
 
+    public SlpOpReturn getSlpOpReturn() {
+        return this.slpOpReturn;
+    }
+
     public String getTokenId() {
         return this.slpOpReturn.getTokenId();
     }
