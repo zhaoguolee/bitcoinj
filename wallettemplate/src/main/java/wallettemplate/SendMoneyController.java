@@ -82,19 +82,20 @@ public class SendMoneyController {
     }
 
     public void send(ActionEvent event) {
-        /*// Address exception cannot happen as we validated it beforehand.
+        // Address exception cannot happen as we validated it beforehand.
         try {
             Coin amount = Coin.parseCoin(amountEdit.getText());
             SendRequest req;
-            if (amount.value >= Main.bitcoin.getvWallet().getBalance().value)
-                req = SendRequest.emptyWallet(Main.bitcoin.getvWallet().getParams(), address.getText());
+            if (amount.value >= Main.bitcoin.wallet().getBalance().value)
+                req = SendRequest.emptyWallet(Main.bitcoin.wallet().getParams(), address.getText());
             else
-                req = SendRequest.to(Main.bitcoin.getvWallet().getParams(), address.getText(), amount);
+                req = SendRequest.to(Main.bitcoin.wallet().getParams(), address.getText(), amount);
             req.aesKey = aesKey;
             // Don't make the user wait for confirmations for now, as the intention is they're sending it
             // their own money!
             req.allowUnconfirmed();
-            sendResult = Main.bitcoin.getvWallet().sendCoins(req);
+            sendResult = Main.bitcoin.wallet().sendCoins(req);
+            System.out.println(sendResult.tx.toString());
             Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<Transaction>() {
                 @Override
                 public void onSuccess(@Nullable Transaction result) {
@@ -123,13 +124,13 @@ public class SendMoneyController {
             overlayUI.done();
         } catch (ECKey.KeyIsEncryptedException e) {
             askForPasswordAndRetry();
-        }*/
+        }
         Address toAddress = AddressFactory.create().getAddress(Main.bitcoin.params(), address.getText());
         Coin amount = Coin.parseCoin(amountEdit.getText());
-        sendUsingMultisig(toAddress, amount);
+        //sendUsingMultisig(toAddress, amount);
     }
 
-    public void sendUsingMultisig(Address address, Coin amount) {
+    /*public void sendUsingMultisig(Address address, Coin amount) {
         try {
             Transaction cosigner0Tx = Main.bitcoinCosigner2.makeIndividualMultisigTransaction(address, amount);
             System.out.println(cosigner0Tx.toString());
@@ -278,13 +279,13 @@ public class SendMoneyController {
             this.address.setDisable(true);
             ((HBox)amountEdit.getParent()).getChildren().remove(amountEdit);
             ((HBox)btcLabel.getParent()).getChildren().remove(btcLabel);
-            updateTitleForBroadcast();*/
+            updateTitleForBroadcast();
         } catch (InsufficientMoneyException e) {
             e.printStackTrace();
         } catch (SignatureDecodeException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     private Transaction makeIndividualMultisigTx(Wallet wallet, Address address, Coin amount) throws InsufficientMoneyException {
         Transaction spendTx = wallet.createSendDontSign(address, amount, true);

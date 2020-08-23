@@ -23,6 +23,7 @@ import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.kits.MultisigAppKit;
 import org.bitcoinj.kits.SlpAppKit;
 import org.bitcoinj.kits.SlpBIP47AppKit;
+import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.utils.AppDataDirectory;
 import org.bitcoinj.params.*;
 import org.bitcoinj.script.Script;
@@ -56,7 +57,7 @@ import java.util.ArrayList;
 import static wallettemplate.utils.GuiUtils.*;
 
 public class Main extends Application {
-    public static NetworkParameters params = TestNet4Params.get();
+    public static NetworkParameters params = TestNetAsertParams.get();
     public static final Script.ScriptType PREFERRED_OUTPUT_SCRIPT_TYPE = Script.ScriptType.P2PKH;
     public static final String APP_NAME = "Multisig";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
@@ -64,8 +65,8 @@ public class Main extends Application {
     private static final String p2pkh_name = "WalletTemplate".replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
 
-    public static SlpBIP47AppKit p2pkh;
-    public static MultisigAppKit bitcoin;
+    public static WalletAppKit p2pkh;
+    public static WalletAppKit bitcoin;
     public static MultisigAppKit bitcoinCosigner1;
     public static MultisigAppKit bitcoinCosigner2;
     public static Main instance;
@@ -134,7 +135,8 @@ public class Main extends Application {
         //setupCosigner2(new DeterministicSeed("cruise apology smart pottery avocado asthma fever able cheap prevent token cupboard", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
         //setupCosigner2(null);
 
-        setupP2PKH(null);
+        setupP2PKH(new DeterministicSeed("armor found urban where kind label weird daring until brother swap smoke", null, "", (System.currentTimeMillis() / 1000) - (3600L*24L)));
+        //setupP2PKH(null);
 
         mainWindow.show();
 
@@ -149,14 +151,14 @@ public class Main extends Application {
         //bitcoin.startAsync();
         //bitcoinCosigner1.startAsync();
         //bitcoinCosigner2.startAsync();
-        p2pkh.startAsync();
+        bitcoin.startAsync();
 
         scene.getAccelerators().put(KeyCombination.valueOf("Shortcut+F"), () -> bitcoin.peerGroup().getDownloadPeer().close());
     }
 
     public void setupWalletKit(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
         // If seed is non-null it means we are restoring from backup.
-        File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
+        /*File appDataDirectory = AppDataDirectory.get(APP_NAME).toFile();
         System.out.println(appDataDirectory.getAbsolutePath());
         ArrayList<DeterministicKey> followingKeys = new ArrayList<>();
         DeterministicKey cosigner1 = DeterministicKey.deserializeB58("tpubDDCUxGJ6KbriHKanzx9a1LDCZTm63rhf2b6ZMgnVUbePKAk7UxsMoxVy371eLkobw9BEwAW39gBKWkkCygTZ1SDpqQZBnQ3cxaZ1woJWjtC", params).setPath(DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH);
@@ -186,7 +188,7 @@ public class Main extends Application {
             bitcoin.setPeerNodes(new PeerAddress(params, InetAddress.getByName("78.97.206.149")));
         } catch (UnknownHostException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public void setupCosigner1(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
@@ -224,25 +226,25 @@ public class Main extends Application {
     }
 
     public void setupP2PKH(@Nullable DeterministicSeed seed) throws UnreadableWalletException {
-        p2pkh = new SlpBIP47AppKit(params, new File("."), p2pkh_name) {
+        bitcoin = new WalletAppKit(params, new File("."), p2pkh_name) {
             @Override
             public void onSetupCompleted() {
-                System.out.println("P2PKH Address:: " + currentSlpReceiveAddress());
-                System.out.println("P2PKH Address:: " + currentSlpReceiveAddress().toCash());
+                Platform.runLater(controller::onBitcoinSetup);
+                System.out.println("P2PKH Address:: " + wallet().currentReceiveAddress().toCash().toString());
             }
         };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        p2pkh.setDownloadListener(controller.progressBarUpdater());
-        p2pkh.setBlockingStartup(false);
+        bitcoin.setDownloadListener(controller.progressBarUpdater());
+        bitcoin.setBlockingStartup(false);
 
         if(seed != null) {
-            p2pkh.restoreWalletFromSeed(seed);
+            bitcoin.restoreWalletFromSeed(seed);
         }
 
-        p2pkh.setPeerNodes(null);
+        bitcoin.setPeerNodes(null);
         try {
-            p2pkh.setPeerNodes(new PeerAddress(params, InetAddress.getByName("rome.toom.im")));
+            bitcoin.setPeerNodes(new PeerAddress(params, InetAddress.getByName("78.97.206.149")));
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }

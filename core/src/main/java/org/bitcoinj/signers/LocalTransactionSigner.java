@@ -19,11 +19,9 @@ package org.bitcoinj.signers;
 
 import java.util.EnumSet;
 
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptException;
@@ -120,16 +118,20 @@ public class LocalTransactionSigner implements TransactionSigner {
                 // we always run first, we have to depend on the other signers rearranging the signatures as needed.
                 // Therefore, always place as first signature.
                 int sigIndex = 0;
-                inputScript = scriptPubKey.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(), sigIndex);
+                Sha256Hash hash = tx.hashForSignatureWitness(i, script, tx.getInput(i).getConnectedOutput().getValue(), Transaction.SigHash.ALL, false);
+                byte[] sig = SchnorrSignature.schnorr_sign(hash.getBytes(), key.getPrivKey());
+                byte[] schnorrSignature = SchnorrSignature.encodeToBitcoin(sig);
+                inputScript = scriptPubKey.getScriptSigWithSignature(inputScript, schnorrSignature, sigIndex);
                 txIn.setScriptSig(inputScript);
             } catch (ECKey.KeyIsEncryptedException e) {
                 throw e;
             } catch (ECKey.MissingPrivateKeyException e) {
                 log.warn("No private key in keypair for input {}", i);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
         }
         return true;
     }
-
 }

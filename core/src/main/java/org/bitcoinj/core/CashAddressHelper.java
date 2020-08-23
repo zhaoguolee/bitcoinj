@@ -222,19 +222,13 @@ public class CashAddressHelper {
         int prefixSize = 0;
         for (int i = 0; i < str.length(); ++i) {
             char c = str.charAt(i);
-            if (c >= 'a' && c <= 'z') {
+            if (c >= 'a' && c <= 'z' || c >= '0' && c <= '9') {
                 lower = true;
                 continue;
             }
 
             if (c >= 'A' && c <= 'Z') {
                 upper = true;
-                continue;
-            }
-
-            if (c >= '0' && c <= '9') {
-                // We cannot have numbers in the prefix.
-                hasNumber = true;
                 continue;
             }
 

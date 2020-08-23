@@ -270,6 +270,17 @@ public class ScriptBuilder {
     }
 
     /**
+     * Creates a scriptSig that can redeem a P2PKH output.
+     * If given signature is null, incomplete scriptSig will be created with OP_0 instead of signature
+     */
+    public static Script createSchnorrInputScript(@Nullable byte[] schnorrSignature, ECKey pubKey) {
+        byte[] pubkeyBytes = pubKey.getPubKey();
+        byte[] sigBytes = schnorrSignature != null ? schnorrSignature : new byte[]{};
+        return new ScriptBuilder().data(sigBytes).data(pubkeyBytes).build();
+    }
+
+
+    /**
      * Creates a scriptSig that can redeem a P2PK output.
      * If given signature is null, incomplete scriptSig will be created with OP_0 instead of signature
      */

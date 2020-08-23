@@ -78,7 +78,7 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         asertReferenceBlockBits = 0x00000000;
         asertReferenceBlockHeight = BigInteger.ZERO;
         asertReferenceBlockAncestorTime = BigInteger.ZERO;
-        asertUpdateTime = 1597096200L;
+        asertUpdateTime = 1605441600L;
         // Aug, 1 hard fork
         uahfHeight = 1155876;
         // Nov, 13 hard fork
