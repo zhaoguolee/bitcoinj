@@ -121,6 +121,13 @@ public abstract class NetworkParameters {
     protected BigInteger asertReferenceBlockHeight;
     protected long asertHalfLife;
     protected boolean allowMinDifficultyBlocks;
+    protected int maxBlockSize;
+    /**
+     * A "sigop" is a signature verification operation. Because they're expensive we also impose a separate limit on
+     * the number in a block to prevent somebody mining a huge block that has way more sigops than normal, so is very
+     * expensive/slow to verify.
+     */
+    protected int maxBlockSigops;
 
     protected NetworkParameters() {
         alertSigningKey = SATOSHI_KEY;
@@ -281,6 +288,14 @@ public abstract class NetworkParameters {
 
     public boolean allowMinDifficultyBlocks() {
         return allowMinDifficultyBlocks;
+    }
+
+    public int getMaxBlockSize() {
+        return maxBlockSize;
+    }
+
+    public int getMaxBlockSigops() {
+        return maxBlockSigops;
     }
 
     /**

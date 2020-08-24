@@ -98,6 +98,8 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         asertUpdateTime = 1605441600L;
         asertHalfLife = 2L * 24L * 60L * 60L;
         allowMinDifficultyBlocks = false;
+        maxBlockSize = 32 * 1000 * 1000;
+        maxBlockSigops = maxBlockSize/50;
     }
 
     private static MainNetParams instance;

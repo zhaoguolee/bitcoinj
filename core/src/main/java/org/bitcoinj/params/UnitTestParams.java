@@ -66,6 +66,8 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
 
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
+        maxBlockSize = 32 * 1000 * 1000;
+        maxBlockSigops = maxBlockSize/50;
     }
 
     private static UnitTestParams instance;

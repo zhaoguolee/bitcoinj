@@ -62,19 +62,6 @@ public class Block extends Message {
 
     static final long ALLOWED_TIME_DRIFT = 2 * 60 * 60; // Same value as Bitcoin Core.
 
-    /**
-     * A constant shared by the entire network: how large in bytes a block is allowed to be. One day we may have to
-     * upgrade everyone to change this, so Bitcoin can continue to grow. For now it exists as an anti-DoS measure to
-     * avoid somebody creating a titanically huge but valid block and forcing everyone to download/store it forever.
-     */
-    public static final int MAX_BLOCK_SIZE = 32 * 1000 * 1000;
-    /**
-     * A "sigop" is a signature verification operation. Because they're expensive we also impose a separate limit on
-     * the number in a block to prevent somebody mining a huge block that has way more sigops than normal, so is very
-     * expensive/slow to verify.
-     */
-    public static final int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE / 50;
-
     /** A value for difficultyTarget (nBits) that allows half of all possible hash solutions. Used in unit testing. */
     public static final long EASIEST_DIFFICULTY_TARGET = 0x207fFFFFL;
 
@@ -561,7 +548,7 @@ public class Block extends Message {
         for (Transaction tx : transactions) {
             sigOps += tx.getSigOpCount();
         }
-        if (sigOps > MAX_BLOCK_SIGOPS)
+        if (sigOps > params.getMaxBlockSigops())
             throw new VerificationException("Block had too many Signature Operations");
     }
 
@@ -689,8 +676,8 @@ public class Block extends Message {
         // transactions that reference spent or non-existent inputs.
         if (transactions.isEmpty())
             throw new VerificationException("Block had no transactions");
-        if (this.getOptimalEncodingMessageSize() > MAX_BLOCK_SIZE)
-            throw new VerificationException("Block larger than MAX_BLOCK_SIZE");
+        if (this.getOptimalEncodingMessageSize() > params.getMaxBlockSize())
+            throw new VerificationException("Block larger than NetworkParameters.getMaxBlockSize");
         checkTransactions(height, flags);
         checkMerkleRoot();
         checkSigOps();

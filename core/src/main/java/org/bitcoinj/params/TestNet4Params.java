@@ -78,6 +78,10 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
 
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
+        //1.2 MB
+        maxBlockSize = 1200*1000;
+        maxBlockSigops = maxBlockSize/50;
+
     }
 
     private static TestNet4Params instance;
