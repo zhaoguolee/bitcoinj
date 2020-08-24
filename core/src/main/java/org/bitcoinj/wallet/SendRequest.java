@@ -189,6 +189,10 @@ public class SendRequest {
         return to(MainNetParams.get(), recipient.toString(), value, null);
     }
 
+    public static SendRequest to(NetworkParameters params, Address recipient, Coin value) throws NullPointerException, AddressFormatException {
+        return to(params, recipient.toString(), value, null);
+    }
+
     public static SendRequest to(NetworkParameters params, String recipient, Coin value) throws NullPointerException, AddressFormatException {
         return to(params, recipient, value, null);
     }
@@ -238,6 +242,10 @@ public class SendRequest {
 
     public static SendRequest emptyWallet(Address recipient) throws NullPointerException, AddressFormatException {
         return emptyWallet(MainNetParams.get(), recipient.toString(), null);
+    }
+
+    public static SendRequest emptyWallet(NetworkParameters params, Address recipient) throws NullPointerException, AddressFormatException {
+        return emptyWallet(params, recipient.toString(), null);
     }
 
     public static SendRequest emptyWallet(NetworkParameters params, String recipient) throws NullPointerException, AddressFormatException {

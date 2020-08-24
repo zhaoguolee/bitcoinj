@@ -54,7 +54,7 @@ public class SendMoneyController {
 
     // Called by FXMLLoader
     public void initialize() {
-        Coin balance = Main.bitcoin.wallet().getBalance();
+        Coin balance = Main.bitcoin.wallet().getBalance(Wallet.BalanceType.ESTIMATED);
         checkState(!balance.isZero());
         new BitcoinAddressValidator(Main.params, address, sendBtn);
         new TextFieldValidator(amountEdit, text ->
@@ -74,9 +74,9 @@ public class SendMoneyController {
             Address destination = AddressFactory.create().getAddress(Main.params, address.getText());
             SendRequest req;
             if (amount.equals(Main.bitcoin.wallet().getBalance()))
-                req = SendRequest.emptyWallet(destination);
+                req = SendRequest.emptyWallet(Main.params, destination);
             else
-                req = SendRequest.to(destination, amount);
+                req = SendRequest.to(Main.params, destination, amount);
             req.aesKey = aesKey;
             // Don't make the user wait for confirmations for now, as the intention is they're sending it
             // their own money!
