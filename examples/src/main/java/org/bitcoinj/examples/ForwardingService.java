@@ -71,7 +71,7 @@ public class ForwardingService {
             filePrefix = "forwarding-service";
         }
         // Parse the address given as the first parameter.
-        forwardingAddress = LegacyAddress.fromBase58(params, args[0]);
+        forwardingAddress = Address.fromBase58(params, args[0]);
 
         System.out.println("Network: " + params.getId());
         System.out.println("Forwarding address: " + forwardingAddress);
@@ -121,7 +121,7 @@ public class ForwardingService {
             }
         });
 
-        Address sendToAddress = LegacyAddress.fromKey(params, kit.wallet().currentReceiveKey());
+        Address sendToAddress = Address.fromKey(params, kit.wallet().currentReceiveKey());
         System.out.println("Send coins to: " + sendToAddress);
         System.out.println("Waiting for coins to arrive. Press Ctrl-C to quit.");
 

@@ -58,9 +58,9 @@ public class PrivateKeys {
                 BigInteger privKey = Base58.decodeToBigInteger(args[0]);
                 key = ECKey.fromPrivate(privKey);
             }
-            System.out.println("Address from private key is: " + LegacyAddress.fromKey(params, key).toString());
+            System.out.println("Address from private key is: " + Address.fromKey(params, key).toString());
             // And the address ...
-            Address destination = LegacyAddress.fromBase58(params, args[1]);
+            Address destination = Address.fromBase58(params, args[1]);
 
             // Import the private key to a fresh wallet.
             Wallet wallet = Wallet.createDeterministic(params, Script.ScriptType.P2PKH);
