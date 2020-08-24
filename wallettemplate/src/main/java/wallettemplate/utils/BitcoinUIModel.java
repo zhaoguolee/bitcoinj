@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -64,7 +64,7 @@ public class BitcoinUIModel {
     }
 
     private void updateBalance(Wallet wallet) {
-        balance.set(wallet.getBalance(Wallet.BalanceType.ESTIMATED));
+        balance.set(wallet.getBalance());
     }
 
     private void updateAddress(Wallet wallet) {
@@ -75,14 +75,12 @@ public class BitcoinUIModel {
         @Override
         protected void progress(double pct, int blocksLeft, Date date) {
             super.progress(pct, blocksLeft, date);
-            System.out.println(pct);
             Platform.runLater(() -> syncProgress.set(pct / 100.0));
         }
 
         @Override
         protected void doneDownload() {
             super.doneDownload();
-            System.out.println("blockchain downloaded");
             Platform.runLater(() -> syncProgress.set(1.0));
         }
     }

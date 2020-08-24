@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +28,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextArea;
-import org.bitcoinj.wallet.UnreadableWalletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -91,7 +90,7 @@ public class WalletSettingsController {
         // Validate words as they are being typed.
         MnemonicCode codec = unchecked(MnemonicCode::new);
         TextFieldValidator validator = new TextFieldValidator(wordsArea, text ->
-            !didThrow(() -> codec.check(Splitter.on(' ').splitToList(text)))
+                !didThrow(() -> codec.check(Splitter.on(' ').splitToList(text)))
         );
 
         // Clear the date picker if the user starts editing the words, if it contained the current wallets date.
@@ -105,8 +104,8 @@ public class WalletSettingsController {
                 datePicker.valueProperty().isNull(),
 
                 createBooleanBinding(() ->
-                        datePicker.getValue().isAfter(LocalDate.now())
-                , /* depends on */ datePicker.valueProperty())
+                                datePicker.getValue().isAfter(LocalDate.now())
+                        , /* depends on */ datePicker.valueProperty())
         );
 
         // Don't let the user click restore if the words area contains the current wallet words, or are an invalid set,
@@ -175,11 +174,7 @@ public class WalletSettingsController {
         Main.bitcoin.addListener(new Service.Listener() {
             @Override
             public void terminated(Service.State from) {
-                try {
-                    Main.instance.setupWalletKit(seed);
-                } catch (UnreadableWalletException e) {
-                    e.printStackTrace();
-                }
+                Main.instance.setupWalletKit(seed);
                 Main.bitcoin.startAsync();
             }
         }, Platform::runLater);
