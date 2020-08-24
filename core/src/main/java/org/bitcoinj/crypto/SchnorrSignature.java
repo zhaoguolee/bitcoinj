@@ -33,6 +33,14 @@ public class SchnorrSignature {
 
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
+    private byte[] signature;
+    public final int sighashFlags;
+
+    public SchnorrSignature(byte[] signature, Transaction.SigHash mode, boolean anyoneCanPay, boolean useForkId) {
+        this.signature = signature;
+        sighashFlags = calcSigHashValue(mode, anyoneCanPay, useForkId);
+    }
+
     public static BigInteger[] point_add(BigInteger[] p1, BigInteger[] p2) {
         if(p1==null || p1.length!=2)
             return p2;
@@ -223,13 +231,6 @@ public class SchnorrSignature {
         return digest.digest(input);
     }
 
-    public static byte[] encodeToBitcoin(byte[] sig) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(sig.length);
-        bos.write(sig, 0, sig.length);
-        bos.write(calcSigHashValue(Transaction.SigHash.ALL, false, true));
-        return bos.toByteArray();
-    }
-
     public static int calcSigHashValue(Transaction.SigHash mode, boolean anyoneCanPay, boolean useForkId) {
         Preconditions.checkArgument(Transaction.SigHash.ALL == mode || Transaction.SigHash.NONE == mode || Transaction.SigHash.SINGLE == mode); // enforce compatibility since this code was made before the SigHash enum was updated
         int sighashFlags = mode.value;
@@ -238,5 +239,16 @@ public class SchnorrSignature {
         if(useForkId)
             sighashFlags |= Transaction.SigHash.FORKID.value;
         return sighashFlags;
+    }
+
+    public byte[] getSignature() {
+        return this.signature;
+    }
+
+    public byte[] encodeToBitcoin() {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(this.getSignature().length);
+        bos.write(this.getSignature(), 0, this.getSignature().length);
+        bos.write(sighashFlags);
+        return bos.toByteArray();
     }
 }

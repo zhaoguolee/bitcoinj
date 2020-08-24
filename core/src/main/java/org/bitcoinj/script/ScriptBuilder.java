@@ -19,6 +19,7 @@
 package org.bitcoinj.script;
 
 import org.bitcoinj.core.*;
+import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script.ScriptType;
 
@@ -273,9 +274,9 @@ public class ScriptBuilder {
      * Creates a scriptSig that can redeem a P2PKH output.
      * If given signature is null, incomplete scriptSig will be created with OP_0 instead of signature
      */
-    public static Script createSchnorrInputScript(@Nullable byte[] schnorrSignature, ECKey pubKey) {
+    public static Script createSchnorrInputScript(@Nullable SchnorrSignature schnorrSignature, ECKey pubKey) {
         byte[] pubkeyBytes = pubKey.getPubKey();
-        byte[] sigBytes = schnorrSignature != null ? schnorrSignature : new byte[]{};
+        byte[] sigBytes = schnorrSignature != null ? schnorrSignature.encodeToBitcoin() : new byte[]{};
         return new ScriptBuilder().data(sigBytes).data(pubkeyBytes).build();
     }
 

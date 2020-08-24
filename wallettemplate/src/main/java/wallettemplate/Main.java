@@ -90,6 +90,7 @@ public class Main extends Application {
     private void realStart(Stage mainWindow) throws IOException, UnreadableWalletException {
         this.mainWindow = mainWindow;
         instance = this;
+
         // Show the crash dialog for any exceptions that we don't handle and that hit the main loop.
         GuiUtils.handleCrashesOnThisThread();
 

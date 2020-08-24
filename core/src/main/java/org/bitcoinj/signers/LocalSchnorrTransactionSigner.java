@@ -17,22 +17,22 @@
 
 package org.bitcoinj.signers;
 
-import java.util.EnumSet;
-
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.script.ScriptException;
-import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.script.Script.VerifyFlag;
+import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.wallet.KeyBag;
 import org.bitcoinj.wallet.RedeemData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.EnumSet;
 
 /**
  * <p>{@link TransactionSigner} implementation for signing inputs using keys from provided {@link KeyBag}.</p>
@@ -41,20 +41,20 @@ import org.slf4j.LoggerFactory;
  * </p>
  * <p>This signer is always implicitly added into every wallet and it is the first signer to be executed during tx
  * completion. As the first signer to create a signature, it stores derivation path of the signing key in a given
- * {@link TransactionSigner.ProposedTransaction} object that will be also passed then to the next signer in chain. This allows other
+ * {@link ProposedTransaction} object that will be also passed then to the next signer in chain. This allows other
  * signers to use correct signing key for P2SH inputs, because all the keys involved in a single P2SH address have
  * the same derivation path.</p>
  * <p>This signer always uses {@link Transaction.SigHash#ALL} signing mode.</p>
  */
-public class LocalTransactionSigner implements TransactionSigner {
-    private static final Logger log = LoggerFactory.getLogger(LocalTransactionSigner.class);
+public class LocalSchnorrTransactionSigner implements TransactionSigner {
+    private static final Logger log = LoggerFactory.getLogger(LocalSchnorrTransactionSigner.class);
 
     /**
      * Verify flags that are safe to use when testing if an input is already
      * signed.
      */
     private static final EnumSet<VerifyFlag> MINIMUM_VERIFY_FLAGS = EnumSet.of(VerifyFlag.P2SH,
-            VerifyFlag.NULLDUMMY);
+        VerifyFlag.NULLDUMMY);
 
     @Override
     public boolean isReady() {
@@ -108,9 +108,7 @@ public class LocalTransactionSigner implements TransactionSigner {
             // a CHECKMULTISIG program for P2SH inputs
             byte[] script = redeemData.redeemScript.getProgram();
             try {
-                TransactionSignature signature = propTx.useForkId ?
-                        tx.calculateWitnessSignature(i, key, script, tx.getInput(i).getConnectedOutput().getValue(), Transaction.SigHash.ALL, false) :
-                        tx.calculateSignature(i, key, script, Transaction.SigHash.ALL, false);
+                SchnorrSignature signature = tx.calculateSchnorrSignature(i, key, script, tx.getInput(i).getConnectedOutput().getValue(), Transaction.SigHash.ALL, false);
 
                 // at this point we have incomplete inputScript with OP_0 in place of one or more signatures. We already
                 // have calculated the signature using the local key and now need to insert it in the correct place
@@ -126,10 +124,11 @@ public class LocalTransactionSigner implements TransactionSigner {
                 throw e;
             } catch (ECKey.MissingPrivateKeyException e) {
                 log.warn("No private key in keypair for input {}", i);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
         }
         return true;
     }
-
 }

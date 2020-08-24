@@ -439,7 +439,7 @@ public class Wallet extends BaseTaggableObject
         // Use a linked hash map to ensure ordering of event listeners is correct.
         confidenceChanged = new LinkedHashMap<>();
         signers = new ArrayList<>();
-        addTransactionSigner(new LocalTransactionSigner());
+        addTransactionSigner(new LocalSchnorrTransactionSigner());
         createTransientState();
     }
 

@@ -17,7 +17,10 @@
 
 package org.bitcoinj.core;
 
+import org.bitcoin.NativeSecp256k1;
+import org.bitcoin.NativeSecp256k1Util;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
+import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.ScriptType;
@@ -1003,6 +1006,7 @@ public class Transaction extends ChildMessage {
         Sha256Hash hash = hashForSignature(inputIndex, redeemScript, hashType, anyoneCanPay);
         return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay);
     }
+
     public TransactionSignature calculateWitnessSignature(
             int inputIndex,
             ECKey key,
@@ -1013,6 +1017,32 @@ public class Transaction extends ChildMessage {
     {
         Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
         return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true);
+    }
+
+    public SchnorrSignature calculateSchnorrSignature(
+            int inputIndex,
+            ECKey key,
+            byte[] redeemScript,
+            Coin value,
+            SigHash hashType,
+            boolean anyoneCanPay) {
+        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
+        byte[] sig = SchnorrSignature.schnorr_sign(hash.getBytes(), key.getPrivKey());
+        return new SchnorrSignature(sig, hashType, anyoneCanPay, true);
+    }
+
+    public SchnorrSignature calculateSchnorrSignature(
+            int inputIndex,
+            ECKey key,
+            byte[] redeemScript,
+            Coin value,
+            SigHash hashType,
+            boolean anyoneCanPay,
+            boolean useForkId)
+    {
+        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
+        byte[] sig = SchnorrSignature.schnorr_sign(hash.getBytes(), key.getPrivKey());
+        return new SchnorrSignature(sig, hashType, anyoneCanPay, useForkId);
     }
 
     /**
