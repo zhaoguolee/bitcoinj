@@ -98,11 +98,11 @@ public class SchnorrSignature {
     }
 
     public static BigInteger toBigInteger(byte[] data, int startPos, int len) {
-        return new BigInteger(data, startPos, len);
+        return new BigInteger(bytesToHex(data, startPos, len),16);
     }
 
     public static BigInteger toBigInteger(byte[] data) {
-        return new BigInteger(data);
+        return new BigInteger(bytesToHex(data),16);
     }
 
     public static byte[] bytes_from_point(BigInteger[] point) {
@@ -187,6 +187,36 @@ public class SchnorrSignature {
             e.printStackTrace();
             throw new RuntimeException("Error occurs during schnorr_verify, e="+e);
         }
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for ( int j = 0; j < bytes.length; j++ ) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
+    public static String bytesToHex(byte[] bytes, int startPos, int len) {
+        char[] hexChars = new char[len * 2];
+        for ( int j = 0, i=startPos; j < len; j++, i++ ) {
+            int v = bytes[i] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
     public static byte[] sha256(byte[] input) throws NoSuchAlgorithmException {
