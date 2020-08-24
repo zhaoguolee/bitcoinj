@@ -70,8 +70,8 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         uahfHeight = 6;
         // Nov, 13 hard fork
         daaUpdateHeight = 3000;
-        cashAddrPrefix = "bchtest4";
-        simpleledgerPrefix = "slptest4";
+        cashAddrPrefix = "bchtest";
+        simpleledgerPrefix = "slptest";
 
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
