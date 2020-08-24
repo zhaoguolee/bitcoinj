@@ -39,6 +39,7 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         id = ID_TESTNET4;
         packetMagic = 0xe2b7daafL;
         targetTimespan = 60 * 60;
+        interval = targetTimespan / TARGET_SPACING;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
         port = 28333;
         addressHeader = 111;
@@ -53,7 +54,9 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         checkState(genesisHash.equals("000000001dd410c49a788668ce26751718cc797474d3152a5fc073dd44fd9f7b"));
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
 
-        dnsSeeds = null;
+        dnsSeeds = new String[] {
+                "testnet4-seed-bch.bitcoinforks.org"
+        };
         httpSeeds = null;
         addrSeeds = null;
         bip32HeaderP2PKHpub = 0x043587cf; // The 4 byte header that serializes in base58 to "tpub".
@@ -67,7 +70,7 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         asertReferenceBlockAncestorTime = BigInteger.ZERO;
         asertUpdateTime = 1605441600L;
         // Aug, 1 hard fork
-        uahfHeight = 6;
+        uahfHeight = 7;
         // Nov, 13 hard fork
         daaUpdateHeight = 3000;
         cashAddrPrefix = "bchtest";
