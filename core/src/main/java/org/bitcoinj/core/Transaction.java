@@ -1026,9 +1026,7 @@ public class Transaction extends ChildMessage {
             Coin value,
             SigHash hashType,
             boolean anyoneCanPay) {
-        Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
-        byte[] sig = SchnorrSignature.schnorr_sign(hash.getBytes(), key.getPrivKey());
-        return new SchnorrSignature(sig, hashType, anyoneCanPay, true);
+        return this.calculateSchnorrSignature(inputIndex, key, redeemScript, value, hashType, anyoneCanPay, true);
     }
 
     public SchnorrSignature calculateSchnorrSignature(
