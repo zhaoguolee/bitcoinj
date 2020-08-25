@@ -38,7 +38,7 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         super();
         id = ID_TESTNET4;
         packetMagic = 0xe2b7daafL;
-        targetTimespan = 14 * 24 * 60 * 60;
+        targetTimespan = TARGET_TIMESPAN;
         interval = targetTimespan / TARGET_SPACING;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
         port = 28333;
