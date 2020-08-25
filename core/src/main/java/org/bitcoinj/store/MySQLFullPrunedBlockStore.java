@@ -71,28 +71,28 @@ public class MySQLFullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
             ")\n";
 
     // Some indexes to speed up inserts
-    private static final String CREATE_OUTPUTS_ADDRESS_MULTI_INDEX              = "CREATE INDEX openoutputs_hash_index_height_toaddress_idx ON openoutputs (hash, `index`, height, toaddress) USING btree";
-    private static final String CREATE_OUTPUTS_TOADDRESS_INDEX                  = "CREATE INDEX openoutputs_toaddress_idx ON openoutputs (toaddress) USING btree";
-    private static final String CREATE_OUTPUTS_ADDRESSTARGETABLE_INDEX          = "CREATE INDEX openoutputs_addresstargetable_idx ON openoutputs (addresstargetable) USING btree";
-    private static final String CREATE_OUTPUTS_HASH_INDEX                       = "CREATE INDEX openoutputs_hash_idx ON openoutputs (hash) USING btree";
-    private static final String CREATE_UNDOABLE_TABLE_INDEX                     = "CREATE INDEX undoableblocks_height_idx ON undoableblocks (height) USING btree";
+    private static final String CREATE_OUTPUTS_ADDRESS_MULTI_INDEX = "CREATE INDEX openoutputs_hash_index_height_toaddress_idx ON openoutputs (hash, `index`, height, toaddress) USING btree";
+    private static final String CREATE_OUTPUTS_TOADDRESS_INDEX = "CREATE INDEX openoutputs_toaddress_idx ON openoutputs (toaddress) USING btree";
+    private static final String CREATE_OUTPUTS_ADDRESSTARGETABLE_INDEX = "CREATE INDEX openoutputs_addresstargetable_idx ON openoutputs (addresstargetable) USING btree";
+    private static final String CREATE_OUTPUTS_HASH_INDEX = "CREATE INDEX openoutputs_hash_idx ON openoutputs (hash) USING btree";
+    private static final String CREATE_UNDOABLE_TABLE_INDEX = "CREATE INDEX undoableblocks_height_idx ON undoableblocks (height) USING btree";
 
     // SQL involving index column (table openOutputs) overridden as it is a reserved word and must be back ticked in MySQL.
-    private static final String SELECT_OPENOUTPUTS_SQL                          = "SELECT height, value, scriptbytes, coinbase, toaddress, addresstargetable FROM openoutputs WHERE hash = ? AND `index` = ?";
-    private static final String INSERT_OPENOUTPUTS_SQL                          = "INSERT INTO openoutputs (hash, `index`, height, value, scriptbytes, toaddress, addresstargetable, coinbase) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    private static final String DELETE_OPENOUTPUTS_SQL                          = "DELETE FROM openoutputs WHERE hash = ? AND `index`= ?";
+    private static final String SELECT_OPENOUTPUTS_SQL = "SELECT height, value, scriptbytes, coinbase, toaddress, addresstargetable FROM openoutputs WHERE hash = ? AND `index` = ?";
+    private static final String INSERT_OPENOUTPUTS_SQL = "INSERT INTO openoutputs (hash, `index`, height, value, scriptbytes, toaddress, addresstargetable, coinbase) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String DELETE_OPENOUTPUTS_SQL = "DELETE FROM openoutputs WHERE hash = ? AND `index`= ?";
 
-    private static final String SELECT_TRANSACTION_OUTPUTS_SQL                  = "SELECT hash, value, scriptbytes, height, `index`, coinbase, toaddress, addresstargetable FROM openoutputs where toaddress = ?";
+    private static final String SELECT_TRANSACTION_OUTPUTS_SQL = "SELECT hash, value, scriptbytes, height, `index`, coinbase, toaddress, addresstargetable FROM openoutputs where toaddress = ?";
 
     /**
      * Creates a new MySQLFullPrunedBlockStore.
      *
-     * @param params A copy of the NetworkParameters used
+     * @param params         A copy of the NetworkParameters used
      * @param fullStoreDepth The number of blocks of history stored in full (something like 1000 is pretty safe)
-     * @param hostname The hostname of the database to connect to
-     * @param dbName The database to connect to
-     * @param username The database username
-     * @param password The password to the database
+     * @param hostname       The hostname of the database to connect to
+     * @param dbName         The database to connect to
+     * @param username       The database username
+     * @param password       The password to the database
      * @throws BlockStoreException if the database fails to open for any reason
      */
     public MySQLFullPrunedBlockStore(NetworkParameters params, int fullStoreDepth, String hostname, String dbName,

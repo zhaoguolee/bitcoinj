@@ -17,6 +17,8 @@
 
 package org.bitcoinj.store;
 
+import com.google.common.io.ByteStreams;
+import com.google.protobuf.ByteString;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Transaction.Purpose;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
@@ -29,20 +31,7 @@ import org.bitcoinj.testing.FakeTxBuilder;
 import org.bitcoinj.testing.FooWalletExtension;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
-import org.bitcoinj.wallet.DeterministicKeyChain;
-import org.bitcoinj.wallet.KeyChain;
-import org.bitcoinj.wallet.KeyChainGroup;
-
-import com.google.common.io.ByteStreams;
-import com.google.protobuf.ByteString;
-
-import org.bitcoinj.wallet.MarriedKeyChain;
-import org.bitcoinj.wallet.Protos;
-import org.bitcoinj.wallet.UnreadableWalletException;
-import org.bitcoinj.wallet.Wallet;
-import org.bitcoinj.wallet.WalletExtension;
-import org.bitcoinj.wallet.WalletProtobufSerializer;
-import org.bitcoinj.wallet.WalletTransaction;
+import org.bitcoinj.wallet.*;
 import org.bitcoinj.wallet.WalletTransaction.Pool;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.junit.Before;
@@ -58,10 +47,11 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.bitcoinj.core.Coin.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.bitcoinj.core.Coin.COIN;
+import static org.bitcoinj.core.Coin.FIFTY_COINS;
 import static org.bitcoinj.testing.FakeTxBuilder.createFakeTx;
 import static org.junit.Assert.*;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class WalletProtobufSerializerTest {
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
@@ -72,7 +62,7 @@ public class WalletProtobufSerializerTest {
     private Address myAddress;
     private Wallet myWallet;
 
-    public static String WALLET_DESCRIPTION  = "The quick brown fox lives in \u4f26\u6566"; // Beijing in Chinese
+    public static String WALLET_DESCRIPTION = "The quick brown fox lives in \u4f26\u6566"; // Beijing in Chinese
     private long mScriptCreationTime;
 
     @Before
@@ -125,13 +115,13 @@ public class WalletProtobufSerializerTest {
         assertEquals(2, t1copy.getConfidence().numBroadcastPeers());
         assertNotNull(t1copy.getConfidence().getLastBroadcastedAt());
         assertEquals(TransactionConfidence.Source.NETWORK, t1copy.getConfidence().getSource());
-        
+
         Protos.Wallet walletProto = new WalletProtobufSerializer().walletToProto(myWallet);
         assertEquals(Protos.Key.Type.ORIGINAL, walletProto.getKey(0).getType());
         assertEquals(0, walletProto.getExtensionCount());
         assertEquals(1, walletProto.getTransactionCount());
         assertEquals(6, walletProto.getKeyCount());
-        
+
         Protos.Transaction t1p = walletProto.getTransaction(0);
         assertEquals(0, t1p.getBlockHashCount());
         assertArrayEquals(t1.getTxId().getBytes(), t1p.getHash().toByteArray());
@@ -173,10 +163,10 @@ public class WalletProtobufSerializerTest {
         // TODO: Wallet should store overriding transactions even if they are not wallet-relevant.
         // assertEquals(doubleSpends.t2, t1.getConfidence().getOverridingTransaction());
     }
-    
+
     @Test
     public void testKeys() throws Exception {
-        for (int i = 0 ; i < 20 ; i++) {
+        for (int i = 0; i < 20; i++) {
             myKey = new ECKey();
             myAddress = Address.fromKey(UNITTEST, myKey);
             myWallet = Wallet.createDeterministic(UNITTEST, Script.ScriptType.P2PKH);
@@ -287,7 +277,7 @@ public class WalletProtobufSerializerTest {
         Transaction txB = it.next();
 
         Transaction rebornTx0, rebornTx1;
-         if (txA.getConfidence().getAppearedAtChainHeight() == 1) {
+        if (txA.getConfidence().getAppearedAtChainHeight() == 1) {
             rebornTx0 = txA;
             rebornTx1 = txB;
         } else {
@@ -410,7 +400,7 @@ public class WalletProtobufSerializerTest {
             assertTrue(e.getMessage().contains("mandatory"));
         }
         Wallet wallet = new WalletProtobufSerializer().readWallet(UNITTEST,
-                new WalletExtension[]{ new FooWalletExtension("com.whatever.required", true) },
+                new WalletExtension[]{new FooWalletExtension("com.whatever.required", true)},
                 proto);
         assertTrue(wallet.getExtensions().containsKey("com.whatever.required"));
 

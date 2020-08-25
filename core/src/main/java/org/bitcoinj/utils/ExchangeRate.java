@@ -16,14 +16,13 @@
 
 package org.bitcoinj.utils;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import org.bitcoinj.core.Coin;
 
 import java.io.Serializable;
 import java.math.BigInteger;
-
-import org.bitcoinj.core.Coin;
-
 import java.util.Objects;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * An exchange rate is expressed as a ratio of a {@link Coin} and a {@link Fiat} amount.
@@ -33,7 +32,9 @@ public class ExchangeRate implements Serializable {
     public final Coin coin;
     public final Fiat fiat;
 
-    /** Construct exchange rate. This amount of coin is worth that amount of fiat. */
+    /**
+     * Construct exchange rate. This amount of coin is worth that amount of fiat.
+     */
     public ExchangeRate(Coin coin, Fiat fiat) {
         checkArgument(coin.isPositive());
         checkArgument(fiat.isPositive());
@@ -42,13 +43,16 @@ public class ExchangeRate implements Serializable {
         this.fiat = fiat;
     }
 
-    /** Construct exchange rate. One coin is worth this amount of fiat. */
+    /**
+     * Construct exchange rate. One coin is worth this amount of fiat.
+     */
     public ExchangeRate(Fiat fiat) {
         this(Coin.COIN, fiat);
     }
 
     /**
      * Convert a coin amount to a fiat amount using this exchange rate.
+     *
      * @throws ArithmeticException if the converted fiat amount is too high or too low.
      */
     public Fiat coinToFiat(Coin convertCoin) {
@@ -63,6 +67,7 @@ public class ExchangeRate implements Serializable {
 
     /**
      * Convert a fiat amount to a coin amount using this exchange rate.
+     *
      * @throws ArithmeticException if the converted coin amount is too high or too low.
      */
     public Coin fiatToCoin(Fiat convertFiat) {

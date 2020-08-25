@@ -44,8 +44,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * <p>Utility class that wraps the boilerplate needed to set up a new SPV bitcoinj app. Instantiate it with a directory
  * and file prefix, optionally configure a few things, then use startAsync and optionally awaitRunning. The object will
@@ -106,12 +104,12 @@ public class SlpBIP47AppKit extends BIP47AppKit {
     protected void startUp() throws Exception {
         super.startUp();
         File txsDataFile = new File(this.directory(), this.filePrefix + ".txs");
-        if(txsDataFile.exists()) {
+        if (txsDataFile.exists()) {
             this.loadRecordedTxs();
         }
         File tokenDataFile = new File(this.directory(), this.filePrefix + ".tokens");
         this.tokensFile = tokenDataFile;
-        if(tokenDataFile.exists()) {
+        if (tokenDataFile.exists()) {
             this.loadTokens();
         }
 
@@ -143,7 +141,7 @@ public class SlpBIP47AppKit extends BIP47AppKit {
     private void saveTokens(ArrayList<SlpToken> slpTokens) {
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.directory(), tokensFile.getName())), StandardCharsets.UTF_8))) {
             JSONArray json = new JSONArray();
-            for(SlpToken slpToken : slpTokens) {
+            for (SlpToken slpToken : slpTokens) {
                 JSONObject tokenObj = new JSONObject();
                 tokenObj.put("tokenId", slpToken.getTokenId());
                 tokenObj.put("ticker", slpToken.getTicker());
@@ -180,7 +178,7 @@ public class SlpBIP47AppKit extends BIP47AppKit {
                     String ticker = tokenObj.getString("ticker");
                     int decimals = tokenObj.getInt("decimals");
                     SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                    if(!this.tokenIsMapped(tokenId)) {
+                    if (!this.tokenIsMapped(tokenId)) {
                         this.slpTokens.add(slpToken);
                     }
                 }
@@ -202,7 +200,7 @@ public class SlpBIP47AppKit extends BIP47AppKit {
     private void saveVerifiedTxs(ArrayList<String> recordedSlpTxs) {
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.directory(), this.filePrefix + ".txs")), StandardCharsets.UTF_8))) {
             StringBuilder text = new StringBuilder();
-            for(String txHash : recordedSlpTxs) {
+            for (String txHash : recordedSlpTxs) {
                 text.append(txHash).append("\n");
             }
             writer.write(text.toString());
@@ -237,9 +235,11 @@ public class SlpBIP47AppKit extends BIP47AppKit {
     public ArrayList<SlpTokenBalance> getSlpBalances() {
         return this.slpBalances;
     }
+
     public ArrayList<SlpToken> getSlpTokens() {
         return this.slpTokens;
     }
+
     public ArrayList<SlpUTXO> getSlpUtxos() {
         return this.slpUtxos;
     }
@@ -290,7 +290,7 @@ public class SlpBIP47AppKit extends BIP47AppKit {
     }
 
     public void recalculateSlpUtxos() {
-        if(!recalculatingTokens)  {
+        if (!recalculatingTokens) {
             recalculatingTokens = true;
             this.slpUtxos.clear();
             this.slpBalances.clear();
@@ -354,7 +354,7 @@ public class SlpBIP47AppKit extends BIP47AppKit {
     }
 
     private void tryCacheToken(String tokenId) {
-        if(!this.tokenIsMapped(tokenId)) {
+        if (!this.tokenIsMapped(tokenId)) {
             SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
             JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
 

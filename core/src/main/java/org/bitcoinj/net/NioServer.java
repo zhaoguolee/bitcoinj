@@ -16,16 +16,19 @@
 
 package org.bitcoinj.net;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.*;
-import java.nio.channels.spi.SelectorProvider;
-import java.util.Iterator;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
 
 /**
  * Creates a simple server listener which listens for incoming client connections and uses a {@link StreamConnection} to
@@ -37,7 +40,8 @@ public class NioServer extends AbstractExecutionThreadService {
     private final StreamConnectionFactory connectionFactory;
 
     private final ServerSocketChannel sc;
-    @VisibleForTesting final Selector selector;
+    @VisibleForTesting
+    final Selector selector;
 
     // Handle a SelectionKey which was selected
     private void handleKey(Selector selector, SelectionKey key) throws IOException {

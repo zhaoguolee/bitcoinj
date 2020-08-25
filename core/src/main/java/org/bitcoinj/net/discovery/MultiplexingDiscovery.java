@@ -17,10 +17,11 @@
 
 package org.bitcoinj.net.discovery;
 
+import okhttp3.OkHttpClient;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.VersionMessage;
 import org.bitcoinj.net.discovery.DnsDiscovery.DnsSeedDiscovery;
-import org.bitcoinj.utils.*;
+import org.bitcoinj.utils.ContextPropagatingThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +31,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
-
-import okhttp3.OkHttpClient;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -52,7 +51,8 @@ public class MultiplexingDiscovery implements PeerDiscovery {
     /**
      * Builds a suitable set of peer discoveries. Will query them in parallel before producing a merged response.
      * If specific services are required, DNS is not used as the protocol can't handle it.
-     * @param params Network to use.
+     *
+     * @param params   Network to use.
      * @param services Required services as a bitmask, e.g. {@link VersionMessage#NODE_NETWORK}.
      */
     public static MultiplexingDiscovery forServices(NetworkParameters params, long services) {
@@ -62,10 +62,11 @@ public class MultiplexingDiscovery implements PeerDiscovery {
     /**
      * Builds a suitable set of peer discoveries.
      * If specific services are required, DNS is not used as the protocol can't handle it.
-     * @param params Network to use.
-     * @param services Required services as a bitmask, e.g. {@link VersionMessage#NODE_NETWORK}.
+     *
+     * @param params          Network to use.
+     * @param services        Required services as a bitmask, e.g. {@link VersionMessage#NODE_NETWORK}.
      * @param parallelQueries When true, seeds are queried in parallel
-     * @param shufflePeers When true, queried peers are shuffled
+     * @param shufflePeers    When true, queried peers are shuffled
      */
     public static MultiplexingDiscovery forServices(NetworkParameters params, long services, boolean parallelQueries,
                                                     boolean shufflePeers) {

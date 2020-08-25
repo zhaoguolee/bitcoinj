@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,11 +16,14 @@
 
 package org.bitcoinj.store;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.params.*;
-import org.junit.*;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.params.UnitTestParams;
+import org.junit.Test;
 
-import java.io.*;
+import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 

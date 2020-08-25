@@ -18,20 +18,13 @@ package org.bitcoinj.uri;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.params.AbstractBitcoinNetParams;
-import org.bitcoinj.params.MainNetParams;
 
 import javax.annotation.Nullable;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -113,8 +106,7 @@ public class BitcoinURI {
      *
      * @param params The network parameters that determine which network the URI is from, or null if you don't have
      *               any expectation about what network the URI is for and wish to check yourself.
-     * @param input The raw URI data to be parsed (see class comments for accepted formats)
-     *
+     * @param input  The raw URI data to be parsed (see class comments for accepted formats)
      * @throws BitcoinURIParseException If the input fails Bitcoin URI syntax and semantic checks.
      */
     public BitcoinURI(@Nullable NetworkParameters params, String input) throws BitcoinURIParseException {
@@ -161,7 +153,7 @@ public class BitcoinURI {
         String[] nameValuePairTokens;
         if (addressSplitTokens.length == 1) {
             // Only an address is specified - use an empty '<name>=<value>' token array.
-            nameValuePairTokens = new String[] {};
+            nameValuePairTokens = new String[]{};
         } else {
             // Split into '<name>=<value>' tokens.
             nameValuePairTokens = addressSplitTokens[1].split("&");
@@ -179,8 +171,7 @@ public class BitcoinURI {
                 try {
                     Address address = CashAddressFactory.create().getFromFormattedAddress(params, correctScheme + addressToken);
                     putWithValidation(FIELD_ADDRESS, address);
-                }
-                catch(AddressFormatException cae) {
+                } catch (AddressFormatException cae) {
                     throw new BitcoinURIParseException("Bad address", cae);
                 }
             }
@@ -192,7 +183,7 @@ public class BitcoinURI {
     }
 
     /**
-     * @param params The network parameters or null
+     * @param params              The network parameters or null
      * @param nameValuePairTokens The tokens representing the name value pairs (assumed to be
      *                            separated by '=' e.g. 'amount=0.2')
      */
@@ -247,7 +238,7 @@ public class BitcoinURI {
     /**
      * Put the value against the key in the map checking for duplication. This avoids address field overwrite etc.
      *
-     * @param key The key for the map
+     * @param key   The key for the map
      * @param value The value to store
      */
     private void putWithValidation(String key, Object value) throws BitcoinURIParseException {
@@ -270,7 +261,7 @@ public class BitcoinURI {
 
     /**
      * @return The amount name encoded using a pure integer value based at
-     *         10,000,000 units is 1 BTC. May be null if no amount is specified
+     * 10,000,000 units is 1 BTC. May be null if no amount is specified
      */
     public Coin getAmount() {
         return (Coin) parameterMap.get(FIELD_AMOUNT);
@@ -292,7 +283,7 @@ public class BitcoinURI {
 
     /**
      * @return The URL where a payment request (as specified in BIP 70) may
-     *         be fetched.
+     * be fetched.
      */
     public final String getPaymentRequestUrl() {
         return (String) parameterMap.get(FIELD_PAYMENT_REQUEST_URL);
@@ -344,8 +335,8 @@ public class BitcoinURI {
      * Simple Bitcoin URI builder using known good fields.
      *
      * @param address The Bitcoin address
-     * @param amount The amount
-     * @param label A label
+     * @param amount  The amount
+     * @param label   A label
      * @param message A message
      * @return A String containing the Bitcoin URI
      */
@@ -357,11 +348,11 @@ public class BitcoinURI {
     /**
      * Simple Bitcoin URI builder using known good fields.
      *
-     * @param params The network parameters that determine which network the URI
-     * is for.
+     * @param params  The network parameters that determine which network the URI
+     *                is for.
      * @param address The Bitcoin address
-     * @param amount The amount
-     * @param label A label
+     * @param amount  The amount
+     * @param label   A label
      * @param message A message
      * @return A String containing the Bitcoin URI
      */
@@ -376,7 +367,7 @@ public class BitcoinURI {
 
         StringBuilder builder = new StringBuilder();
         String scheme = params.getUriScheme();
-        if(!address.startsWith(scheme + ":")) {
+        if (!address.startsWith(scheme + ":")) {
             builder.append(scheme).append(":").append(address);
         } else {
             builder.append(address);

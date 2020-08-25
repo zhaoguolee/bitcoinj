@@ -23,8 +23,6 @@ import org.bitcoinj.wallet.DefaultRiskAnalysis;
 import org.bitcoinj.wallet.KeyBag;
 import org.bitcoinj.wallet.RedeemData;
 
-import com.google.common.base.Joiner;
-
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,11 +39,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * can be claimed by the recipient in the input of another transaction. You can imagine a
  * transaction as being a module which is wired up to others, the inputs of one have to be wired
  * to the outputs of another. The exceptions are coinbase transactions, which create new coins.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class TransactionInput extends ChildMessage {
-    /** Magic sequence number that indicates there is no sequence number. */
+    /**
+     * Magic sequence number that indicates there is no sequence number.
+     */
     public static final long NO_SEQUENCE = 0xFFFFFFFFL;
     /**
      * BIP68: If this flag set, sequence is NOT interpreted as a relative lock-time.
@@ -77,7 +77,9 @@ public class TransactionInput extends ChildMessage {
     // The Script object obtained from parsing scriptBytes. Only filled in on demand and if the transaction is not
     // coinbase.
     private WeakReference<Script> scriptSig;
-    /** Value of the output connected to the input, if known. This field does not participate in equals()/hashCode(). */
+    /**
+     * Value of the output connected to the input, if known. This field does not participate in equals()/hashCode().
+     */
     @Nullable
     private Coin value;
 
@@ -94,7 +96,7 @@ public class TransactionInput extends ChildMessage {
     }
 
     public TransactionInput(NetworkParameters params, @Nullable Transaction parentTransaction, byte[] scriptBytes,
-            TransactionOutPoint outpoint, @Nullable Coin value) {
+                            TransactionOutPoint outpoint, @Nullable Coin value) {
         super(params);
         this.scriptBytes = scriptBytes;
         this.outpoint = outpoint;
@@ -110,7 +112,7 @@ public class TransactionInput extends ChildMessage {
     TransactionInput(NetworkParameters params, Transaction parentTransaction, TransactionOutput output) {
         super(params);
         long outputIndex = output.getIndex();
-        if(output.getParentTransaction() != null ) {
+        if (output.getParentTransaction() != null) {
             outpoint = new TransactionOutPoint(params, outputIndex, output.getParentTransaction());
         } else {
             outpoint = new TransactionOutPoint(params, output);
@@ -133,9 +135,10 @@ public class TransactionInput extends ChildMessage {
 
     /**
      * Deserializes an input message. This is usually part of a transaction message.
-     * @param params NetworkParameters object.
-     * @param payload Bitcoin protocol formatted byte array containing message content.
-     * @param offset The location of the first payload byte within the array.
+     *
+     * @param params     NetworkParameters object.
+     * @param payload    Bitcoin protocol formatted byte array containing message content.
+     * @param offset     The location of the first payload byte within the array.
      * @param serializer the serializer to use for this message.
      * @throws ProtocolException
      */
@@ -197,7 +200,9 @@ public class TransactionInput extends ChildMessage {
         return script;
     }
 
-    /** Set the given program as the scriptSig that is supposed to satisfy the connected output script. */
+    /**
+     * Set the given program as the scriptSig that is supposed to satisfy the connected output script.
+     */
     public void setScriptSig(Script scriptSig) {
         this.scriptSig = new WeakReference<>(checkNotNull(scriptSig));
         // TODO: This should all be cleaned up so we have a consistent internal representation.
@@ -226,7 +231,7 @@ public class TransactionInput extends ChildMessage {
     }
 
     /**
-     * @return The previous output transaction reference, as an OutPoint structure.  This contains the 
+     * @return The previous output transaction reference, as an OutPoint structure.  This contains the
      * data needed to connect to the output of the transaction we're gathering coins from.
      */
     public TransactionOutPoint getOutpoint() {
@@ -237,13 +242,16 @@ public class TransactionInput extends ChildMessage {
      * The "script bytes" might not actually be a script. In coinbase transactions where new coins are minted there
      * is no input transaction, so instead the scriptBytes contains some extra stuff (like a rollover nonce) that we
      * don't care about much. The bytes are turned into a Script object (cached below) on demand via a getter.
+     *
      * @return the scriptBytes
      */
     public byte[] getScriptBytes() {
         return scriptBytes;
     }
 
-    /** Clear input scripts, e.g. in preparation for signing. */
+    /**
+     * Clear input scripts, e.g. in preparation for signing.
+     */
     public void clearScriptBytes() {
         setScriptBytes(TransactionInput.EMPTY_ARRAY);
     }
@@ -299,6 +307,7 @@ public class TransactionInput extends ChildMessage {
 
     /**
      * Alias for getOutpoint().getConnectedRedeemData(keyBag)
+     *
      * @see TransactionOutPoint#getConnectedRedeemData(KeyBag)
      */
     @Nullable
@@ -318,7 +327,7 @@ public class TransactionInput extends ChildMessage {
      * the spent output won't be changed, but the outpoint.fromTx pointer will still be updated.
      *
      * @param transactions Map of txhash to transaction.
-     * @param mode   Whether to abort if there's a pre-existing connection or not.
+     * @param mode         Whether to abort if there's a pre-existing connection or not.
      * @return NO_SUCH_TX if the prevtx wasn't found, ALREADY_SPENT if there was a conflict, SUCCESS if not.
      */
     public ConnectionResult connect(Map<Sha256Hash, Transaction> transactions, ConnectMode mode) {
@@ -335,7 +344,7 @@ public class TransactionInput extends ChildMessage {
      * the spent output won't be changed, but the outpoint.fromTx pointer will still be updated.
      *
      * @param transaction The transaction to try.
-     * @param mode   Whether to abort if there's a pre-existing connection or not.
+     * @param mode        Whether to abort if there's a pre-existing connection or not.
      * @return NO_SUCH_TX if transaction is not the prevtx, ALREADY_SPENT if there was a conflict, SUCCESS if not.
      */
     public ConnectionResult connect(Transaction transaction, ConnectMode mode) {
@@ -358,7 +367,9 @@ public class TransactionInput extends ChildMessage {
         return TransactionInput.ConnectionResult.SUCCESS;
     }
 
-    /** Internal use only: connects this TransactionInput to the given output (updates pointers and spent flags) */
+    /**
+     * Internal use only: connects this TransactionInput to the given output (updates pointers and spent flags)
+     */
     public void connect(TransactionOutput out) {
         outpoint.fromTx = out.getParentTransaction();
         out.markAsSpent(this);
@@ -420,7 +431,8 @@ public class TransactionInput extends ChildMessage {
 
     /**
      * For a connected transaction, runs the script against the connected pubkey and verifies they are correct.
-     * @throws ScriptException if the script did not verify.
+     *
+     * @throws ScriptException       if the script did not verify.
      * @throws VerificationException If the outpoint doesn't match the given output.
      */
     public void verify() throws VerificationException {
@@ -436,7 +448,7 @@ public class TransactionInput extends ChildMessage {
      * Also note that the consistency of the outpoint will be checked, even if this input has not been connected.
      *
      * @param output the output that this input is supposed to spend.
-     * @throws ScriptException If the script doesn't verify.
+     * @throws ScriptException       If the script doesn't verify.
      * @throws VerificationException If the outpoint doesn't match the given output.
      */
     public void verify(TransactionOutput output) throws VerificationException {
@@ -474,7 +486,9 @@ public class TransactionInput extends ChildMessage {
         return getOutpoint().fromTx;
     }
 
-    /** Returns a copy of the input detached from its containing transaction, if need be. */
+    /**
+     * Returns a copy of the input detached from its containing transaction, if need be.
+     */
     public TransactionInput duplicateDetached() {
         return new TransactionInput(params, null, bitcoinSerialize(), 0);
     }
@@ -496,7 +510,7 @@ public class TransactionInput extends ChildMessage {
         if (o == null || getClass() != o.getClass()) return false;
         TransactionInput other = (TransactionInput) o;
         return sequence == other.sequence && parent == other.parent
-            && outpoint.equals(other.outpoint) && Arrays.equals(scriptBytes, other.scriptBytes);
+                && outpoint.equals(other.outpoint) && Arrays.equals(scriptBytes, other.scriptBytes);
     }
 
     @Override

@@ -23,12 +23,14 @@ import static com.google.common.base.Preconditions.checkArgument;
  * a bandwidth optimization - on receiving some data, a (fully validating) peer sends every connected peer an inv
  * containing the hash of what it saw. It'll only transmit the full thing if a peer asks for it with a
  * {@link GetDataMessage}.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class InventoryMessage extends ListMessage {
 
-    /** A hard coded constant in the protocol. */
+    /**
+     * A hard coded constant in the protocol.
+     */
     public static final int MAX_INV_SIZE = 50000;
 
     public InventoryMessage(NetworkParameters params, byte[] bytes) throws ProtocolException {
@@ -37,11 +39,12 @@ public class InventoryMessage extends ListMessage {
 
     /**
      * Deserializes an 'inv' message.
-     * @param params NetworkParameters object.
-     * @param payload Bitcoin protocol formatted byte array containing message content.
+     *
+     * @param params     NetworkParameters object.
+     * @param payload    Bitcoin protocol formatted byte array containing message content.
      * @param serializer the serializer to use for this message.
-     * @param length The length of message if known.  Usually this is provided when deserializing of the wire
-     * as the length will be provided as part of the header.  If unknown then set to Message.UNKNOWN_LENGTH
+     * @param length     The length of message if known.  Usually this is provided when deserializing of the wire
+     *                   as the length will be provided as part of the header.  If unknown then set to Message.UNKNOWN_LENGTH
      * @throws ProtocolException
      */
     public InventoryMessage(NetworkParameters params, byte[] payload, MessageSerializer serializer, int length)
@@ -61,7 +64,9 @@ public class InventoryMessage extends ListMessage {
         addItem(new InventoryItem(InventoryItem.Type.TRANSACTION, tx.getTxId()));
     }
 
-    /** Creates a new inv message for the given transactions. */
+    /**
+     * Creates a new inv message for the given transactions.
+     */
     public static InventoryMessage with(Transaction... txns) {
         checkArgument(txns.length > 0);
         InventoryMessage result = new InventoryMessage(txns[0].getParams());

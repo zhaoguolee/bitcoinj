@@ -27,7 +27,9 @@ package org.bitcoinj.wallet;
  * <p>Note that extensions are singletons - you cannot add two objects that provide the same ID to the same wallet.</p>
  */
 public interface WalletExtension {
-    /** Returns a Java package/class style name used to disambiguate this extension from others. */
+    /**
+     * Returns a Java package/class style name used to disambiguate this extension from others.
+     */
     String getWalletExtensionID();
 
     /**
@@ -37,8 +39,13 @@ public interface WalletExtension {
      */
     boolean isWalletExtensionMandatory();
 
-    /** Returns bytes that will be saved in the wallet. */
+    /**
+     * Returns bytes that will be saved in the wallet.
+     */
     byte[] serializeWalletExtension();
-    /** Loads the contents of this object from the wallet. */
+
+    /**
+     * Loads the contents of this object from the wallet.
+     */
     void deserializeWalletExtension(Wallet containingWallet, byte[] data) throws Exception;
 }

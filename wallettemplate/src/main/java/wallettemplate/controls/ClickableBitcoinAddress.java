@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,10 +16,8 @@
 
 package wallettemplate.controls;
 
-import java.awt.Desktop;
-import java.io.IOException;
-import java.net.URI;
-
+import de.jensd.fx.fontawesome.AwesomeDude;
+import de.jensd.fx.fontawesome.AwesomeIcon;
 import javafx.beans.binding.StringExpression;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -38,16 +36,15 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-
 import org.bitcoinj.core.Address;
 import org.bitcoinj.uri.BitcoinURI;
-
 import wallettemplate.Main;
 import wallettemplate.utils.GuiUtils;
 import wallettemplate.utils.QRCodeImages;
 
-import de.jensd.fx.fontawesome.AwesomeDude;
-import de.jensd.fx.fontawesome.AwesomeIcon;
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
 
 import static javafx.beans.binding.Bindings.convert;
 
@@ -57,10 +54,14 @@ import static javafx.beans.binding.Bindings.convert;
  * that shows a QRcode.
  */
 public class ClickableBitcoinAddress extends AnchorPane {
-    @FXML protected Label addressLabel;
-    @FXML protected ContextMenu addressMenu;
-    @FXML protected Label copyWidget;
-    @FXML protected Label qrCode;
+    @FXML
+    protected Label addressLabel;
+    @FXML
+    protected ContextMenu addressMenu;
+    @FXML
+    protected Label copyWidget;
+    @FXML
+    protected Label qrCode;
 
     protected SimpleObjectProperty<Address> address = new SimpleObjectProperty<>();
     private final StringExpression addressStr;

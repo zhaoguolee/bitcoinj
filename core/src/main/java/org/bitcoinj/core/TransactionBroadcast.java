@@ -16,19 +16,23 @@
 
 package org.bitcoinj.core;
 
-import com.google.common.annotations.*;
-import com.google.common.base.*;
-import com.google.common.util.concurrent.*;
-import org.bitcoinj.utils.*;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.Uninterruptibles;
+import org.bitcoinj.core.listeners.PreMessageReceivedEventListener;
+import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.Wallet;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkState;
-import org.bitcoinj.core.listeners.PreMessageReceivedEventListener;
 
 /**
  * Represents a single transaction broadcast that we are performing. A broadcast occurs after a new transaction is created
@@ -47,10 +51,12 @@ public class TransactionBroadcast {
     private boolean dropPeersAfterBroadcast = false;
     private int numWaitingFor;
 
-    /** Used for shuffling the peers before broadcast: unit tests can replace this to make themselves deterministic. */
+    /**
+     * Used for shuffling the peers before broadcast: unit tests can replace this to make themselves deterministic.
+     */
     @VisibleForTesting
     public static Random random = new Random();
-    
+
     // Tracks which nodes sent us a reject message about this broadcast, if any. Useful for debugging.
     private Map<Peer, RejectMessage> rejects = Collections.synchronizedMap(new HashMap<Peer, RejectMessage>());
 
@@ -97,7 +103,7 @@ public class TransactionBroadcast {
         @Override
         public Message onPreMessageReceived(Peer peer, Message m) {
             if (m instanceof RejectMessage) {
-                RejectMessage rejectMessage = (RejectMessage)m;
+                RejectMessage rejectMessage = (RejectMessage) m;
                 if (tx.getTxId().equals(rejectMessage.getRejectedObjectHash())) {
                     rejects.put(peer, rejectMessage);
                     int size = rejects.size();
@@ -255,7 +261,9 @@ public class TransactionBroadcast {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /** An interface for receiving progress information on the propagation of the tx, from 0.0 to 1.0 */
+    /**
+     * An interface for receiving progress information on the propagation of the tx, from 0.0 to 1.0
+     */
     public interface ProgressCallback {
         /**
          * onBroadcastProgress will be invoked on the provided executor when the progress of the transaction
@@ -266,8 +274,10 @@ public class TransactionBroadcast {
         void onBroadcastProgress(double progress);
     }
 
-    @Nullable private ProgressCallback callback;
-    @Nullable private Executor progressCallbackExecutor;
+    @Nullable
+    private ProgressCallback callback;
+    @Nullable
+    private Executor progressCallbackExecutor;
 
     /**
      * Sets the given callback for receiving progress values, which will run on the user thread. See

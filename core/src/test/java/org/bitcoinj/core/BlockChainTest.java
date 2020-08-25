@@ -17,6 +17,7 @@
 
 package org.bitcoinj.core;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.params.UnitTestParams;
@@ -27,12 +28,10 @@ import org.bitcoinj.testing.FakeTxBuilder;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.Wallet.BalanceType;
-
-import com.google.common.util.concurrent.ListenableFuture;
-import org.junit.rules.ExpectedException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
@@ -65,6 +64,7 @@ public class BlockChainTest {
             maxTarget = limit;
         }
     }
+
     private static final TweakableTestNet3Params TESTNET = new TweakableTestNet3Params();
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
     private static final NetworkParameters MAINNET = MainNetParams.get();
@@ -131,8 +131,8 @@ public class BlockChainTest {
         int height = 1;
         // Quick check that we can actually receive coins.
         Transaction tx1 = createFakeTx(UNITTEST,
-                                       COIN,
-                                       Address.fromKey(UNITTEST, wallet.currentReceiveKey()));
+                COIN,
+                Address.fromKey(UNITTEST, wallet.currentReceiveKey()));
         Block b1 = createFakeBlock(blockStore, height, tx1).block;
         chain.add(b1);
         assertTrue(wallet.getBalance().signum() > 0);
@@ -267,7 +267,7 @@ public class BlockChainTest {
         thrown.expect(VerificationException.BlockVersionOutOfDate.class);
         try {
             versionChain.add(chainHead.block);
-        } catch(final VerificationException ex) {
+        } catch (final VerificationException ex) {
             throw (Exception) ex.getCause();
         }
     }
@@ -437,7 +437,7 @@ public class BlockChainTest {
         chain.trackFilteredTransactions(550);
         double rate1 = chain.getFalsePositiveRate();
         // Run this scenario a few more time for the filter to converge
-        for (int i = 1 ; i < 10 ; i++) {
+        for (int i = 1; i < 10; i++) {
             chain.trackFalsePositives(55);
             chain.trackFilteredTransactions(550);
         }

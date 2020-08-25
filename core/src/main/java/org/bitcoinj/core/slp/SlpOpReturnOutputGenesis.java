@@ -10,13 +10,14 @@ import java.nio.ByteBuffer;
 
 public class SlpOpReturnOutputGenesis {
     private Script script;
-    private byte[] lokad = new byte[] {83, 76, 80, 0};
-    private byte[] type = new byte[] {1};
+    private byte[] lokad = new byte[]{83, 76, 80, 0};
+    private byte[] type = new byte[]{1};
     private int PUSHDATA_BYTES = 8;
+
     public SlpOpReturnOutputGenesis(String ticker, String name, String url, int decimals, long tokenAmount) {
-        if(decimals > 9) {
+        if (decimals > 9) {
             throw new IllegalArgumentException("Decimal count cannot be greater than 9.");
-        } else if(decimals < 0) {
+        } else if (decimals < 0) {
             throw new IllegalArgumentException("Decimal count must be greater than or equal to 0.");
         }
 
@@ -34,26 +35,26 @@ public class SlpOpReturnOutputGenesis {
                 .addChunk(new ScriptChunk(type.length, type))
                 .data("GENESIS".getBytes());
 
-        if(ticker.equals("")) {
+        if (ticker.equals("")) {
             scriptBuilder = scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, ticker.getBytes()));
         } else {
             scriptBuilder = scriptBuilder.data(ticker.getBytes());
         }
 
-        if(name.equals("")) {
+        if (name.equals("")) {
             scriptBuilder = scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, name.getBytes()));
         } else {
             scriptBuilder = scriptBuilder.data(name.getBytes());
         }
 
-        if(url.equals("")) {
+        if (url.equals("")) {
             scriptBuilder = scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, url.getBytes()));
         } else {
             scriptBuilder = scriptBuilder.data(url.getBytes());
         }
 
         scriptBuilder = scriptBuilder.addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, "".getBytes())) // Document hash.
-                .addChunk(new ScriptChunk(Hex.decode("0"+decimals).length, Hex.decode("0"+decimals)))
+                .addChunk(new ScriptChunk(Hex.decode("0" + decimals).length, Hex.decode("0" + decimals)))
                 .addChunk(new ScriptChunk(ScriptOpCodes.OP_PUSHDATA1, "".getBytes())) // Mint baton.
                 .data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(amountTotal).array());
 

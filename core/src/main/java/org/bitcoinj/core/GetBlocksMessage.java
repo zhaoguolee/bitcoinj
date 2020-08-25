@@ -23,7 +23,7 @@ import java.io.OutputStream;
 /**
  * <p>Represents the "getblocks" P2P network message, which requests the hashes of the parts of the block chain we're
  * missing. Those blocks can then be downloaded with a {@link GetDataMessage}.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class GetBlocksMessage extends Message {
@@ -93,7 +93,7 @@ public class GetBlocksMessage extends Message {
         if (o == null || getClass() != o.getClass()) return false;
         GetBlocksMessage other = (GetBlocksMessage) o;
         return version == other.version && stopHash.equals(other.stopHash) &&
-            locator.size() == other.locator.size() && locator.equals(other.locator); // ignores locator ordering
+                locator.size() == other.locator.size() && locator.equals(other.locator); // ignores locator ordering
     }
 
     @Override

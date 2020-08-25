@@ -17,20 +17,28 @@
 
 package org.bitcoinj.core;
 
-import com.google.common.base.*;
-import com.google.common.collect.*;
-import com.google.common.util.concurrent.*;
-import org.bitcoinj.core.listeners.*;
-import org.bitcoinj.net.*;
-import org.bitcoinj.params.*;
-import org.bitcoinj.store.*;
-import org.bitcoinj.utils.*;
-import org.slf4j.*;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.SettableFuture;
+import org.bitcoinj.core.listeners.PeerConnectedEventListener;
+import org.bitcoinj.core.listeners.PeerDisconnectedEventListener;
+import org.bitcoinj.core.listeners.PreMessageReceivedEventListener;
+import org.bitcoinj.net.NioClient;
+import org.bitcoinj.params.RegTestParams;
+import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.store.H2FullPrunedBlockStore;
+import org.bitcoinj.store.MemoryBlockStore;
+import org.bitcoinj.utils.BlockFileLoader;
+import org.bitcoinj.utils.BriefLogFormatter;
+import org.bitcoinj.utils.Threading;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
+import java.io.File;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A tool for comparing the blocks which are accepted/rejected by bitcoind/bitcoinj
@@ -93,12 +101,12 @@ public class BitcoindComparisonTool {
                 if (!peer.getPeerVersionMessage().subVer.contains("Satoshi")) {
                     System.out.println();
                     System.out.println("************************************************************************************************************************\n" +
-                                       "WARNING: You appear to be using this to test an alternative implementation with full validation rules. You should go\n" +
-                                       "think hard about what you're doing. Seriously, no one has gotten even close to correctly reimplementing Bitcoin\n" +
-                                       "consensus rules, despite serious investment in trying. It is a huge task and the slightest difference is a huge bug.\n" +
-                                       "Instead, go work on making Bitcoin Core consensus rules a shared library and use that. Seriously, you wont get it right,\n" +
-                                       "and starting with this tester as a way to try to do so will simply end in pain and lost coins.\n" +
-                                       "************************************************************************************************************************");
+                            "WARNING: You appear to be using this to test an alternative implementation with full validation rules. You should go\n" +
+                            "think hard about what you're doing. Seriously, no one has gotten even close to correctly reimplementing Bitcoin\n" +
+                            "consensus rules, despite serious investment in trying. It is a huge task and the slightest difference is a huge bug.\n" +
+                            "Instead, go work on making Bitcoin Core consensus rules a shared library and use that. Seriously, you wont get it right,\n" +
+                            "and starting with this tester as a way to try to do so will simply end in pain and lost coins.\n" +
+                            "************************************************************************************************************************");
                     System.out.println();
                 }
                 log.info("bitcoind connected");
@@ -199,9 +207,9 @@ public class BitcoindComparisonTool {
                 return m;
             }
         });
-        
+
         bitcoindChainHead = PARAMS.getGenesisBlock().getHash();
-        
+
         // bitcoind MUST be on localhost or we will get banned as a DoSer
         new NioClient(new InetSocketAddress(InetAddress.getLoopbackAddress(), args.length > 2 ? Integer.parseInt(args[2]) : PARAMS.getPort()), bitcoind, 1000);
 
@@ -210,7 +218,7 @@ public class BitcoindComparisonTool {
         BlockLocator locator = new BlockLocator();
         locator = locator.add(PARAMS.getGenesisBlock().getHash());
         Sha256Hash hashTo = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000");
-                
+
         int rulesSinceFirstFail = 0;
         for (Rule rule : blockList.list) {
             if (rule instanceof FullBlockTestGenerator.BlockAndValidity) {
@@ -220,7 +228,7 @@ public class BitcoindComparisonTool {
                 // Often load at least one block because sometimes we have duplicates with the same hash (b56/57)
                 for (int i = 0; i < 1
                         || nextBlock == null || !nextBlock.getHash().equals(block.blockHash);
-                        i++) {
+                     i++) {
                     try {
                         Block b = blocks.next();
                         Block oldBlockWithSameHash = preloadedBlocks.put(b.getHash(), b);
@@ -277,10 +285,10 @@ public class BitcoindComparisonTool {
                 // bitcoind doesn't request blocks inline so we can't rely on a ping for synchronization
                 for (int i = 0; !shouldntRequest && !blocksRequested.contains(nextBlock.getHash()); i++) {
                     int SLEEP_TIME = 1;
-                    if (i % 1000/SLEEP_TIME == 1000/SLEEP_TIME - 1)
+                    if (i % 1000 / SLEEP_TIME == 1000 / SLEEP_TIME - 1)
                         log.error("bitcoind still hasn't requested block " + block.ruleName + " with hash " + nextBlock.getHash());
                     Thread.sleep(SLEEP_TIME);
-                    if (i > 60000/SLEEP_TIME) {
+                    if (i > 60000 / SLEEP_TIME) {
                         log.error("bitcoind failed to request block " + block.ruleName);
                         System.exit(1);
                     }
@@ -318,8 +326,8 @@ public class BitcoindComparisonTool {
                     log.error("ERROR: bitcoind had a non-empty mempool, but we expected an empty one on rule " + rule.ruleName);
                     rulesSinceFirstFail++;
                 } else if (mostRecentInv != null) {
-                    Set<InventoryItem> originalRuleSet = new HashSet<>(((MemoryPoolState)rule).mempool);
-                    boolean matches = mostRecentInv.items.size() == ((MemoryPoolState)rule).mempool.size();
+                    Set<InventoryItem> originalRuleSet = new HashSet<>(((MemoryPoolState) rule).mempool);
+                    boolean matches = mostRecentInv.items.size() == ((MemoryPoolState) rule).mempool.size();
                     for (InventoryItem item : mostRecentInv.items)
                         if (!((MemoryPoolState) rule).mempool.remove(item))
                             matches = false;

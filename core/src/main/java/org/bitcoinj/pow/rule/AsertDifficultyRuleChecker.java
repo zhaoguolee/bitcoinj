@@ -16,7 +16,6 @@
 
 package org.bitcoinj.pow.rule;
 
-import com.google.common.base.Preconditions;
 import org.bitcoinj.core.*;
 import org.bitcoinj.params.AbstractBitcoinNetParams;
 import org.bitcoinj.pow.AbstractPowRulesChecker;
@@ -63,11 +62,11 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
     private StoredBlock getAsertReferenceBlock(StoredBlock storedPrev, BlockStore blockStore) throws BlockStoreException {
         StoredBlock bestAsertCandidate = storedPrev;
         StoredBlock prev = storedPrev;
-        while(true) {
-            if(AbstractBitcoinNetParams.isAsertEnabled(prev, blockStore, networkParameters)) {
+        while (true) {
+            if (AbstractBitcoinNetParams.isAsertEnabled(prev, blockStore, networkParameters)) {
                 bestAsertCandidate = prev;
                 prev = prev.getPrev(blockStore);
-            } else if(!AbstractBitcoinNetParams.isAsertEnabled(prev, blockStore, networkParameters)) {
+            } else if (!AbstractBitcoinNetParams.isAsertEnabled(prev, blockStore, networkParameters)) {
                 return bestAsertCandidate;
             }
         }

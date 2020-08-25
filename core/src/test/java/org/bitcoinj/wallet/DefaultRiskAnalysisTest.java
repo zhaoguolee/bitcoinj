@@ -17,20 +17,23 @@
 
 package org.bitcoinj.wallet;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
 import org.bitcoinj.core.*;
-import org.bitcoinj.crypto.*;
-import org.bitcoinj.params.*;
-import org.bitcoinj.script.*;
+import org.bitcoinj.crypto.TransactionSignature;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.testing.FakeTxBuilder;
-import org.bitcoinj.wallet.DefaultRiskAnalysis.*;
-import org.junit.*;
+import org.bitcoinj.wallet.DefaultRiskAnalysis.RuleViolation;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.bitcoinj.core.Coin.*;
-import static org.bitcoinj.script.ScriptOpCodes.*;
+import static org.bitcoinj.core.Coin.COIN;
+import static org.bitcoinj.script.ScriptOpCodes.OP_PUSHDATA1;
 import static org.junit.Assert.*;
 
 public class DefaultRiskAnalysisTest {

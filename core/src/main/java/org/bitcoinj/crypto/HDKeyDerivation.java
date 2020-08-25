@@ -16,15 +16,17 @@
 
 package org.bitcoinj.crypto;
 
-import org.bitcoinj.core.*;
-import org.bouncycastle.math.ec.*;
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Utils;
+import org.bouncycastle.math.ec.ECPoint;
 
-import java.math.*;
-import java.nio.*;
-import java.security.*;
-import java.util.*;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.Arrays;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Implementation of the <a href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki">BIP 32</a>
@@ -42,7 +44,8 @@ public final class HDKeyDerivation {
     // Some arbitrary random number. Doesn't matter what it is.
     private static final BigInteger RAND_INT;
 
-    private HDKeyDerivation() { }
+    private HDKeyDerivation() {
+    }
 
     /**
      * Child derivation may fail (although with extremely low probability); in such case it is re-attempted.
@@ -56,7 +59,7 @@ public final class HDKeyDerivation {
      * broken by attackers (this is not theoretical, people have had money stolen that way). This method checks
      * that the given seed is at least 64 bits long.
      *
-     * @throws HDDerivationException if generated master key is invalid (private key not between 0 and n inclusive)
+     * @throws HDDerivationException    if generated master key is invalid (private key not between 0 and n inclusive)
      * @throws IllegalArgumentException if the seed is less than 8 bytes and could be brute forced
      */
     public static DeterministicKey createMasterPrivateKey(byte[] seed) throws HDDerivationException {
@@ -68,10 +71,10 @@ public final class HDKeyDerivation {
         checkState(i.length == 64, i.length);
         byte[] il = Arrays.copyOfRange(i, 0, 32);
         byte[] ir = Arrays.copyOfRange(i, 32, 64);
-        Arrays.fill(i, (byte)0);
+        Arrays.fill(i, (byte) 0);
         DeterministicKey masterPrivKey = createMasterPrivKeyFromBytes(il, ir);
-        Arrays.fill(il, (byte)0);
-        Arrays.fill(ir, (byte)0);
+        Arrays.fill(il, (byte) 0);
+        Arrays.fill(ir, (byte) 0);
         // Child deterministic keys will chain up to their parents to find the keys.
         masterPrivKey.setCreationTimeSeconds(Utils.currentTimeSeconds());
         return masterPrivKey;
@@ -115,7 +118,8 @@ public final class HDKeyDerivation {
             try {
                 child = new ChildNumber(child.num() + nAttempts, isHardened);
                 return deriveChildKey(parent, child);
-            } catch (HDDerivationException ignore) { }
+            } catch (HDDerivationException ignore) {
+            }
             nAttempts++;
         }
         throw new HDDerivationException("Maximum number of child derivation attempts reached, this is probably an indication of a bug.");
@@ -124,7 +128,7 @@ public final class HDKeyDerivation {
 
     /**
      * @throws HDDerivationException if private derivation is attempted for a public-only parent key, or
-     * if the resulting derived key is invalid (eg. private key == 0).
+     *                               if the resulting derived key is invalid (eg. private key == 0).
      */
     public static DeterministicKey deriveChildKey(DeterministicKey parent, ChildNumber childNumber) throws HDDerivationException {
         if (!parent.hasPrivKey())
@@ -206,7 +210,8 @@ public final class HDKeyDerivation {
                 Ki = Ki.add(ECKey.publicPointFromPrivate(additiveInverse));
                 Ki = Ki.add(parent.getPubKeyPoint());
                 break;
-            default: throw new AssertionError();
+            default:
+                throw new AssertionError();
         }
 
         assertNonInfinity(Ki, "Illegal derived key: derived public key equals infinity.");

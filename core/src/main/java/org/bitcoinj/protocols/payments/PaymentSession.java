@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,11 @@
 
 package org.bitcoinj.protocols.payments;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.protobuf.InvalidProtocolBufferException;
+import org.bitcoin.protocols.payments.Protos;
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.TrustStoreLoader;
 import org.bitcoinj.params.MainNetParams;
@@ -24,16 +29,9 @@ import org.bitcoinj.uri.BitcoinURI;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.SendRequest;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import org.bitcoin.protocols.payments.Protos;
-
 import javax.annotation.Nullable;
-
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.*;
 import java.security.KeyStoreException;
 import java.util.ArrayList;
@@ -79,7 +77,8 @@ public class PaymentSession {
      * Stores the calculated PKI verification data, or null if none is available.
      * Only valid after the session is created with the verifyPki parameter set to true.
      */
-    @Nullable public final PkiVerificationData pkiVerificationData;
+    @Nullable
+    public final PkiVerificationData pkiVerificationData;
 
     /**
      * <p>Returns a future that will be notified with a PaymentSession object after it is fetched using the provided uri.
@@ -165,7 +164,7 @@ public class PaymentSession {
             throw new PaymentProtocolException.InvalidPaymentRequestURL("null paymentRequestUrl");
         try {
             return fetchPaymentRequest(new URI(url), verifyPki, trustStoreLoader);
-        } catch(URISyntaxException e) {
+        } catch (URISyntaxException e) {
             throw new PaymentProtocolException.InvalidPaymentRequestURL(e);
         }
     }
@@ -174,7 +173,7 @@ public class PaymentSession {
         return executor.submit(new Callable<PaymentSession>() {
             @Override
             public PaymentSession call() throws Exception {
-                HttpURLConnection connection = (HttpURLConnection)uri.toURL().openConnection();
+                HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
                 connection.setRequestProperty("Accept", PaymentProtocol.MIMETYPE_PAYMENTREQUEST);
                 connection.setUseCaches(false);
                 Protos.PaymentRequest paymentRequest = Protos.PaymentRequest.parseFrom(connection.getInputStream());
@@ -235,7 +234,8 @@ public class PaymentSession {
     /**
      * Returns the memo included by the merchant in the payment request, or null if not found.
      */
-    @Nullable public String getMemo() {
+    @Nullable
+    public String getMemo() {
         if (paymentDetails.hasMemo())
             return paymentDetails.getMemo();
         else
@@ -259,7 +259,8 @@ public class PaymentSession {
     /**
      * Returns the expires time of the payment request, or null if none.
      */
-    @Nullable public Date getExpires() {
+    @Nullable
+    public Date getExpires() {
         if (paymentDetails.hasExpires())
             return new Date(paymentDetails.getExpires() * 1000);
         else
@@ -287,7 +288,8 @@ public class PaymentSession {
     /**
      * Returns the merchant data included by the merchant in the payment request, or null if none.
      */
-    @Nullable public byte[] getMerchantData() {
+    @Nullable
+    public byte[] getMerchantData() {
         if (paymentDetails.hasMerchantData())
             return paymentDetails.getMerchantData().toByteArray();
         else
@@ -311,9 +313,10 @@ public class PaymentSession {
      * merchant confirming the payment.
      * Returns an object wrapping PaymentACK once received.
      * If the PaymentRequest did not specify a payment_url, returns null and does nothing.
-     * @param txns list of transactions to be included with the Payment message.
+     *
+     * @param txns       list of transactions to be included with the Payment message.
      * @param refundAddr will be used by the merchant to send money back if there was a problem.
-     * @param memo is a message to include in the payment message sent to the merchant.
+     * @param memo       is a message to include in the payment message sent to the merchant.
      */
     @Nullable
     public ListenableFuture<PaymentProtocol.Ack> sendPayment(List<Transaction> txns, @Nullable Address refundAddr, @Nullable String memo)
@@ -336,9 +339,10 @@ public class PaymentSession {
      * Generates a Payment message based on the information in the PaymentRequest.
      * Provide transactions built by the wallet.
      * If the PaymentRequest did not specify a payment_url, returns null.
-     * @param txns list of transactions to be included with the Payment message.
+     *
+     * @param txns       list of transactions to be included with the Payment message.
      * @param refundAddr will be used by the merchant to send money back if there was a problem.
-     * @param memo is a message to include in the payment message sent to the merchant.
+     * @param memo       is a message to include in the payment message sent to the merchant.
      */
     @Nullable
     public Protos.Payment getPayment(List<Transaction> txns, @Nullable Address refundAddr, @Nullable String memo)
@@ -413,22 +417,31 @@ public class PaymentSession {
         }
     }
 
-    /** Returns the value of pkiVerificationData or null if it wasn't verified at construction time. */
-    @Nullable public PkiVerificationData verifyPki() {
+    /**
+     * Returns the value of pkiVerificationData or null if it wasn't verified at construction time.
+     */
+    @Nullable
+    public PkiVerificationData verifyPki() {
         return pkiVerificationData;
     }
 
-    /** Gets the params as read from the PaymentRequest.network field: main is the default if missing. */
+    /**
+     * Gets the params as read from the PaymentRequest.network field: main is the default if missing.
+     */
     public NetworkParameters getNetworkParameters() {
         return params;
     }
 
-    /** Returns the protobuf that this object was instantiated with. */
+    /**
+     * Returns the protobuf that this object was instantiated with.
+     */
     public Protos.PaymentRequest getPaymentRequest() {
         return paymentRequest;
     }
 
-    /** Returns the protobuf that describes the payment to be made. */
+    /**
+     * Returns the protobuf that describes the payment to be made.
+     */
     public Protos.PaymentDetails getPaymentDetails() {
         return paymentDetails;
     }

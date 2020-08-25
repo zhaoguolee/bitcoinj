@@ -7,7 +7,6 @@ package org.bitcoinj.wallet.bip47.listeners;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.WalletKitCore;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
@@ -30,10 +29,11 @@ public abstract class TransactionEventListener implements WalletCoinsReceivedEve
     }
 
     @Override
-    public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance){
+    public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
         onTransactionSent(this.wallet, tx);
     }
 
     public abstract void onTransactionReceived(WalletKitCore wallet, Transaction transaction);
+
     public abstract void onTransactionSent(WalletKitCore wallet, Transaction transaction);
 }

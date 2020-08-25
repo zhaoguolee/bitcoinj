@@ -5,24 +5,18 @@
 
 package org.bitcoinj.crypto;
 
-import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.spec.InvalidKeySpecException;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.util.encoders.Hex;
+
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 
 public class BIP47SecretPoint {
     private static final ECParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");

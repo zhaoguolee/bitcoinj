@@ -60,7 +60,7 @@ public class RegTestParams extends AbstractBitcoinNetParams {
         majorityRejectBlockOutdated = MainNetParams.MAINNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = MainNetParams.MAINNET_MAJORITY_WINDOW;
         maxBlockSize = 32 * 1000 * 1000;
-        maxBlockSigops = maxBlockSize/50;
+        maxBlockSigops = maxBlockSize / 50;
     }
 
     @Override
@@ -85,6 +85,7 @@ public class RegTestParams extends AbstractBitcoinNetParams {
     }
 
     private static RegTestParams instance;
+
     public static synchronized RegTestParams get() {
         if (instance == null) {
             instance = new RegTestParams();

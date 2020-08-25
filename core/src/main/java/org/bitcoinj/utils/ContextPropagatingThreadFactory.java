@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,10 +16,11 @@
 
 package org.bitcoinj.utils;
 
-import org.bitcoinj.core.*;
-import org.slf4j.*;
+import org.bitcoinj.core.Context;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * A {@link ThreadFactory} that propagates a {@link Context} from the creating

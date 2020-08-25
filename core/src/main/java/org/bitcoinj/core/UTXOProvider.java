@@ -29,6 +29,7 @@ import java.util.List;
 public interface UTXOProvider {
     /**
      * Get the list of {@link UTXO}'s for given keys.
+     *
      * @param keys List of keys.
      * @return The list of transaction outputs.
      * @throws UTXOProviderException If there is an error.
@@ -37,6 +38,7 @@ public interface UTXOProvider {
 
     /**
      * Get the height of the chain head.
+     *
      * @return The chain head height.
      * @throws UTXOProviderException If there is an error.
      */
@@ -44,6 +46,7 @@ public interface UTXOProvider {
 
     /**
      * The {@link NetworkParameters} of this provider.
+     *
      * @return The network parameters.
      */
     NetworkParameters getParams();

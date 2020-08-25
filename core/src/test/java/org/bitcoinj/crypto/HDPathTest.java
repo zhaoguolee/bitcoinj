@@ -45,11 +45,11 @@ public class HDPathTest {
         HDPath path4 = basePath.extend(ChildNumber.ZERO_HARDENED, ChildNumber.ONE_HARDENED, ChildNumber.ZERO_HARDENED, ChildNumber.ONE);
         HDPath path5 = basePath.extend(ChildNumber.ZERO_HARDENED, ChildNumber.ONE_HARDENED, ChildNumber.ZERO_HARDENED, ChildNumber.ONE, ChildNumber.ZERO);
 
-        Assert.assertEquals("m/0H",  path1.toString());
-        Assert.assertEquals("m/0H/1H",  path2.toString());
-        Assert.assertEquals("m/0H/1H/0H",  path3.toString());
-        Assert.assertEquals("m/0H/1H/0H/1",  path4.toString());
-        Assert.assertEquals("m/0H/1H/0H/1/0",  path5.toString());
+        Assert.assertEquals("m/0H", path1.toString());
+        Assert.assertEquals("m/0H/1H", path2.toString());
+        Assert.assertEquals("m/0H/1H/0H", path3.toString());
+        Assert.assertEquals("m/0H/1H/0H/1", path4.toString());
+        Assert.assertEquals("m/0H/1H/0H/1/0", path5.toString());
     }
 
     @Test

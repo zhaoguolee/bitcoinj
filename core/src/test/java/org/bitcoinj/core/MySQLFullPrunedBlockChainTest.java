@@ -30,7 +30,7 @@ public class MySQLFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainT
 
     @After
     public void tearDown() throws Exception {
-        ((MySQLFullPrunedBlockStore)store).deleteStore();
+        ((MySQLFullPrunedBlockStore) store).deleteStore();
     }
 
     // Replace these with your mysql location/credentials and remove @Ignore to test
@@ -47,6 +47,6 @@ public class MySQLFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainT
 
     @Override
     public void resetStore(FullPrunedBlockStore store) throws BlockStoreException {
-        ((MySQLFullPrunedBlockStore)store).resetStore();
+        ((MySQLFullPrunedBlockStore) store).resetStore();
     }
 }

@@ -16,8 +16,6 @@
 
 package org.bitcoinj.utils;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import org.bitcoinj.core.Block;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.ProtocolException;
@@ -27,20 +25,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.NoSuchElementException;
+import java.util.*;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * <p>This class reads block files stored in the Bitcoin Core format. This is simply a way to concatenate
  * blocks together. Importing block data with this tool can be a lot faster than syncing over the network, if you
  * have the files available.</p>
- * 
+ *
  * <p>In order to comply with {@link Iterator}, this class swallows a lot of {@link IOException}s, which may result in a few
  * blocks being missed followed by a huge set of orphan blocks.</p>
- * 
+ *
  * <p>To blindly import all files which can be found in Bitcoin Core (version 0.8 or higher) datadir automatically,
  * try this code fragment:
  * {@code
@@ -91,7 +87,7 @@ public class BlockFileLoader implements Iterable<Block>, Iterator<Block> {
         fileIt = files.iterator();
         this.params = params;
     }
-    
+
     @Override
     public boolean hasNext() {
         if (nextBlock == null)
@@ -107,7 +103,7 @@ public class BlockFileLoader implements Iterable<Block>, Iterator<Block> {
         nextBlock = null;
         return next;
     }
-    
+
     private void loadNextBlock() {
         while (true) {
             try {
@@ -158,7 +154,7 @@ public class BlockFileLoader implements Iterable<Block>, Iterator<Block> {
                 currentFileStream.read(bytes, 0, 4);
                 long size = Utils.readUint32BE(Utils.reverseBytes(bytes), 0);
                 // We allow larger than MAX_BLOCK_SIZE because test code uses this as well.
-                if (size > params.getMaxBlockSize()*2 || size <= 0)
+                if (size > params.getMaxBlockSize() * 2 || size <= 0)
                     continue;
                 bytes = new byte[(int) size];
                 currentFileStream.read(bytes, 0, (int) size);

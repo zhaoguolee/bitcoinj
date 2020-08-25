@@ -32,9 +32,17 @@ public class RejectedTransactionException extends Exception {
         this.rejectMessage = rejectMessage;
     }
 
-    /** Return the original Transaction object whose broadcast was rejected. */
-    public Transaction getTransaction() { return tx; }
+    /**
+     * Return the original Transaction object whose broadcast was rejected.
+     */
+    public Transaction getTransaction() {
+        return tx;
+    }
 
-    /** Return the RejectMessage object representing the broadcast rejection. */
-    public RejectMessage getRejectMessage() { return rejectMessage; }
+    /**
+     * Return the RejectMessage object representing the broadcast rejection.
+     */
+    public RejectMessage getRejectMessage() {
+        return rejectMessage;
+    }
 }

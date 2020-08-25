@@ -21,20 +21,24 @@ import java.nio.ByteBuffer;
 /**
  * A generic handler which is used in {@link NioServer}, {@link NioClient} and {@link BlockingClient} to handle incoming
  * data streams.
- *
+ * <p>
  * Used to be called StreamParser.
  */
 public interface StreamConnection {
-    /** Called when the connection socket is closed */
+    /**
+     * Called when the connection socket is closed
+     */
     void connectionClosed();
 
-    /** Called when the connection socket is first opened */
+    /**
+     * Called when the connection socket is first opened
+     */
     void connectionOpened();
 
     /**
      * <p>Called when new bytes are available from the remote end. This should only ever be called by the single
      * writeTarget associated with any given StreamConnection, multiple callers will likely confuse implementations.</p>
-     *
+     * <p>
      * Implementers/callers must follow the following conventions exactly:
      * <ul>
      * <li>buff will start with its limit set to the position we can read to and its position set to the location we

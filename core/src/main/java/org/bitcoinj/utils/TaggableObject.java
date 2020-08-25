@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,8 +35,11 @@ import java.util.Map;
  * in string parameters causing confusing bugs!</p>
  */
 public interface TaggableObject {
-    /** Returns the immutable byte array associated with the given tag name, or null if there is none. */
-    @Nullable ByteString maybeGetTag(String tag);
+    /**
+     * Returns the immutable byte array associated with the given tag name, or null if there is none.
+     */
+    @Nullable
+    ByteString maybeGetTag(String tag);
 
     /**
      * Returns the immutable byte array associated with the given tag name, or throws {@link IllegalArgumentException}
@@ -44,9 +47,13 @@ public interface TaggableObject {
      */
     ByteString getTag(String tag);
 
-    /** Associates the given immutable byte array with the string tag. See the docs for TaggableObject to learn more. */
+    /**
+     * Associates the given immutable byte array with the string tag. See the docs for TaggableObject to learn more.
+     */
     void setTag(String tag, ByteString value);
 
-    /** Returns a copy of all the tags held by this object. */
+    /**
+     * Returns a copy of all the tags held by this object.
+     */
     Map<String, ByteString> getTags();
 }

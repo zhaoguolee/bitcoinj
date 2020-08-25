@@ -17,10 +17,9 @@
 
 package org.bitcoinj.crypto;
 
+import com.google.common.base.MoreObjects;
 import org.bitcoinj.core.*;
 import org.bitcoinj.script.Script;
-
-import com.google.common.base.MoreObjects;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -32,8 +31,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-import static org.bitcoinj.core.Utils.HEX;
 import static com.google.common.base.Preconditions.*;
+import static org.bitcoinj.core.Utils.HEX;
 
 /**
  * A deterministic key is a node in a {@link DeterministicHierarchy}. As per
@@ -43,7 +42,9 @@ import static com.google.common.base.Preconditions.*;
  */
 public class DeterministicKey extends ECKey {
 
-    /** Sorts deterministic keys in the order of their child number. That's <i>usually</i> the order used to derive them. */
+    /**
+     * Sorts deterministic keys in the order of their child number. That's <i>usually</i> the order used to derive them.
+     */
     public static final Comparator<ECKey> CHILDNUM_ORDER = new Comparator<ECKey>() {
         @Override
         public int compare(ECKey k1, ECKey k2) {
@@ -58,10 +59,14 @@ public class DeterministicKey extends ECKey {
     private final int depth;
     private int parentFingerprint; // 0 if this key is root node of key hierarchy
 
-    /** 32 bytes */
+    /**
+     * 32 bytes
+     */
     private final byte[] chainCode;
 
-    /** Constructs a key from its components. This is not normally something you should use. */
+    /**
+     * Constructs a key from its components. This is not normally something you should use.
+     */
     public DeterministicKey(List<ChildNumber> childNumberPath,
                             byte[] chainCode,
                             LazyECPoint publicAsPoint,
@@ -85,7 +90,9 @@ public class DeterministicKey extends ECKey {
         this(childNumberPath, chainCode, new LazyECPoint(publicAsPoint, compressed), priv, parent);
     }
 
-    /** Constructs a key from its components. This is not normally something you should use. */
+    /**
+     * Constructs a key from its components. This is not normally something you should use.
+     */
     public DeterministicKey(HDPath hdPath,
                             byte[] chainCode,
                             BigInteger priv,
@@ -99,7 +106,9 @@ public class DeterministicKey extends ECKey {
         this.parentFingerprint = (parent != null) ? parent.getFingerprint() : 0;
     }
 
-    /** Constructs a key from its components. This is not normally something you should use. */
+    /**
+     * Constructs a key from its components. This is not normally something you should use.
+     */
     public DeterministicKey(List<ChildNumber> childNumberPath,
                             byte[] chainCode,
                             KeyCrypter crypter,
@@ -117,12 +126,12 @@ public class DeterministicKey extends ECKey {
      * This method exists to avoid code repetition in the constructors.
      */
     private int ascertainParentFingerprint(DeterministicKey parentKey, int parentFingerprint)
-    throws IllegalArgumentException {
+            throws IllegalArgumentException {
         if (parentFingerprint != 0) {
             if (parent != null)
                 checkArgument(parent.getFingerprint() == parentFingerprint,
-                              "parent fingerprint mismatch",
-                              Integer.toHexString(parent.getFingerprint()), Integer.toHexString(parentFingerprint));
+                        "parent fingerprint mismatch",
+                        Integer.toHexString(parent.getFingerprint()), Integer.toHexString(parentFingerprint));
             return parentFingerprint;
         } else return 0;
     }
@@ -167,8 +176,10 @@ public class DeterministicKey extends ECKey {
         this.parentFingerprint = ascertainParentFingerprint(parent, parentFingerprint);
     }
 
-    
-    /** Clones the key */
+
+    /**
+     * Clones the key
+     */
     public DeterministicKey(DeterministicKey keyToClone, DeterministicKey newParent) {
         super(keyToClone.priv, keyToClone.pub.get(), keyToClone.pub.isCompressed());
         this.parent = newParent;
@@ -209,7 +220,9 @@ public class DeterministicKey extends ECKey {
         return depth;
     }
 
-    /** Returns the last element of the path returned by {@link DeterministicKey#getPath()} */
+    /**
+     * Returns the last element of the path returned by {@link DeterministicKey#getPath()}
+     */
     public ChildNumber getChildNumber() {
         return childNumberPath.size() == 0 ? ChildNumber.ZERO : childNumberPath.get(childNumberPath.size() - 1);
     }
@@ -228,7 +241,9 @@ public class DeterministicKey extends ECKey {
         return Utils.sha256hash160(getPubKey());
     }
 
-    /** Returns the first 32 bits of the result of {@link #getIdentifier()}. */
+    /**
+     * Returns the first 32 bits of the result of {@link #getIdentifier()}.
+     */
     public int getFingerprint() {
         // TODO: why is this different than armory's fingerprint? BIP 32: "The first 32 bits of the identifier are called the fingerprint."
         return ByteBuffer.wrap(Arrays.copyOfRange(getIdentifier(), 0, 4)).getInt();
@@ -249,6 +264,7 @@ public class DeterministicKey extends ECKey {
 
     /**
      * Returns private key bytes, padded with zeros to 33 bytes.
+     *
      * @throws java.lang.IllegalStateException if the private key bytes are missing.
      */
     public byte[] getPrivKeyBytes33() {
@@ -347,7 +363,8 @@ public class DeterministicKey extends ECKey {
     /**
      * Returns this keys {@link KeyCrypter} <b>or</b> the keycrypter of its parent key.
      */
-    @Override @Nullable
+    @Override
+    @Nullable
     public KeyCrypter getKeyCrypter() {
         if (keyCrypter != null)
             return keyCrypter;
@@ -466,6 +483,7 @@ public class DeterministicKey extends ECKey {
     /**
      * Returns the private key of this deterministic key. Even if this object isn't storing the private key,
      * it can be re-derived by walking up to the parents if necessary and this is what will happen.
+     *
      * @throws java.lang.IllegalStateException if the parents are encrypted or a watching chain.
      */
     @Override
@@ -520,29 +538,33 @@ public class DeterministicKey extends ECKey {
         return Base58.encode(addChecksum(ser));
     }
 
-    /** Deserialize a base-58-encoded HD Key with no parent */
+    /**
+     * Deserialize a base-58-encoded HD Key with no parent
+     */
     public static DeterministicKey deserializeB58(String base58, NetworkParameters params) {
         return deserializeB58(null, base58, params);
     }
 
     /**
-      * Deserialize a base-58-encoded HD Key.
-      *  @param parent The parent node in the given key's deterministic hierarchy.
-      *  @throws IllegalArgumentException if the base58 encoded key could not be parsed.
-      */
+     * Deserialize a base-58-encoded HD Key.
+     *
+     * @param parent The parent node in the given key's deterministic hierarchy.
+     * @throws IllegalArgumentException if the base58 encoded key could not be parsed.
+     */
     public static DeterministicKey deserializeB58(@Nullable DeterministicKey parent, String base58, NetworkParameters params) {
         return deserialize(params, Base58.decodeChecked(base58), parent);
     }
 
     /**
-      * Deserialize an HD Key with no parent
-      */
+     * Deserialize an HD Key with no parent
+     */
     public static DeterministicKey deserialize(NetworkParameters params, byte[] serializedKey) {
         return deserialize(params, serializedKey, null);
     }
 
     /**
-      * Deserialize an HD Key.
+     * Deserialize an HD Key.
+     *
      * @param parent The parent node in the given key's deterministic hierarchy.
      */
     public static DeterministicKey deserialize(NetworkParameters params, byte[] serializedKey, @Nullable DeterministicKey parent) {
@@ -646,7 +668,7 @@ public class DeterministicKey extends ECKey {
 
     @Override
     public void formatKeyWithAddress(boolean includePrivateKeys, @Nullable KeyParameter aesKey, StringBuilder builder,
-            NetworkParameters params, Script.ScriptType outputScriptType, @Nullable String comment) {
+                                     NetworkParameters params, Script.ScriptType outputScriptType, @Nullable String comment) {
         builder.append("  addr:").append(Address.fromKey(params, this).toString());
         builder.append("  hash160:").append(Utils.HEX.encode(getPubKeyHash()));
         builder.append("  (").append(getPathAsString());

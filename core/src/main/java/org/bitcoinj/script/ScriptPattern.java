@@ -52,9 +52,7 @@ public class ScriptPattern {
             return false;
         if (!chunks.get(3).equalsOpCode(OP_EQUALVERIFY))
             return false;
-        if (!chunks.get(4).equalsOpCode(OP_CHECKSIG))
-            return false;
-        return true;
+        return chunks.get(4).equalsOpCode(OP_CHECKSIG);
     }
 
     /**
@@ -94,9 +92,7 @@ public class ScriptPattern {
             return false;
         if (chunk1data.length != Address.LENGTH)
             return false;
-        if (!chunks.get(2).equalsOpCode(OP_EQUAL))
-            return false;
-        return true;
+        return chunks.get(2).equalsOpCode(OP_EQUAL);
     }
 
     /**
@@ -125,9 +121,7 @@ public class ScriptPattern {
             return false;
         if (chunk0data.length <= 1)
             return false;
-        if (!chunks.get(1).equalsOpCode(OP_CHECKSIG))
-            return false;
-        return true;
+        return chunks.get(1).equalsOpCode(OP_CHECKSIG);
     }
 
     /**
@@ -184,9 +178,7 @@ public class ScriptPattern {
         byte[] chunkData = chunks.get(1).data;
         if (chunkData == null || chunkData.length != 36)
             return false;
-        if (!Arrays.equals(Arrays.copyOfRange(chunkData, 0, 4), SEGWIT_COMMITMENT_HEADER))
-            return false;
-        return true;
+        return Arrays.equals(Arrays.copyOfRange(chunkData, 0, 4), SEGWIT_COMMITMENT_HEADER);
     }
 
     /**

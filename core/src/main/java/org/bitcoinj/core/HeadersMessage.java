@@ -30,7 +30,7 @@ import java.util.List;
  * <p>A protocol message that contains a repeated series of block headers, sent in response to the "getheaders" command.
  * This is useful when you want to traverse the chain but know you don't care about the block contents, for example,
  * because you have a freshly created wallet with no keys.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class HeadersMessage extends Message {
@@ -69,7 +69,7 @@ public class HeadersMessage extends Message {
         long numHeaders = readVarInt();
         if (numHeaders > MAX_HEADERS)
             throw new ProtocolException("Too many headers: got " + numHeaders + " which is larger than " +
-                                         MAX_HEADERS);
+                    MAX_HEADERS);
 
         blockHeaders = new ArrayList<>();
         final BitcoinSerializer serializer = this.params.getSerializer(true);

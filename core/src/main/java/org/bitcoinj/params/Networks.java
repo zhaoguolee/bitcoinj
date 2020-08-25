@@ -16,9 +16,9 @@
 
 package org.bitcoinj.params;
 
-import org.bitcoinj.core.NetworkParameters;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import org.bitcoinj.core.NetworkParameters;
 
 import java.util.Collection;
 import java.util.Set;
@@ -31,7 +31,9 @@ import java.util.Set;
  * parts for RegTest and TestNet are different.)
  */
 public class Networks {
-    /** Registered networks */
+    /**
+     * Registered networks
+     */
     private static Set<NetworkParameters> networks = ImmutableSet.<NetworkParameters>of(TestNet3Params.get(), MainNetParams.get(), TestNet4Params.get());
 
     public static Set<NetworkParameters> get() {

@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,15 +16,15 @@
 
 package wallettemplate.utils;
 
-import org.bitcoinj.crypto.KeyCrypterScrypt;
 import com.google.common.util.concurrent.Uninterruptibles;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.concurrent.Task;
+import org.bitcoinj.crypto.KeyCrypterScrypt;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.params.KeyParameter;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 

@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,4 +20,5 @@ package org.bitcoinj.wallet;
  * Indicates that an attempt was made to use HD wallet features on a wallet that was deserialized from an old,
  * pre-HD random wallet without calling upgradeToDeterministic() beforehand.
  */
-public class DeterministicUpgradeRequiredException extends RuntimeException {}
+public class DeterministicUpgradeRequiredException extends RuntimeException {
+}

@@ -16,19 +16,14 @@
 
 package org.bitcoinj.crypto;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.math.BigInteger;
-
 import org.bitcoinj.core.Utils;
 import org.bitcoinj.crypto.HDKeyDerivation.PublicDeriveMode;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
+import java.math.BigInteger;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Andreas Schildbach

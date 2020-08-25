@@ -16,12 +16,15 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.utils.*;
+import org.bitcoinj.utils.Threading;
 
-import javax.annotation.*;
-import java.lang.ref.*;
-import java.util.*;
-import java.util.concurrent.locks.*;
+import javax.annotation.Nullable;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -41,11 +44,13 @@ public class TxConfidenceTable {
 
     private static class WeakConfidenceReference extends WeakReference<TransactionConfidence> {
         public Sha256Hash hash;
+
         public WeakConfidenceReference(TransactionConfidence confidence, ReferenceQueue<TransactionConfidence> queue) {
             super(confidence, queue);
             hash = confidence.getTransactionHash();
         }
     }
+
     private final Map<Sha256Hash, WeakConfidenceReference> table;
     private final TransactionConfidence.Factory confidenceFactory;
 
@@ -56,19 +61,22 @@ public class TxConfidenceTable {
     // if our peers flood us with invs but the MAX_SIZE param caps this.
     private ReferenceQueue<TransactionConfidence> referenceQueue;
 
-    /** The max size of a table created with the no-args constructor. */
+    /**
+     * The max size of a table created with the no-args constructor.
+     */
     public static final int MAX_SIZE = 1000;
 
     /**
      * Creates a table that will track at most the given number of transactions (allowing you to bound memory
      * usage).
+     *
      * @param size Max number of transactions to track. The table will fill up to this size then stop growing.
      */
     public TxConfidenceTable(final int size) {
         this(size, new TransactionConfidence.Factory());
     }
 
-    TxConfidenceTable(final int size, TransactionConfidence.Factory confidenceFactory){
+    TxConfidenceTable(final int size, TransactionConfidence.Factory confidenceFactory) {
         table = new LinkedHashMap<Sha256Hash, WeakConfidenceReference>() {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Sha256Hash, WeakConfidenceReference> entry) {
@@ -191,10 +199,7 @@ public class TxConfidenceTable {
             if (ref == null)
                 return null;
             TransactionConfidence confidence = ref.get();
-            if (confidence != null)
-                return confidence;
-            else
-                return null;
+            return confidence;
         } finally {
             lock.unlock();
         }

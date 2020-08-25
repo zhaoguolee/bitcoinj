@@ -16,20 +16,20 @@
 
 package org.bitcoinj.utils;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.math.LongMath;
+import org.bitcoinj.core.Coin;
+import org.bitcoinj.core.Monetary;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.Monetary;
 import java.util.Objects;
-import com.google.common.math.LongMath;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Represents a monetary fiat value. It was decided to not fold this into {@link Coin} because of type
  * safety. Fiat values always come with an attached currency code.
- * 
+ * <p>
  * This class is immutable.
  */
 public final class Fiat implements Monetary, Comparable<Fiat>, Serializable {
@@ -77,8 +77,7 @@ public final class Fiat implements Monetary, Comparable<Fiat>, Serializable {
      * <p>This takes string in a format understood by {@link BigDecimal#BigDecimal(String)}, for example "0", "1", "0.10",
      * "1.23E3", "1234.5E-5".</p>
      *
-     * @throws IllegalArgumentException
-     *             if you try to specify more than 4 digits after the comma, or a value out of range.
+     * @throws IllegalArgumentException if you try to specify more than 4 digits after the comma, or a value out of range.
      */
     public static Fiat parseFiat(final String currencyCode, final String str) {
         try {
@@ -94,8 +93,7 @@ public final class Fiat implements Monetary, Comparable<Fiat>, Serializable {
      * <p>This takes string in a format understood by {@link BigDecimal#BigDecimal(String)}, for example "0", "1", "0.10",
      * "1.23E3", "1234.5E-5".</p>
      *
-     * @throws IllegalArgumentException
-     *             if you try to specify a value out of range.
+     * @throws IllegalArgumentException if you try to specify a value out of range.
      */
     public static Fiat parseFiatInexact(final String currencyCode, final String str) {
         try {
@@ -125,7 +123,7 @@ public final class Fiat implements Monetary, Comparable<Fiat>, Serializable {
     }
 
     public Fiat[] divideAndRemainder(final long divisor) {
-        return new Fiat[] { new Fiat(currencyCode, this.value / divisor), new Fiat(currencyCode, this.value % divisor) };
+        return new Fiat[]{new Fiat(currencyCode, this.value / divisor), new Fiat(currencyCode, this.value % divisor)};
     }
 
     public long divide(final Fiat divisor) {

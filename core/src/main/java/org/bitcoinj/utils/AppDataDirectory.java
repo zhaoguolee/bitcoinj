@@ -67,7 +67,7 @@ public class AppDataDirectory {
         if (Utils.isWindows()) {
             applicationDataDirectory = pathOf(System.getenv("APPDATA"), appName.toLowerCase());
         } else if (Utils.isMac()) {
-            applicationDataDirectory = pathOf(System.getProperty("user.home"),"Library/Application Support", appName);
+            applicationDataDirectory = pathOf(System.getProperty("user.home"), "Library/Application Support", appName);
         } else if (Utils.isLinux()) {
             applicationDataDirectory = pathOf(System.getProperty("user.home"), "." + appName.toLowerCase());
         } else {
@@ -79,7 +79,8 @@ public class AppDataDirectory {
 
     /**
      * Create a {@code Path} by joining path strings. Same functionality as Path.of() in JDK 11+
-     * @param first A base path string
+     *
+     * @param first      A base path string
      * @param additional additional components to add
      * @return the joined {@code Path}
      */

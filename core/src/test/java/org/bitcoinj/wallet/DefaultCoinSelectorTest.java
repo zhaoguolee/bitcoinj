@@ -17,15 +17,21 @@
 package org.bitcoinj.wallet;
 
 import org.bitcoinj.core.*;
-import org.bitcoinj.params.*;
-import org.bitcoinj.testing.*;
-import org.junit.*;
+import org.bitcoinj.params.RegTestParams;
+import org.bitcoinj.params.UnitTestParams;
+import org.bitcoinj.testing.FakeTxBuilder;
+import org.bitcoinj.testing.TestWithWallet;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import static com.google.common.base.Preconditions.*;
-import static org.bitcoinj.core.Coin.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.bitcoinj.core.Coin.CENT;
+import static org.bitcoinj.core.Coin.COIN;
 import static org.junit.Assert.*;
 
 public class DefaultCoinSelectorTest extends TestWithWallet {
@@ -114,10 +120,10 @@ public class DefaultCoinSelectorTest extends TestWithWallet {
         // Add four outputs to a transaction with same value and destination. Select them all.
         Transaction t = new Transaction(UNITTEST);
         java.util.List<TransactionOutput> outputs = Arrays.asList(
-            new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress),
-            new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress),
-            new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress),
-            new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress)
+                new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress),
+                new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress),
+                new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress),
+                new TransactionOutput(UNITTEST, t, Coin.valueOf(30302787), myAddress)
         );
         t.getConfidence().setConfidenceType(TransactionConfidence.ConfidenceType.BUILDING);
 

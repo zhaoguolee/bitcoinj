@@ -28,16 +28,21 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import static org.bitcoinj.core.Coin.*;
 import static com.google.common.base.Preconditions.checkState;
+import static org.bitcoinj.core.Coin.COIN;
+import static org.bitcoinj.core.Coin.valueOf;
 
 public class FakeTxBuilder {
-    /** Create a fake transaction, without change. */
+    /**
+     * Create a fake transaction, without change.
+     */
     public static Transaction createFakeTx(final NetworkParameters params) {
         return createFakeTxWithoutChangeAddress(params, Coin.COIN, Address.fromKey(params, new ECKey()));
     }
 
-    /** Create a fake transaction, without change. */
+    /**
+     * Create a fake transaction, without change.
+     */
     public static Transaction createFakeTxWithoutChange(final NetworkParameters params, final TransactionOutput output) {
         Transaction prevTx = FakeTxBuilder.createFakeTx(params, Coin.COIN, Address.fromKey(params, new ECKey()));
         Transaction tx = new Transaction(params);
@@ -46,7 +51,9 @@ public class FakeTxBuilder {
         return tx;
     }
 
-    /** Create a fake coinbase transaction. */
+    /**
+     * Create a fake coinbase transaction.
+     */
     public static Transaction createFakeCoinbaseTx(final NetworkParameters params) {
         TransactionOutPoint outpoint = new TransactionOutPoint(params, -1, Sha256Hash.ZERO_HASH);
         TransactionInput input = new TransactionInput(params, null, new byte[0], outpoint);
@@ -93,8 +100,12 @@ public class FakeTxBuilder {
 
         // Make a random split in the output value so we get a distinct hash when we call this multiple times with same args
         long split = new Random().nextLong();
-        if (split < 0) { split *= -1; }
-        if (split == 0) { split = 15; }
+        if (split < 0) {
+            split *= -1;
+        }
+        if (split == 0) {
+            split = 15;
+        }
         while (split > value.getValue()) {
             split /= 2;
         }
@@ -175,7 +186,7 @@ public class FakeTxBuilder {
         t.addInput(prevOut);
 
         // roundtrip the tx so that they are just like they would be from the wire
-        return new Transaction[]{roundTripTransaction(params, prevTx), roundTripTransaction(params,t)};
+        return new Transaction[]{roundTripTransaction(params, prevTx), roundTripTransaction(params, t)};
     }
 
     /**
@@ -233,13 +244,17 @@ public class FakeTxBuilder {
         public Block block;
     }
 
-    /** Emulates receiving a valid block that builds on top of the chain. */
+    /**
+     * Emulates receiving a valid block that builds on top of the chain.
+     */
     public static BlockPair createFakeBlock(BlockStore blockStore, long version,
                                             long timeSeconds, Transaction... transactions) {
         return createFakeBlock(blockStore, version, timeSeconds, 0, transactions);
     }
 
-    /** Emulates receiving a valid block */
+    /**
+     * Emulates receiving a valid block
+     */
     public static BlockPair createFakeBlock(BlockStore blockStore, StoredBlock previousStoredBlock, long version,
                                             long timeSeconds, int height,
                                             Transaction... transactions) {
@@ -270,7 +285,9 @@ public class FakeTxBuilder {
         return createFakeBlock(blockStore, previousStoredBlock, Block.BLOCK_VERSION_BIP66, Utils.currentTimeSeconds(), height, transactions);
     }
 
-    /** Emulates receiving a valid block that builds on top of the chain. */
+    /**
+     * Emulates receiving a valid block that builds on top of the chain.
+     */
     public static BlockPair createFakeBlock(BlockStore blockStore, long version, long timeSeconds, int height, Transaction... transactions) {
         try {
             return createFakeBlock(blockStore, blockStore.getChainHead(), version, timeSeconds, height, transactions);
@@ -279,13 +296,17 @@ public class FakeTxBuilder {
         }
     }
 
-    /** Emulates receiving a valid block that builds on top of the chain. */
+    /**
+     * Emulates receiving a valid block that builds on top of the chain.
+     */
     public static BlockPair createFakeBlock(BlockStore blockStore, int height,
                                             Transaction... transactions) {
         return createFakeBlock(blockStore, Block.BLOCK_VERSION_GENESIS, Utils.currentTimeSeconds(), height, transactions);
     }
 
-    /** Emulates receiving a valid block that builds on top of the chain. */
+    /**
+     * Emulates receiving a valid block that builds on top of the chain.
+     */
     public static BlockPair createFakeBlock(BlockStore blockStore, Transaction... transactions) {
         return createFakeBlock(blockStore, Block.BLOCK_VERSION_GENESIS, Utils.currentTimeSeconds(), 0, transactions);
     }

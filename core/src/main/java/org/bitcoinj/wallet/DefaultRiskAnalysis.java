@@ -17,22 +17,14 @@
 
 package org.bitcoinj.wallet;
 
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.*;
 import org.bitcoinj.core.ECKey.ECDSASignature;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.SignatureDecodeException;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionConfidence;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.ScriptChunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -47,7 +39,8 @@ public class DefaultRiskAnalysis implements RiskAnalysis {
 
     protected final Transaction tx;
     protected final List<Transaction> dependencies;
-    @Nullable protected final Wallet wallet;
+    @Nullable
+    protected final Wallet wallet;
 
     private Transaction nonStandard;
     protected Transaction nonFinal;
@@ -179,7 +172,9 @@ public class DefaultRiskAnalysis implements RiskAnalysis {
         return RuleViolation.NONE;
     }
 
-    /** Checks if the given input passes some of the AreInputsStandard checks. Not complete. */
+    /**
+     * Checks if the given input passes some of the AreInputsStandard checks. Not complete.
+     */
     public static RuleViolation isInputStandard(TransactionInput input) {
         for (ScriptChunk chunk : input.getScriptSig().getChunks()) {
             if (chunk.data != null && !chunk.isShortestPossiblePushData())
@@ -226,13 +221,17 @@ public class DefaultRiskAnalysis implements RiskAnalysis {
         return Result.OK;
     }
 
-    /** Returns the transaction that was found to be non-standard, or null. */
+    /**
+     * Returns the transaction that was found to be non-standard, or null.
+     */
     @Nullable
     public Transaction getNonStandard() {
         return nonStandard;
     }
 
-    /** Returns the transaction that was found to be non-final, or null. */
+    /**
+     * Returns the transaction that was found to be non-final, or null.
+     */
     @Nullable
     public Transaction getNonFinal() {
         return nonFinal;

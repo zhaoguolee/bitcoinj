@@ -17,8 +17,8 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.core.listeners.TransactionConfidenceEventListener;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
+import org.bitcoinj.core.listeners.TransactionConfidenceEventListener;
 import org.bitcoinj.params.UnitTestParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.MemoryBlockStore;
@@ -43,8 +43,8 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.bitcoinj.core.Coin.*;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.bitcoinj.core.Coin.*;
 import static org.junit.Assert.*;
 
 public class ChainSplitTest {
@@ -193,7 +193,7 @@ public class ChainSplitTest {
         // Waiting for confirmation ... make it eligible for selection.
         assertEquals(Coin.ZERO, wallet.getBalance());
         spend.getConfidence().markBroadcastBy(new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{1, 2, 3, 4})));
-        spend.getConfidence().markBroadcastBy(new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{5,6,7,8})));
+        spend.getConfidence().markBroadcastBy(new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{5, 6, 7, 8})));
         assertEquals(ConfidenceType.PENDING, spend.getConfidence().getConfidenceType());
         assertEquals(valueOf(40, 0), wallet.getBalance());
         Block b2 = b1.createNextBlock(someOtherGuy);
@@ -478,7 +478,8 @@ public class ChainSplitTest {
         try {
             txns.get(1).getConfidence().getAppearedAtChainHeight();
             fail();
-        } catch (IllegalStateException e) {}
+        } catch (IllegalStateException e) {
+        }
         assertEquals(0, txns.get(1).getConfidence().getDepthInBlocks());
 
         // ... and back to the first chain.

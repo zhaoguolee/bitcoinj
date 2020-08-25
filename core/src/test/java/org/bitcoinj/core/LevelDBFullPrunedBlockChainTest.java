@@ -35,7 +35,7 @@ public class LevelDBFullPrunedBlockChainTest extends
 
     @Override
     public FullPrunedBlockStore createStore(NetworkParameters params,
-            int blockCount) throws BlockStoreException {
+                                            int blockCount) throws BlockStoreException {
         deleteFiles();
         return new LevelDBFullPrunedBlockStore(params, "test-leveldb",
                 blockCount);

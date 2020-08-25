@@ -23,6 +23,7 @@ import org.bitcoinj.wallet.Wallet;
  */
 public interface WalletReorganizeEventListener {
     // TODO: Finish onReorganize to be more useful.
+
     /**
      * <p>This is called when a block is received that triggers a block chain re-organization.</p>
      *

@@ -17,20 +17,15 @@
 
 package org.bitcoinj.params;
 
-import static com.google.common.base.Preconditions.checkState;
-
-import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
-
 import com.google.common.base.Preconditions;
 import org.bitcoinj.core.*;
-import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.utils.MonetaryFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Stopwatch;
+import java.math.BigInteger;
 
 /**
  * Parameters for Bitcoin-like networks.
@@ -63,6 +58,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     /**
      * Checks if we are at a reward halving point.
+     *
      * @param previousHeight The height of the previous stored block
      * @return If this is a reward halving point
      */
@@ -86,6 +82,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     /**
      * Checks if we are at a difficulty transition point.
+     *
      * @param storedPrev The previous stored block
      * @param parameters The network parameters
      * @return If this is a difficulty transition point
@@ -100,8 +97,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     /**
      * determines whether monolith upgrade is activated based on MTP
+     *
      * @param storedPrev The previous stored block
-     * @param store BlockStore containing at least 11 blocks
+     * @param store      BlockStore containing at least 11 blocks
      * @param parameters The network parameters
      * @return
      */
@@ -161,7 +159,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
                                                 BigInteger evalBlockTime, BigInteger evalBlockHeight, StoredBlock storedPrev, Block nextBlock) {
         Preconditions.checkState(evalBlockHeight.compareTo(referenceBlockHeight) >= 0);
 
-        if(storedPrev != null && nextBlock != null) {
+        if (storedPrev != null && nextBlock != null) {
             if (networkParameters.allowMinDifficultyBlocks() &&
                     (nextBlock.getTimeSeconds() >
                             storedPrev.getHeader().getTimeSeconds() + 2 * TARGET_SPACING)) {
@@ -193,7 +191,7 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
         factor = factor.shiftRight(48);
         target = target.multiply(radix.add(factor));
 
-        if(numShifts.compareTo(BigInteger.ZERO) < 0) {
+        if (numShifts.compareTo(BigInteger.ZERO) < 0) {
             target = target.shiftRight(-numShifts.intValue());
         } else {
             target = target.shiftLeft(numShifts.intValue());
@@ -201,10 +199,10 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
         target = target.shiftRight(16);
 
-        if(target.equals(BigInteger.ZERO)) {
+        if (target.equals(BigInteger.ZERO)) {
             return BigInteger.valueOf(Utils.encodeCompactBits(BigInteger.ONE));
         }
-        if(target.compareTo(MAX_TARGET) > 0) {
+        if (target.compareTo(MAX_TARGET) > 0) {
             return new BigInteger(MAX_BITS_STRING, 16);
         }
 
@@ -224,8 +222,9 @@ public abstract class AbstractBitcoinNetParams extends NetworkParameters {
 
     /**
      * determines whether monolith upgrade is activated based on the given MTP.  Useful for overriding MTP for testing.
+     *
      * @param medianTimePast
-     * @param parameters The network parameters
+     * @param parameters     The network parameters
      * @return
      */
     public static boolean isMonolithEnabled(long medianTimePast, NetworkParameters parameters) {

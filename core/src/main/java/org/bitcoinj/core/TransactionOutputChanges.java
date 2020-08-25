@@ -31,18 +31,18 @@ import java.util.List;
 public class TransactionOutputChanges {
     public final List<UTXO> txOutsCreated;
     public final List<UTXO> txOutsSpent;
-    
+
     public TransactionOutputChanges(List<UTXO> txOutsCreated, List<UTXO> txOutsSpent) {
         this.txOutsCreated = txOutsCreated;
         this.txOutsSpent = txOutsSpent;
     }
-    
+
     public TransactionOutputChanges(InputStream in) throws IOException {
         int numOutsCreated = (int) Utils.readUint32FromStream(in);
         txOutsCreated = new LinkedList<>();
         for (int i = 0; i < numOutsCreated; i++)
             txOutsCreated.add(new UTXO(in));
-        
+
         int numOutsSpent = (int) Utils.readUint32FromStream(in);
         txOutsSpent = new LinkedList<>();
         for (int i = 0; i < numOutsSpent; i++)
@@ -55,7 +55,7 @@ public class TransactionOutputChanges {
         for (UTXO output : txOutsCreated) {
             output.serializeToStream(bos);
         }
-        
+
         int numOutsSpent = txOutsSpent.size();
         Utils.uint32ToByteStreamLE(numOutsSpent, bos);
         for (UTXO output : txOutsSpent) {

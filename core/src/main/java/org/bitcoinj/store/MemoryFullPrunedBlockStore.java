@@ -16,8 +16,8 @@
 
 package org.bitcoinj.store;
 
-import org.bitcoinj.core.*;
 import com.google.common.base.Preconditions;
+import org.bitcoinj.core.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -28,28 +28,32 @@ import java.util.*;
  */
 class StoredTransactionOutPoint {
 
-    /** Hash of the transaction to which we refer. */
+    /**
+     * Hash of the transaction to which we refer.
+     */
     Sha256Hash hash;
-    /** Which output of that transaction we are talking about. */
+    /**
+     * Which output of that transaction we are talking about.
+     */
     long index;
-    
+
     StoredTransactionOutPoint(Sha256Hash hash, long index) {
         this.hash = hash;
         this.index = index;
     }
-    
+
     StoredTransactionOutPoint(UTXO out) {
         this.hash = out.getHash();
         this.index = out.getIndex();
     }
-    
+
     /**
      * The hash of the transaction to which we refer
      */
     Sha256Hash getHash() {
         return hash;
     }
-    
+
     /**
      * The index of the output in transaction to which we refer
      */
@@ -61,7 +65,7 @@ class StoredTransactionOutPoint {
     public int hashCode() {
         return Objects.hash(getIndex(), getHash());
     }
-    
+
     @Override
     public String toString() {
         return "Stored transaction out point: " + hash + ":" + index;
@@ -84,23 +88,23 @@ class TransactionalHashMap<KeyType, ValueType> {
     ThreadLocal<HashMap<KeyType, ValueType>> tempMap;
     ThreadLocal<HashSet<KeyType>> tempSetRemoved;
     private ThreadLocal<Boolean> inTransaction;
-    
+
     HashMap<KeyType, ValueType> map;
-    
+
     public TransactionalHashMap() {
         tempMap = new ThreadLocal<>();
         tempSetRemoved = new ThreadLocal<>();
         inTransaction = new ThreadLocal<>();
         map = new HashMap<>();
     }
-    
+
     public void beginDatabaseBatchWrite() {
         inTransaction.set(true);
     }
 
     public void commitDatabaseBatchWrite() {
         if (tempSetRemoved.get() != null)
-            for(KeyType key : tempSetRemoved.get())
+            for (KeyType key : tempSetRemoved.get())
                 map.remove(key);
         if (tempMap.get() != null)
             for (Map.Entry<KeyType, ValueType> entry : tempMap.get().entrySet())
@@ -135,7 +139,7 @@ class TransactionalHashMap<KeyType, ValueType> {
         }
         return valueTypes;
     }
-    
+
     public void put(KeyType key, ValueType value) {
         if (Boolean.TRUE.equals(inTransaction.get())) {
             if (tempSetRemoved.get() != null)
@@ -143,11 +147,11 @@ class TransactionalHashMap<KeyType, ValueType> {
             if (tempMap.get() == null)
                 tempMap.set(new HashMap<KeyType, ValueType>());
             tempMap.get().put(key, value);
-        }else{
+        } else {
             map.put(key, value);
         }
     }
-    
+
     @Nullable
     public ValueType remove(KeyType key) {
         if (Boolean.TRUE.equals(inTransaction.get())) {
@@ -163,7 +167,7 @@ class TransactionalHashMap<KeyType, ValueType> {
                     return tempVal;
             }
             return retVal;
-        }else{
+        } else {
             return map.remove(key);
         }
     }
@@ -172,18 +176,19 @@ class TransactionalHashMap<KeyType, ValueType> {
 /**
  * A Map with multiple key types that is DB per-thread-transaction-aware.
  * However, this class is not thread-safe.
+ *
  * @param <UniqueKeyType> is a key that must be unique per object
- * @param <MultiKeyType> is a key that can have multiple values
+ * @param <MultiKeyType>  is a key that can have multiple values
  */
 class TransactionalMultiKeyHashMap<UniqueKeyType, MultiKeyType, ValueType> {
     TransactionalHashMap<UniqueKeyType, ValueType> mapValues;
     HashMap<MultiKeyType, Set<UniqueKeyType>> mapKeys;
-    
+
     public TransactionalMultiKeyHashMap() {
         mapValues = new TransactionalHashMap<>();
         mapKeys = new HashMap<>();
     }
-    
+
     public void BeginTransaction() {
         mapValues.beginDatabaseBatchWrite();
     }
@@ -200,7 +205,7 @@ class TransactionalMultiKeyHashMap<UniqueKeyType, MultiKeyType, ValueType> {
     public ValueType get(UniqueKeyType key) {
         return mapValues.get(key);
     }
-    
+
     public void put(UniqueKeyType uniqueKey, MultiKeyType multiKey, ValueType value) {
         mapValues.put(uniqueKey, value);
         Set<UniqueKeyType> set = mapKeys.get(multiKey);
@@ -208,16 +213,16 @@ class TransactionalMultiKeyHashMap<UniqueKeyType, MultiKeyType, ValueType> {
             set = new HashSet<>();
             set.add(uniqueKey);
             mapKeys.put(multiKey, set);
-        }else{
+        } else {
             set.add(uniqueKey);
         }
     }
-    
+
     @Nullable
     public ValueType removeByUniqueKey(UniqueKeyType key) {
         return mapValues.remove(key);
     }
-    
+
     public void removeByMultiKey(MultiKeyType key) {
         Set<UniqueKeyType> set = mapKeys.remove(key);
         if (set != null)
@@ -234,8 +239,13 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
     protected static class StoredBlockAndWasUndoableFlag {
         public StoredBlock block;
         public boolean wasUndoable;
-        public StoredBlockAndWasUndoableFlag(StoredBlock block, boolean wasUndoable) { this.block = block; this.wasUndoable = wasUndoable; }
+
+        public StoredBlockAndWasUndoableFlag(StoredBlock block, boolean wasUndoable) {
+            this.block = block;
+            this.wasUndoable = wasUndoable;
+        }
     }
+
     private TransactionalHashMap<Sha256Hash, StoredBlockAndWasUndoableFlag> blockMap;
     private TransactionalMultiKeyHashMap<Sha256Hash, Integer, StoredUndoableBlock> fullBlockMap;
     //TODO: Use something more suited to remove-heavy use?
@@ -244,10 +254,11 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
     private StoredBlock verifiedChainHead;
     private int fullStoreDepth;
     private NetworkParameters params;
-    
+
     /**
      * Set up the MemoryFullPrunedBlockStore
-     * @param params The network parameters of this block store - used to get genesis block
+     *
+     * @param params         The network parameters of this block store - used to get genesis block
      * @param fullStoreDepth The depth of blocks to keep FullStoredBlocks instead of StoredBlocks
      */
     public MemoryFullPrunedBlockStore(NetworkParameters params, int fullStoreDepth) {
@@ -278,7 +289,7 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
         Sha256Hash hash = block.getHeader().getHash();
         blockMap.put(hash, new StoredBlockAndWasUndoableFlag(block, false));
     }
-    
+
     @Override
     public synchronized final void put(StoredBlock storedBlock, StoredUndoableBlock undoableBlock) throws BlockStoreException {
         Preconditions.checkNotNull(blockMap, "MemoryFullPrunedBlockStore is closed");
@@ -294,7 +305,7 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
         StoredBlockAndWasUndoableFlag storedBlock = blockMap.get(hash);
         return storedBlock == null ? null : storedBlock.block;
     }
-    
+
     @Override
     @Nullable
     public synchronized StoredBlock getOnceUndoableStoredBlock(Sha256Hash hash) throws BlockStoreException {
@@ -302,7 +313,7 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
         StoredBlockAndWasUndoableFlag storedBlock = blockMap.get(hash);
         return (storedBlock != null && storedBlock.wasUndoable) ? storedBlock.block : null;
     }
-    
+
     @Override
     @Nullable
     public synchronized StoredUndoableBlock getUndoBlock(Sha256Hash hash) throws BlockStoreException {
@@ -321,7 +332,7 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
         Preconditions.checkNotNull(blockMap, "MemoryFullPrunedBlockStore is closed");
         this.chainHead = chainHead;
     }
-    
+
     @Override
     public synchronized StoredBlock getVerifiedChainHead() throws BlockStoreException {
         Preconditions.checkNotNull(blockMap, "MemoryFullPrunedBlockStore is closed");
@@ -338,14 +349,14 @@ public class MemoryFullPrunedBlockStore implements FullPrunedBlockStore {
         // Though the FullPrunedBlockStore allows for this, the current AbstractBlockChain will not do it.
         fullBlockMap.removeByMultiKey(chainHead.getHeight() - fullStoreDepth);
     }
-    
+
     @Override
     public void close() {
         blockMap = null;
         fullBlockMap = null;
         transactionOutputMap = null;
     }
-    
+
     @Override
     @Nullable
     public synchronized UTXO getTransactionOutput(Sha256Hash hash, long index) throws BlockStoreException {

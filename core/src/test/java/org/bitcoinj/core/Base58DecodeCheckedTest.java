@@ -32,8 +32,9 @@ public class Base58DecodeCheckedTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     private static final String BASE58_ALPHABET = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
+
     private boolean containsOnlyValidBase58Chars(String input) {
-        for(String s : input.split("")) {
+        for (String s : input.split("")) {
             if (!BASE58_ALPHABET.contains(s)) {
                 return false;
             }

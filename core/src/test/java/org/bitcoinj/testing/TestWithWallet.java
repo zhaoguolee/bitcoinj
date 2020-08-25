@@ -16,16 +16,7 @@
 
 package org.bitcoinj.testing;
 
-import org.bitcoinj.core.AbstractBlockChain;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.BlockChain;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.core.*;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.UnitTestParams;
 import org.bitcoinj.script.Script;

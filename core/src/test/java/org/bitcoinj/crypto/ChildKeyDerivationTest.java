@@ -17,12 +17,16 @@
 
 package org.bitcoinj.crypto;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.params.*;
-import org.junit.*;
-import org.bouncycastle.crypto.params.*;
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.params.UnitTestParams;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.junit.Test;
 
-import static org.bitcoinj.core.Utils.*;
+import static org.bitcoinj.core.Utils.HEX;
 import static org.junit.Assert.*;
 
 /**
@@ -42,7 +46,7 @@ public class ChildKeyDerivationTest {
         String[] ckdTestVectors = {
                 // test case 1:
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "04" +  "6a04ab98d9e4774ad806e302dddeb63b" +
+                "04" + "6a04ab98d9e4774ad806e302dddeb63b" +
                         "ea16b5cb5f223ee77478e861bb583eb3" +
                         "36b6fbcb60b5b3d4f1551ac45e5ffc49" +
                         "36466e7d98f6c7c0ec736539f74691a6",
@@ -50,15 +54,15 @@ public class ChildKeyDerivationTest {
 
                 // test case 2:
                 "be05d9ded0a73f81b814c93792f753b35c575fe446760005d44e0be13ba8935a",
-                "02" +  "b530da16bbff1428c33020e87fc9e699" +
+                "02" + "b530da16bbff1428c33020e87fc9e699" +
                         "cc9c753a63b8678ce647b7457397acef",
                 "7012bc411228495f25d666d55fdce3f10a93908b5f9b9b7baa6e7573603a7bda"
         };
         assertEquals(0, ckdTestVectors.length % 3);
 
-        for(int i = 0; i < ckdTestVectors.length / 3; i++) {
-            byte[] priv  = HEX.decode(ckdTestVectors[3 * i]);
-            byte[] pub   = HEX.decode(ckdTestVectors[3 * i + 1]);
+        for (int i = 0; i < ckdTestVectors.length / 3; i++) {
+            byte[] priv = HEX.decode(ckdTestVectors[3 * i]);
+            byte[] pub = HEX.decode(ckdTestVectors[3 * i + 1]);
             byte[] chain = HEX.decode(ckdTestVectors[3 * i + 2]); // chain code
 
             //////////////////////////////////////////////////////////////////////////
@@ -278,7 +282,9 @@ public class ChildKeyDerivationTest {
         assertEquals(DeterministicKey.deserialize(UNITTEST, key4.serializePrivate(UNITTEST)).getPath().size(), 1);
     }
 
-    /** Reserializing a deserialized key should yield the original input */
+    /**
+     * Reserializing a deserialized key should yield the original input
+     */
     @Test
     public void reserialization() {
         // This is the public encoding of the key with path m/0H/1/2H from BIP32 published test vector 1:

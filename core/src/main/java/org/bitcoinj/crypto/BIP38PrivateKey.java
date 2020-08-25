@@ -16,14 +16,12 @@
 
 package org.bitcoinj.crypto;
 
+import com.google.common.primitives.Bytes;
 import org.bitcoinj.core.*;
 import org.bouncycastle.crypto.generators.SCrypt;
 
-import com.google.common.primitives.Bytes;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -48,12 +46,10 @@ public class BIP38PrivateKey extends PrefixedChecksummedBytes {
 
     /**
      * Construct a password-protected private key from its Base58 representation.
-     * @param params
-     *            The network parameters of the chain that the key is for.
-     * @param base58
-     *            The textual form of the password-protected private key.
-     * @throws AddressFormatException
-     *             if the given base58 doesn't parse or the checksum is invalid
+     *
+     * @param params The network parameters of the chain that the key is for.
+     * @param base58 The textual form of the password-protected private key.
+     * @throws AddressFormatException if the given base58 doesn't parse or the checksum is invalid
      */
     public static BIP38PrivateKey fromBase58(NetworkParameters params, String base58) throws AddressFormatException {
         byte[] versionAndDataBytes = Base58.decodeChecked(base58);
@@ -97,7 +93,7 @@ public class BIP38PrivateKey extends PrefixedChecksummedBytes {
     }
 
     private BIP38PrivateKey(NetworkParameters params, byte[] bytes, boolean ecMultiply, boolean compressed,
-            boolean hasLotAndSequence, byte[] addressHash, byte[] content) throws AddressFormatException {
+                            boolean hasLotAndSequence, byte[] addressHash, byte[] content) throws AddressFormatException {
         super(params, bytes);
         this.ecMultiply = ecMultiply;
         this.compressed = compressed;
@@ -108,7 +104,7 @@ public class BIP38PrivateKey extends PrefixedChecksummedBytes {
 
     /**
      * Returns the base58-encoded textual form, including version and checksum bytes.
-     * 
+     *
      * @return textual form
      */
     public String toBase58() {

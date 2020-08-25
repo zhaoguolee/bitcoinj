@@ -50,7 +50,7 @@ public class SeedPeers implements PeerDiscovery {
      * Supports finding peers by IP addresses
      *
      * @param seedAddrs IP addresses for seed addresses.
-     * @param params Network parameters to be used for port information.
+     * @param params    Network parameters to be used for port information.
      */
     public SeedPeers(int[] seedAddrs, NetworkParameters params) {
         this.seedAddrs = seedAddrs;

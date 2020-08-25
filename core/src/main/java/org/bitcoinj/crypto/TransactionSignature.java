@@ -16,12 +16,13 @@
 
 package org.bitcoinj.crypto;
 
-import org.bitcoinj.core.SignatureDecodeException;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.VerificationException;
-import org.bitcoinj.core.Transaction.SigHash;
 import com.google.common.base.Preconditions;
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.SignatureDecodeException;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.Transaction.SigHash;
+import org.bitcoinj.core.VerificationException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -44,18 +45,24 @@ public class TransactionSignature extends ECKey.ECDSASignature {
         sighashFlags = calcSigHashValue(mode, anyoneCanPay, useForkId);
     }
 
-    /** Constructs a signature with the given components and SIGHASH_ALL. */
+    /**
+     * Constructs a signature with the given components and SIGHASH_ALL.
+     */
     public TransactionSignature(BigInteger r, BigInteger s) {
         this(r, s, Transaction.SigHash.ALL.value);
     }
 
-    /** Constructs a signature with the given components and raw sighash flag bytes (needed for rule compatibility). */
+    /**
+     * Constructs a signature with the given components and raw sighash flag bytes (needed for rule compatibility).
+     */
     public TransactionSignature(BigInteger r, BigInteger s, int sighashFlags) {
         super(r, s);
         this.sighashFlags = sighashFlags;
     }
 
-    /** Constructs a transaction signature based on the ECDSA signature. */
+    /**
+     * Constructs a transaction signature based on the ECDSA signature.
+     */
     public TransactionSignature(ECKey.ECDSASignature signature, Transaction.SigHash mode, boolean anyoneCanPay) {
         super(signature.r, signature.s);
         sighashFlags = calcSigHashValue(mode, anyoneCanPay);
@@ -77,12 +84,14 @@ public class TransactionSignature extends ECKey.ECDSASignature {
         int sighashFlags = mode.value;
         if (anyoneCanPay)
             sighashFlags |= Transaction.SigHash.ANYONECANPAY.value;
-        if(useForkId)
+        if (useForkId)
             sighashFlags |= SigHash.FORKID.value;
         return sighashFlags;
     }
 
-    /** Calculates the byte used in the protocol to represent the combination of mode and anyoneCanPay. */
+    /**
+     * Calculates the byte used in the protocol to represent the combination of mode and anyoneCanPay.
+     */
     public static int calcSigHashValue(Transaction.SigHash mode, boolean anyoneCanPay) {
         Preconditions.checkArgument(SigHash.ALL == mode || SigHash.NONE == mode || SigHash.SINGLE == mode); // enforce compatibility since this code was made before the SigHash enum was updated
         int sighashFlags = mode.value;
@@ -113,34 +122,31 @@ public class TransactionSignature extends ECKey.ECDSASignature {
         if (signature.length < 9 || signature.length > 73)
             return false;
 
-        int hashType = (signature[signature.length-1] & 0xff) & ~(Transaction.SigHash.ANYONECANPAY.value| SigHash.FORKID.value); // mask the byte to prevent sign-extension hurting us
+        int hashType = (signature[signature.length - 1] & 0xff) & ~(Transaction.SigHash.ANYONECANPAY.value | SigHash.FORKID.value); // mask the byte to prevent sign-extension hurting us
         if (hashType < Transaction.SigHash.ALL.value || hashType > Transaction.SigHash.SINGLE.value)
             return false;
 
         //                   "wrong type"                  "wrong length marker"
-        if ((signature[0] & 0xff) != 0x30 || (signature[1] & 0xff) != signature.length-3)
+        if ((signature[0] & 0xff) != 0x30 || (signature[1] & 0xff) != signature.length - 3)
             return false;
 
         int lenR = signature[3] & 0xff;
         if (5 + lenR >= signature.length || lenR == 0)
             return false;
-        int lenS = signature[5+lenR] & 0xff;
+        int lenS = signature[5 + lenR] & 0xff;
         if (lenR + lenS + 7 != signature.length || lenS == 0)
             return false;
 
         //    R value type mismatch          R value negative
-        if (signature[4-2] != 0x02 || (signature[4] & 0x80) == 0x80)
+        if (signature[4 - 2] != 0x02 || (signature[4] & 0x80) == 0x80)
             return false;
-        if (lenR > 1 && signature[4] == 0x00 && (signature[4+1] & 0x80) != 0x80)
+        if (lenR > 1 && signature[4] == 0x00 && (signature[4 + 1] & 0x80) != 0x80)
             return false; // R value excessively padded
 
         //       S value type mismatch                    S value negative
         if (signature[6 + lenR - 2] != 0x02 || (signature[6 + lenR] & 0x80) == 0x80)
             return false;
-        if (lenS > 1 && signature[6 + lenR] == 0x00 && (signature[6 + lenR + 1] & 0x80) != 0x80)
-            return false; // S value excessively padded
-
-        return true;
+        return lenS <= 1 || signature[6 + lenR] != 0x00 || (signature[6 + lenR + 1] & 0x80) == 0x80; // S value excessively padded
     }
 
     public boolean useForkId() {
@@ -185,14 +191,14 @@ public class TransactionSignature extends ECKey.ECDSASignature {
      * Returns a decoded signature.
      *
      * @param requireCanonicalEncoding if the encoding of the signature must
-     * be canonical.
-     * @param requireCanonicalSValue if the S-value must be canonical (below half
-     * the order of the curve).
+     *                                 be canonical.
+     * @param requireCanonicalSValue   if the S-value must be canonical (below half
+     *                                 the order of the curve).
      * @throws SignatureDecodeException if the signature is unparseable in some way.
-     * @throws VerificationException if the signature is invalid.
+     * @throws VerificationException    if the signature is invalid.
      */
     public static TransactionSignature decodeFromBitcoin(byte[] bytes, boolean requireCanonicalEncoding,
-            boolean requireCanonicalSValue) throws SignatureDecodeException, VerificationException {
+                                                         boolean requireCanonicalSValue) throws SignatureDecodeException, VerificationException {
         // Bitcoin encoding is DER signature + sighash byte.
         if (requireCanonicalEncoding && !isEncodingCanonical(bytes))
             throw new VerificationException.NoncanonicalSignature();

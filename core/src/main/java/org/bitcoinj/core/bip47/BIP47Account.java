@@ -51,6 +51,7 @@ public class BIP47Account {
 
     /**
      * Constructor expecting a Base58Check encoded payment code.
+     *
      * @throws AddressFormatException if the payment code is invalid
      */
     public BIP47Account(NetworkParameters parameters, String strPaymentCode) {
@@ -61,7 +62,9 @@ public class BIP47Account {
         mXPub = mKey.serializePubB58(parameters);
     }
 
-    /** Return the Base58Check representation of the payment code*/
+    /**
+     * Return the Base58Check representation of the payment code
+     */
     public String getStringPaymentCode() {
         return mBIP47PaymentCode.toString();
     }
@@ -70,22 +73,30 @@ public class BIP47Account {
         return mXPub;
     }
 
-    /** Returns the P2PKH address associated with the 0th public key  */
+    /**
+     * Returns the P2PKH address associated with the 0th public key
+     */
     public Address getNotificationAddress() {
         return HDKeyDerivation.deriveChildKey(mKey, ChildNumber.ZERO).toAddress(mNetworkParameters);
     }
 
-    /** Returns the 0th derivation key */
+    /**
+     * Returns the 0th derivation key
+     */
     public ECKey getNotificationKey() {
         return HDKeyDerivation.deriveChildKey(mKey, ChildNumber.ZERO);
     }
 
-    /** Return the payment code as is */
+    /**
+     * Return the payment code as is
+     */
     public BIP47PaymentCode getPaymentCode() {
         return mBIP47PaymentCode;
     }
 
-    /** Returns the nth key.
+    /**
+     * Returns the nth key.
+     *
      * @param idx must be between 0 and 2147483647
      */
     public ECKey keyAt(int idx) {

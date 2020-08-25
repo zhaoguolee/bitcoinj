@@ -18,12 +18,10 @@
 package org.bitcoinj.signers;
 
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.SchnorrSignature;
-import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.VerifyFlag;
 import org.bitcoinj.script.ScriptException;
@@ -54,7 +52,7 @@ public class LocalSchnorrTransactionSigner implements TransactionSigner {
      * signed.
      */
     private static final EnumSet<VerifyFlag> MINIMUM_VERIFY_FLAGS = EnumSet.of(VerifyFlag.P2SH,
-        VerifyFlag.NULLDUMMY);
+            VerifyFlag.NULLDUMMY);
 
     @Override
     public boolean isReady() {

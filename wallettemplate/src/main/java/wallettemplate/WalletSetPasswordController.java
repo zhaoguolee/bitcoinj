@@ -16,22 +16,24 @@
 
 package wallettemplate;
 
-import javafx.application.*;
-import javafx.event.*;
-import javafx.fxml.*;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import org.bitcoinj.crypto.*;
-import org.bitcoinj.wallet.*;
-import org.slf4j.*;
-import org.bouncycastle.crypto.params.*;
-
 import com.google.protobuf.ByteString;
-
-import wallettemplate.utils.*;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.GridPane;
+import org.bitcoinj.crypto.KeyCrypterScrypt;
+import org.bitcoinj.wallet.Protos;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import wallettemplate.utils.KeyDerivationTasks;
 
 import java.time.Duration;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
 
 import static wallettemplate.utils.GuiUtils.*;
 

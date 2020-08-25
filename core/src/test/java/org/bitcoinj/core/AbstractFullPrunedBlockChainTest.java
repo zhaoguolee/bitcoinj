@@ -30,6 +30,7 @@ import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletTransaction;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,6 @@ import java.util.List;
 
 import static org.bitcoinj.core.Coin.FIFTY_COINS;
 import static org.junit.Assert.*;
-import org.junit.rules.ExpectedException;
 
 /**
  * We don't do any wallet tests here, we leave that to {@link ChainSplitTest}
@@ -53,7 +53,8 @@ public abstract class AbstractFullPrunedBlockChainTest {
     private static final Logger log = LoggerFactory.getLogger(AbstractFullPrunedBlockChainTest.class);
 
     protected static final NetworkParameters PARAMS = new UnitTestParams() {
-        @Override public int getInterval() {
+        @Override
+        public int getInterval() {
             return 10000;
         }
     };
@@ -70,7 +71,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
     }
 
     public abstract FullPrunedBlockStore createStore(NetworkParameters params, int blockCount)
-        throws BlockStoreException;
+            throws BlockStoreException;
 
     public abstract void resetStore(FullPrunedBlockStore store) throws BlockStoreException;
 
@@ -79,7 +80,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
         // Tests various test cases from FullBlockTestGenerator
         FullBlockTestGenerator generator = new FullBlockTestGenerator(PARAMS);
         RuleList blockList = generator.getBlocksToTest(false, false, null);
-        
+
         store = createStore(PARAMS, blockList.maximumReorgBlockCount);
         chain = new FullPrunedBlockChain(PARAMS, store);
 
@@ -120,7 +121,8 @@ public abstract class AbstractFullPrunedBlockChainTest {
         }
         try {
             store.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     @Test
@@ -145,7 +147,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
 
         rollingBlock = rollingBlock.createNextBlock(null);
         Transaction t = new Transaction(PARAMS);
-        t.addOutput(new TransactionOutput(PARAMS, t, FIFTY_COINS, new byte[] {}));
+        t.addOutput(new TransactionOutput(PARAMS, t, FIFTY_COINS, new byte[]{}));
         TransactionInput input = t.addInput(spendableOutput);
         // Invalid script.
         input.clearScriptBytes();
@@ -159,7 +161,8 @@ public abstract class AbstractFullPrunedBlockChainTest {
         }
         try {
             store.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     @Test
@@ -167,10 +170,10 @@ public abstract class AbstractFullPrunedBlockChainTest {
         final int UNDOABLE_BLOCKS_STORED = 10;
         store = createStore(PARAMS, UNDOABLE_BLOCKS_STORED);
         chain = new FullPrunedBlockChain(PARAMS, store);
-        
+
         // Check that we aren't accidentally leaving any references
         // to the full StoredUndoableBlock's lying around (ie memory leaks)
-        
+
         ECKey outKey = new ECKey();
         int height = 1;
 
@@ -183,18 +186,18 @@ public abstract class AbstractFullPrunedBlockChainTest {
             rollingBlock = rollingBlock.createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS, outKey.getPubKey(), height++);
             chain.add(rollingBlock);
         }
-        
+
         WeakReference<UTXO> out = new WeakReference<UTXO>
-                                       (store.getTransactionOutput(spendableOutput.getHash(), spendableOutput.getIndex()));
+                (store.getTransactionOutput(spendableOutput.getHash(), spendableOutput.getIndex()));
         rollingBlock = rollingBlock.createNextBlock(null);
-        
+
         Transaction t = new Transaction(PARAMS);
         // Entirely invalid scriptPubKey
         t.addOutput(new TransactionOutput(PARAMS, t, FIFTY_COINS, new byte[]{}));
         t.addSignedInput(spendableOutput, new Script(spendableOutputScriptPubKey), outKey);
         rollingBlock.addTransaction(t);
         rollingBlock.solve();
-        
+
         chain.add(rollingBlock);
         WeakReference<StoredUndoableBlock> undoBlock = new WeakReference<>(store.getUndoBlock(rollingBlock.getHash()));
 
@@ -204,7 +207,7 @@ public abstract class AbstractFullPrunedBlockChainTest {
         WeakReference<TransactionOutputChanges> changes = new WeakReference<>(storedUndoableBlock.getTxOutChanges());
         assertNotNull(changes.get());
         storedUndoableBlock = null;   // Blank the reference so it can be GCd.
-        
+
         // Create a chain longer than UNDOABLE_BLOCKS_STORED
         for (int i = 0; i < UNDOABLE_BLOCKS_STORED; i++) {
             rollingBlock = rollingBlock.createNextBlock(null);
@@ -217,15 +220,16 @@ public abstract class AbstractFullPrunedBlockChainTest {
         assertNull(out.get());
         try {
             store.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
-    
+
     @Test
     public void testFirst100KBlocks() throws Exception {
         Context context = new Context(MAINNET);
         File blockFile = new File(getClass().getResource("first-100k-blocks.dat").getFile());
         BlockFileLoader loader = new BlockFileLoader(MAINNET, Arrays.asList(blockFile));
-        
+
         store = createStore(MAINNET, 10);
         resetStore(store);
         chain = new FullPrunedBlockChain(context, store);
@@ -233,7 +237,8 @@ public abstract class AbstractFullPrunedBlockChainTest {
             chain.add(block);
         try {
             store.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     @Test
@@ -284,7 +289,8 @@ public abstract class AbstractFullPrunedBlockChainTest {
         output = null;
         try {
             store.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     @Test
@@ -348,7 +354,8 @@ public abstract class AbstractFullPrunedBlockChainTest {
         assertEquals("Pending tx amount is incorrect", amount2.subtract(fee), totalPendingTxAmount);
         try {
             store.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     /**
@@ -370,20 +377,20 @@ public abstract class AbstractFullPrunedBlockChainTest {
             // Put in just enough v1 blocks to stop the v2 blocks from forming a majority
             for (height = 1; height <= (PARAMS.getMajorityWindow() - PARAMS.getMajorityEnforceBlockUpgrade()); height++) {
                 chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS,
-                    outKey.getPubKey(), height);
+                        outKey.getPubKey(), height);
                 chain.add(chainHead);
             }
 
             // Fill the rest of the window in with v2 blocks
             for (; height < PARAMS.getMajorityWindow(); height++) {
                 chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_BIP34,
-                    outKey.getPubKey(), height);
+                        outKey.getPubKey(), height);
                 chain.add(chainHead);
             }
             // Throw a broken v2 block in before we have a supermajority to enable
             // enforcement, which should validate as-is
             chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_BIP34,
-                outKey.getPubKey(), height * 2);
+                    outKey.getPubKey(), height * 2);
             chain.add(chainHead);
             height++;
 
@@ -391,14 +398,14 @@ public abstract class AbstractFullPrunedBlockChainTest {
             // we have a v2 supermajority
             thrown.expect(VerificationException.CoinbaseHeightMismatch.class);
             chainHead = chainHead.createNextBlockWithCoinbase(Block.BLOCK_VERSION_BIP34,
-                outKey.getPubKey(), height * 2);
+                    outKey.getPubKey(), height * 2);
             chain.add(chainHead);
-        }  catch(final VerificationException ex) {
+        } catch (final VerificationException ex) {
             throw (Exception) ex.getCause();
         } finally {
             try {
                 store.close();
-            } catch(Exception e) {
+            } catch (Exception e) {
                 // Catch and drop any exception so a break mid-test doesn't result
                 // in a new exception being thrown and the original lost
             }

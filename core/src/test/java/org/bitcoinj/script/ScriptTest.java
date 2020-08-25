@@ -20,17 +20,17 @@ package org.bitcoinj.script;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Transaction.SigHash;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.script.Script.VerifyFlag;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
 import org.hamcrest.core.IsNot;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,6 @@ import static org.bitcoinj.script.ScriptOpCodes.OP_0;
 import static org.bitcoinj.script.ScriptOpCodes.OP_INVALIDOPCODE;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
-import org.junit.Before;
 
 public class ScriptTest {
     // From tx 05e04c26c12fe408a3c1b71aa7996403f6acad1045252b1c62e055496f4d2cb1 on the testnet.
@@ -123,7 +122,7 @@ public class ScriptTest {
         Script s = new Script(bytes);
         assertTrue(ScriptPattern.isP2PK(s));
     }
-    
+
     @Test
     public void testCreateMultiSigInputScript() {
         // Setup transaction and signatures
@@ -226,7 +225,7 @@ public class ScriptTest {
     public void testOp0() {
         // Check that OP_0 doesn't NPE and pushes an empty stack frame.
         Transaction tx = new Transaction(TESTNET);
-        tx.addInput(new TransactionInput(TESTNET, tx, new byte[] {}));
+        tx.addInput(new TransactionInput(TESTNET, tx, new byte[]{}));
         Script script = new ScriptBuilder().smallNum(0).build();
 
         LinkedList<byte[]> stack = new LinkedList<>();
@@ -236,17 +235,17 @@ public class ScriptTest {
 
     private Script parseScriptString(String string) throws IOException {
         String[] words = string.split("[ \\t\\n]");
-        
+
         UnsafeByteArrayOutputStream out = new UnsafeByteArrayOutputStream();
 
-        for(String w : words) {
+        for (String w : words) {
             if (w.equals(""))
                 continue;
             if (w.matches("^-?[0-9]*$")) {
                 // Number
                 long val = Long.parseLong(w);
                 if (val >= -1 && val <= 16)
-                    out.write(Script.encodeToOpN((int)val));
+                    out.write(Script.encodeToOpN((int) val));
                 else
                     Script.writeBytes(out, Utils.reverseBytes(Utils.encodeMPI(BigInteger.valueOf(val), false)));
             } else if (w.matches("^0x[0-9a-fA-F]*$")) {
@@ -264,9 +263,9 @@ public class ScriptTest {
                 out.write(ScriptOpCodes.getOpCode(w.substring(3)));
             } else {
                 throw new RuntimeException("Invalid word: '" + w + "'");
-            }                        
+            }
         }
-        
+
         return new Script(out.toByteArray());
     }
 
@@ -350,7 +349,7 @@ public class ScriptTest {
         tx.addInput(txInput);
 
         TransactionOutput txOutput = new TransactionOutput(TESTNET, tx, creditingTransaction.getOutput(0).getValue(),
-                new Script(new byte[] {}).getProgram());
+                new Script(new byte[]{}).getProgram());
         tx.addOutput(txOutput);
 
         return tx;

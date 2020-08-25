@@ -16,7 +16,11 @@
 
 package org.bitcoinj.core;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.bitcoinj.core.listeners.*;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.script.Script;
@@ -26,17 +30,13 @@ import org.bitcoinj.testing.TestWithNetworkConnections;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
-
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.Uninterruptibles;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -45,7 +45,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -54,7 +53,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.bitcoinj.core.Coin.*;
+import static org.bitcoinj.core.Coin.COIN;
+import static org.bitcoinj.core.Coin.valueOf;
 import static org.bitcoinj.testing.FakeTxBuilder.*;
 import static org.junit.Assert.*;
 
@@ -68,10 +68,10 @@ public class PeerTest extends TestWithNetworkConnections {
 
     @Parameterized.Parameters
     public static Collection<ClientType[]> parameters() {
-        return Arrays.asList(new ClientType[] {ClientType.NIO_CLIENT_MANAGER},
-                             new ClientType[] {ClientType.BLOCKING_CLIENT_MANAGER},
-                             new ClientType[] {ClientType.NIO_CLIENT},
-                             new ClientType[] {ClientType.BLOCKING_CLIENT});
+        return Arrays.asList(new ClientType[]{ClientType.NIO_CLIENT_MANAGER},
+                new ClientType[]{ClientType.BLOCKING_CLIENT_MANAGER},
+                new ClientType[]{ClientType.NIO_CLIENT},
+                new ClientType[]{ClientType.BLOCKING_CLIENT});
     }
 
     public PeerTest(ClientType clientType) {
@@ -123,9 +123,9 @@ public class PeerTest extends TestWithNetworkConnections {
         Block b5 = makeSolvedTestBlock(b4);
 
         connect();
-        
+
         peer.startBlockChainDownload();
-        GetBlocksMessage getblocks = (GetBlocksMessage)outbound(writeTarget);
+        GetBlocksMessage getblocks = (GetBlocksMessage) outbound(writeTarget);
         assertEquals(blockStore.getChainHead().getHeader().getHash(), getblocks.getLocator().get(0));
         assertEquals(Sha256Hash.ZERO_HASH, getblocks.getStopHash());
         // Remote peer sends us an inv with some blocks.
@@ -134,7 +134,7 @@ public class PeerTest extends TestWithNetworkConnections {
         inv.addBlock(b3);
         // We do a getdata on them.
         inbound(writeTarget, inv);
-        GetDataMessage getdata = (GetDataMessage)outbound(writeTarget);
+        GetDataMessage getdata = (GetDataMessage) outbound(writeTarget);
         assertEquals(b2.getHash(), getdata.getItems().get(0).hash);
         assertEquals(b3.getHash(), getdata.getItems().get(1).hash);
         assertEquals(2, getdata.getItems().size());
@@ -147,13 +147,13 @@ public class PeerTest extends TestWithNetworkConnections {
         inv.addBlock(b5);
         // We request the head block.
         inbound(writeTarget, inv);
-        getdata = (GetDataMessage)outbound(writeTarget);
+        getdata = (GetDataMessage) outbound(writeTarget);
         assertEquals(b5.getHash(), getdata.getItems().get(0).hash);
         assertEquals(1, getdata.getItems().size());
         // Peer sends us the head block. The act of receiving the orphan block triggers a getblocks to fill in the
         // rest of the chain.
         inbound(writeTarget, b5);
-        getblocks = (GetBlocksMessage)outbound(writeTarget);
+        getblocks = (GetBlocksMessage) outbound(writeTarget);
         assertEquals(b5.getHash(), getblocks.getStopHash());
         assertEquals(b3.getHash(), getblocks.getLocator().getHashes().get(0));
         // At this point another block is solved and broadcast. The inv triggers a getdata but we do NOT send another
@@ -165,7 +165,7 @@ public class PeerTest extends TestWithNetworkConnections {
         inv = new InventoryMessage(UNITTEST);
         inv.addBlock(b6);
         inbound(writeTarget, inv);
-        getdata = (GetDataMessage)outbound(writeTarget);
+        getdata = (GetDataMessage) outbound(writeTarget);
         assertEquals(1, getdata.getItems().size());
         assertEquals(b6.getHash(), getdata.getItems().get(0).hash);
         inbound(writeTarget, b6);
@@ -175,7 +175,7 @@ public class PeerTest extends TestWithNetworkConnections {
         inv.addBlock(b4);
         inv.addBlock(b5);
         inbound(writeTarget, inv);
-        getdata = (GetDataMessage)outbound(writeTarget);
+        getdata = (GetDataMessage) outbound(writeTarget);
         assertEquals(1, getdata.getItems().size());
         assertEquals(b4.getHash(), getdata.getItems().get(0).hash);
         // We already have b5 from before, so it's not requested again.
@@ -202,11 +202,11 @@ public class PeerTest extends TestWithNetworkConnections {
         inv.addItem(item);
         inbound(writeTarget, inv);
 
-        GetBlocksMessage getblocks = (GetBlocksMessage)outbound(writeTarget);
+        GetBlocksMessage getblocks = (GetBlocksMessage) outbound(writeTarget);
         BlockLocator expectedLocator = new BlockLocator();
         expectedLocator = expectedLocator.add(b1.getHash());
         expectedLocator = expectedLocator.add(UNITTEST.getGenesisBlock().getHash());
-        
+
         assertEquals(getblocks.getLocator(), expectedLocator);
         assertEquals(getblocks.getStopHash(), b3.getHash());
         assertNull(outbound(writeTarget));
@@ -283,7 +283,7 @@ public class PeerTest extends TestWithNetworkConnections {
         inbound(writeTarget, inv);
 
         // We got a getdata message.
-        GetDataMessage message = (GetDataMessage)outbound(writeTarget);
+        GetDataMessage message = (GetDataMessage) outbound(writeTarget);
         assertEquals(1, message.getItems().size());
         assertEquals(tx.getTxId(), message.getItems().get(0).hash);
         assertNotEquals(0, tx.getConfidence().numBroadcastPeers());
@@ -329,7 +329,7 @@ public class PeerTest extends TestWithNetworkConnections {
         });
         peer.addBlocksDownloadedEventListener(Threading.SAME_THREAD, new BlocksDownloadedEventListener() {
             @Override
-            public synchronized void onBlocksDownloaded(Peer p, Block block, @Nullable FilteredBlock filteredBlock,  int blocksLeft) {
+            public synchronized void onBlocksDownloaded(Peer p, Block block, @Nullable FilteredBlock filteredBlock, int blocksLeft) {
                 int newValue = newBlockMessagesReceived.incrementAndGet();
                 if (newValue != 3 || p != peer || !block.equals(b2) || blocksLeft != OTHER_PEER_CHAIN_HEIGHT - 2)
                     fail.set(true);
@@ -347,7 +347,7 @@ public class PeerTest extends TestWithNetworkConnections {
         Threading.waitForUserCode();
         pingAndWait(writeTarget);
         assertEquals(3, newBlockMessagesReceived.get());
-        
+
         GetDataMessage getdata = (GetDataMessage) outbound(writeTarget);
         List<InventoryItem> items = getdata.getItems();
         assertEquals(1, items.size());
@@ -453,7 +453,7 @@ public class PeerTest extends TestWithNetworkConnections {
         b4.solve();
 
         // Request headers until the last 2 blocks.
-        peer.setDownloadParameters(Utils.currentTimeSeconds() - (600*2) + 1, false);
+        peer.setDownloadParameters(Utils.currentTimeSeconds() - (600 * 2) + 1, false);
         peer.startBlockChainDownload();
         GetHeadersMessage getheaders = (GetHeadersMessage) outbound(writeTarget);
         BlockLocator expectedLocator = new BlockLocator();

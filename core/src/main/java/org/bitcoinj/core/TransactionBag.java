@@ -17,12 +17,11 @@
 
 package org.bitcoinj.core;
 
-import javax.annotation.Nullable;
-
 import org.bitcoinj.script.Script;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletTransaction;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 
 /**
@@ -31,21 +30,30 @@ import java.util.Map;
 public interface TransactionBag {
     /**
      * Look for a public key which hashes to the given hash and (optionally) is used for a specific script type.
+     *
      * @param pubKeyHash hash of the public key to look for
      * @param scriptType only look for given usage (currently {@link Script.ScriptType#P2PKH} or {@link Script.ScriptType#P2WPKH}) or {@code null} if we don't care
      * @return true if hash was found
      */
     boolean isPubKeyHashMine(byte[] pubKeyHash, @Nullable Script.ScriptType scriptType);
 
-    /** Returns true if this wallet is watching transactions for outputs with the script. */
+    /**
+     * Returns true if this wallet is watching transactions for outputs with the script.
+     */
     boolean isWatchedScript(Script script);
 
-    /** Returns true if this wallet contains a keypair with the given public key. */
+    /**
+     * Returns true if this wallet contains a keypair with the given public key.
+     */
     boolean isPubKeyMine(byte[] pubKey);
 
-    /** Returns true if this wallet knows the script corresponding to the given hash. */
+    /**
+     * Returns true if this wallet knows the script corresponding to the given hash.
+     */
     boolean isPayToScriptHashMine(byte[] payToScriptHash);
 
-    /** Returns transactions from a specific pool. */
+    /**
+     * Returns transactions from a specific pool.
+     */
     Map<Sha256Hash, Transaction> getTransactionPool(WalletTransaction.Pool pool);
 }

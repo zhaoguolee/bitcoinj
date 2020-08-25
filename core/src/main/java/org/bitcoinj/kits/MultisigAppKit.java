@@ -17,41 +17,30 @@
 
 package org.bitcoinj.kits;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Closeables;
-import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.DeterministicKey;
-import org.bitcoinj.crypto.HDPath;
 import org.bitcoinj.crypto.MultisigSignature;
 import org.bitcoinj.crypto.TransactionSignature;
-import org.bitcoinj.net.BlockingClientManager;
 import org.bitcoinj.net.discovery.DnsDiscovery;
-import org.bitcoinj.net.discovery.PeerDiscovery;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
-import org.bitcoinj.wallet.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.bitcoinj.wallet.KeyChainGroupStructure;
+import org.bitcoinj.wallet.MarriedKeyChain;
+import org.bitcoinj.wallet.RedeemData;
+import org.bitcoinj.wallet.Wallet;
 
 import javax.annotation.Nullable;
-import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.channels.FileLock;
-import java.security.SecureRandom;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * <p>Utility class that wraps the boilerplate needed to set up a new SPV bitcoinj app. Instantiate it with a directory
@@ -126,7 +115,7 @@ public class MultisigAppKit extends WalletKitCore {
             boolean shouldAddMarriedKeychain = !vWalletFile.exists() || restoreFromSeed != null || restoreFromKey != null;
             boolean shouldReplayWallet = (vWalletFile.exists() && !chainFileExists) || restoreFromSeed != null || restoreFromKey != null;
             vWallet = createOrLoadWallet(shouldReplayWallet);
-            if(shouldAddMarriedKeychain) {
+            if (shouldAddMarriedKeychain) {
                 MarriedKeyChain marriedKeyChain = MarriedKeyChain.builder()
                         .seed(this.restoreFromSeed == null ? this.wallet().getKeyChainSeed() : this.restoreFromSeed)
                         .followingKeys(followingKeys)
@@ -155,9 +144,7 @@ public class MultisigAppKit extends WalletKitCore {
                             log.info("Clearing the chain file in preparation for restore.");
                             vStore.clear();
                         }
-                    }
-                    else
-                    {
+                    } else {
                         time = vWallet.getEarliestKeyCreationTime();
                     }
                     if (time > 0)
@@ -218,9 +205,9 @@ public class MultisigAppKit extends WalletKitCore {
 
     public Transaction makeIndividualMultisigTransaction(Address address, Coin amount) throws InsufficientMoneyException {
         Transaction spendTx = wallet().createSendDontSign(address, amount, true);
-        for(TransactionInput input : spendTx.getInputs()) {
+        for (TransactionInput input : spendTx.getInputs()) {
             RedeemData redeemData = input.getConnectedRedeemData(wallet());
-            if(redeemData != null) {
+            if (redeemData != null) {
                 TransactionOutput utxo = input.getConnectedOutput();
                 Script script = Objects.requireNonNull(utxo).getScriptPubKey();
                 input.setScriptSig(script.createEmptyInputScript(null, redeemData.redeemScript));
@@ -231,9 +218,9 @@ public class MultisigAppKit extends WalletKitCore {
     }
 
     public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {
-        for(TransactionInput input : tx.getInputs()) {
+        for (TransactionInput input : tx.getInputs()) {
             MultisigInput multisigInput = multisigInputs.get(input.getIndex());
-            for(MultisigSignature multisigSignature : multisigInput.signatures) {
+            for (MultisigSignature multisigSignature : multisigInput.signatures) {
                 TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
                 TransactionOutput utxo = input.getConnectedOutput();
                 Script script = Objects.requireNonNull(utxo).getScriptPubKey();

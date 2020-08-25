@@ -29,7 +29,7 @@ public enum NetworkEnum {
     REGTEST;
 
     public NetworkParameters get() {
-        switch(this) {
+        switch (this) {
             case MAIN:
             case PROD:
                 return MainNetParams.get();

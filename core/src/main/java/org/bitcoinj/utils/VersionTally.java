@@ -16,11 +16,12 @@
 
 package org.bitcoinj.utils;
 
-import java.util.Stack;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+
+import java.util.Stack;
 
 /**
  * Caching counter for the block versions within a moving window. This class
@@ -94,10 +95,10 @@ public class VersionTally {
      * a checkpoint this may not fill the window.
      *
      * @param blockStore block store to load blocks from.
-     * @param chainHead current chain tip.
+     * @param chainHead  current chain tip.
      */
     public void initialize(final BlockStore blockStore, final StoredBlock chainHead)
-        throws BlockStoreException {
+            throws BlockStoreException {
         StoredBlock versionBlock = chainHead;
         final Stack<Long> versions = new Stack<>();
 

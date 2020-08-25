@@ -16,10 +16,10 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.script.*;
+import org.bitcoinj.script.Script;
 
 import java.io.*;
-import java.math.*;
+import java.math.BigInteger;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -91,37 +91,51 @@ public class UTXO implements Serializable {
         deserializeFromStream(in);
     }
 
-    /** The value which this Transaction output holds. */
+    /**
+     * The value which this Transaction output holds.
+     */
     public Coin getValue() {
         return value;
     }
 
-    /** The Script object which you can use to get address, script bytes or script type. */
+    /**
+     * The Script object which you can use to get address, script bytes or script type.
+     */
     public Script getScript() {
         return script;
     }
 
-    /** The hash of the transaction which holds this output. */
+    /**
+     * The hash of the transaction which holds this output.
+     */
     public Sha256Hash getHash() {
         return hash;
     }
 
-    /** The index of this output in the transaction which holds it. */
+    /**
+     * The index of this output in the transaction which holds it.
+     */
     public long getIndex() {
         return index;
     }
 
-    /** Gets the height of the block that created this output. */
+    /**
+     * Gets the height of the block that created this output.
+     */
     public int getHeight() {
         return height;
     }
 
-    /** Gets the flag of whether this was created by a coinbase tx. */
+    /**
+     * Gets the flag of whether this was created by a coinbase tx.
+     */
     public boolean isCoinbase() {
         return coinbase;
     }
 
-    /** The address of this output, can be the empty string if none was provided at construction time or was deserialized */
+    /**
+     * The address of this output, can be the empty string if none was provided at construction time or was deserialized
+     */
     public String getAddress() {
         return address;
     }
@@ -152,7 +166,7 @@ public class UTXO implements Serializable {
         bos.write(hash.getBytes());
         Utils.uint32ToByteStreamLE(index, bos);
         Utils.uint32ToByteStreamLE(height, bos);
-        bos.write(new byte[] { (byte)(coinbase ? 1 : 0) });
+        bos.write(new byte[]{(byte) (coinbase ? 1 : 0)});
     }
 
     public void deserializeFromStream(InputStream in) throws IOException {
@@ -183,13 +197,13 @@ public class UTXO implements Serializable {
         in.read(coinbaseByte);
         coinbase = coinbaseByte[0] == 1;
     }
-    
-    
+
+
     private void writeObject(ObjectOutputStream o) throws IOException {
         serializeToStream(o);
     }
-          
+
     private void readObject(ObjectInputStream o) throws IOException, ClassNotFoundException {
         deserializeFromStream(o);
-    }        
+    }
 }

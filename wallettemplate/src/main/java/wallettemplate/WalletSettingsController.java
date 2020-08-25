@@ -16,9 +16,6 @@
 
 package wallettemplate;
 
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.crypto.MnemonicCode;
-import org.bitcoinj.wallet.DeterministicSeed;
 import com.google.common.base.Splitter;
 import com.google.common.util.concurrent.Service;
 import javafx.application.Platform;
@@ -28,9 +25,12 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextArea;
+import org.bitcoinj.core.Utils;
+import org.bitcoinj.crypto.MnemonicCode;
+import org.bitcoinj.wallet.DeterministicSeed;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.params.KeyParameter;
 import wallettemplate.utils.TextFieldValidator;
 
 import javax.annotation.Nullable;
@@ -50,10 +50,14 @@ import static wallettemplate.utils.WTUtils.unchecked;
 public class WalletSettingsController {
     private static final Logger log = LoggerFactory.getLogger(WalletSettingsController.class);
 
-    @FXML Button passwordButton;
-    @FXML DatePicker datePicker;
-    @FXML TextArea wordsArea;
-    @FXML Button restoreButton;
+    @FXML
+    Button passwordButton;
+    @FXML
+    DatePicker datePicker;
+    @FXML
+    TextArea wordsArea;
+    @FXML
+    Button restoreButton;
 
     public Main.OverlayUI overlayUI;
 

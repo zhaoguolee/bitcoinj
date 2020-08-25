@@ -36,11 +36,11 @@ public class AppDataDirectoryTest {
         if (Utils.isWindows()) {
             assertEquals("Path wrong on Mac", winPath(appName), path);
         } else if (Utils.isMac()) {
-            assertEquals("Path wrong on Mac",  macPath(appName), path);
+            assertEquals("Path wrong on Mac", macPath(appName), path);
         } else if (Utils.isLinux()) {
-            assertEquals("Path wrong on Linux",  unixPath(appName), path);
+            assertEquals("Path wrong on Linux", unixPath(appName), path);
         } else {
-            assertEquals("Path wrong on unknown/default",  unixPath(appName), path);
+            assertEquals("Path wrong on unknown/default", unixPath(appName), path);
         }
     }
 
@@ -51,11 +51,11 @@ public class AppDataDirectoryTest {
         if (Utils.isWindows()) {
             assertEquals("Path wrong on Mac", winPath(appName), path);
         } else if (Utils.isMac()) {
-            assertEquals("Path wrong on Mac",  macPath(appName), path);
+            assertEquals("Path wrong on Mac", macPath(appName), path);
         } else if (Utils.isLinux()) {
-            assertEquals("Path wrong on Linux",  unixPath(appName), path);
+            assertEquals("Path wrong on Linux", unixPath(appName), path);
         } else {
-            assertEquals("Path wrong on unknown/default",  unixPath(appName), path);
+            assertEquals("Path wrong on unknown/default", unixPath(appName), path);
         }
     }
 

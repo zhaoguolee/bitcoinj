@@ -17,18 +17,21 @@
 
 package org.bitcoinj.core;
 
-import com.google.common.collect.*;
-import com.google.common.util.concurrent.*;
-
-import org.bitcoinj.utils.*;
+import com.google.common.collect.Iterators;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import org.bitcoinj.utils.ListenerRegistration;
+import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.CoinSelector;
 import org.bitcoinj.wallet.Wallet;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 // TODO: Modify the getDepthInBlocks method to require the chain height to be specified, in preparation for ceasing to touch every tx on every block.
 
@@ -73,9 +76,13 @@ public class TransactionConfidence {
      * to us, so only peers we explicitly connected to should go here.
      */
     private CopyOnWriteArrayList<PeerAddress> broadcastBy;
-    /** The time the transaction was last announced to us. */
+    /**
+     * The time the transaction was last announced to us.
+     */
     private Date lastBroadcastedAt;
-    /** The Transaction that this confidence object is associated with. */
+    /**
+     * The Transaction that this confidence object is associated with.
+     */
     private final Sha256Hash hash;
     // Lazily created listeners array.
     private CopyOnWriteArrayList<ListenerRegistration<Listener>> listeners;
@@ -83,9 +90,13 @@ public class TransactionConfidence {
     // The depth of the transaction on the best chain in blocks. An unconfirmed block has depth 0.
     private int depth;
 
-    /** Describes the state of the transaction in general terms. Properties can be read to learn specifics. */
+    /**
+     * Describes the state of the transaction in general terms. Properties can be read to learn specifics.
+     */
     public enum ConfidenceType {
-        /** If BUILDING, then the transaction is included in the best chain and your confidence in it is increasing. */
+        /**
+         * If BUILDING, then the transaction is included in the best chain and your confidence in it is increasing.
+         */
         BUILDING(1),
 
         /**
@@ -119,12 +130,13 @@ public class TransactionConfidence {
          * If a transaction hasn't been broadcast yet, or there's no record of it, its confidence is UNKNOWN.
          */
         UNKNOWN(0);
-        
+
         private int value;
+
         ConfidenceType(int value) {
             this.value = value;
         }
-        
+
         public int getValue() {
             return value;
         }
@@ -141,13 +153,20 @@ public class TransactionConfidence {
      * unless re-org double spends start happening frequently.
      */
     public enum Source {
-        /** We don't know where the transaction came from. */
+        /**
+         * We don't know where the transaction came from.
+         */
         UNKNOWN,
-        /** We got this transaction from a network peer. */
+        /**
+         * We got this transaction from a network peer.
+         */
         NETWORK,
-        /** This transaction was created by our own wallet, so we know it's not a double spend. */
+        /**
+         * This transaction was created by our own wallet, so we know it's not a double spend.
+         */
         SELF
     }
+
     private Source source = Source.UNKNOWN;
 
     public TransactionConfidence(Sha256Hash hash) {
@@ -167,7 +186,9 @@ public class TransactionConfidence {
      * <p>During listener execution, it's safe to remove the current listener but not others.</p>
      */
     public interface Listener {
-        /** An enum that describes why a transaction confidence listener is being invoked (i.e. the class of change). */
+        /**
+         * An enum that describes why a transaction confidence listener is being invoked (i.e. the class of change).
+         */
         enum ChangeReason {
             /**
              * Occurs when the type returned by {@link TransactionConfidence#getConfidenceType()}
@@ -190,6 +211,7 @@ public class TransactionConfidence {
              */
             SEEN_PEERS,
         }
+
         void onConfidenceChanged(TransactionConfidence confidence, ChangeReason reason);
     }
 
@@ -241,6 +263,7 @@ public class TransactionConfidence {
 
     /**
      * Returns the chain height at which the transaction appeared if confidence type is BUILDING.
+     *
      * @throws IllegalStateException if the confidence type is not BUILDING.
      */
     public synchronized int getAppearedAtChainHeight() {
@@ -269,7 +292,7 @@ public class TransactionConfidence {
     }
 
     /**
-     * Called by other objects in the system, like a {@link Wallet}, when new information about the confidence of a 
+     * Called by other objects in the system, like a {@link Wallet}, when new information about the confidence of a
      * transaction becomes available.
      */
     public synchronized void setConfidenceType(ConfidenceType confidenceType) {
@@ -322,17 +345,23 @@ public class TransactionConfidence {
         return broadcastBySet;
     }
 
-    /** Returns true if the given address has been seen via markBroadcastBy() */
+    /**
+     * Returns true if the given address has been seen via markBroadcastBy()
+     */
     public boolean wasBroadcastBy(PeerAddress address) {
         return broadcastBy.contains(address);
     }
 
-    /** Return the time the transaction was last announced to us. */
+    /**
+     * Return the time the transaction was last announced to us.
+     */
     public Date getLastBroadcastedAt() {
         return lastBroadcastedAt;
     }
 
-    /** Set the time the transaction was last announced to us. */
+    /**
+     * Set the time the transaction was last announced to us.
+     */
     public void setLastBroadcastedAt(Date lastBroadcastedAt) {
         this.lastBroadcastedAt = lastBroadcastedAt;
     }
@@ -386,7 +415,7 @@ public class TransactionConfidence {
      * considers a transaction impractical to reverse after 6 blocks, but as of EOY 2011 network
      * security is high enough that often only one block is considered enough even for high value transactions. For low
      * value transactions like songs, or other cheap items, no blocks at all may be necessary.</p>
-     *     
+     *
      * <p>If the transaction appears in the top block, the depth is one. If it's anything else (pending, dead, unknown)
      * the depth is zero.</p>
      */
@@ -422,7 +451,7 @@ public class TransactionConfidence {
     public synchronized Transaction getOverridingTransaction() {
         if (getConfidenceType() != ConfidenceType.DEAD)
             throw new IllegalStateException("Confidence type is " + getConfidenceType() +
-                                            ", not DEAD");
+                    ", not DEAD");
         return overridingTransaction;
     }
 
@@ -437,7 +466,9 @@ public class TransactionConfidence {
         setConfidenceType(ConfidenceType.DEAD);
     }
 
-    /** Returns a copy of this object. Event listeners are not duplicated. */
+    /**
+     * Returns a copy of this object. Event listeners are not duplicated.
+     */
     public TransactionConfidence duplicate() {
         TransactionConfidence c = new TransactionConfidence(hash);
         c.broadcastBy.addAll(broadcastBy);
@@ -498,7 +529,8 @@ public class TransactionConfidence {
             result.set(this);
         }
         addEventListener(executor, new Listener() {
-            @Override public void onConfidenceChanged(TransactionConfidence confidence, ChangeReason reason) {
+            @Override
+            public void onConfidenceChanged(TransactionConfidence confidence, ChangeReason reason) {
                 if (getDepthInBlocks() >= depth) {
                     removeEventListener(this);
                     result.set(confidence);

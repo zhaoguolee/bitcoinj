@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,8 +27,7 @@ import org.junit.Test;
  * A Postgres implementation of the {@link AbstractFullPrunedBlockChainTest}
  */
 @Ignore("enable the postgres driver dependency in the maven POM")
-public class PostgresFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainTest
-{
+public class PostgresFullPrunedBlockChainTest extends AbstractFullPrunedBlockChainTest {
     // Replace these with your postgres location/credentials and remove @Ignore to test
     // You can set up a fresh postgres with the command: create user bitcoinj superuser password 'password';
     private static final String DB_HOSTNAME = "localhost";
@@ -42,23 +41,22 @@ public class PostgresFullPrunedBlockChainTest extends AbstractFullPrunedBlockCha
 
     @After
     public void tearDown() throws Exception {
-        ((PostgresFullPrunedBlockStore)store).deleteStore();
+        ((PostgresFullPrunedBlockStore) store).deleteStore();
     }
 
     @Override
     public FullPrunedBlockStore createStore(NetworkParameters params, int blockCount)
             throws BlockStoreException {
-        if(useSchema) {
+        if (useSchema) {
             return new PostgresFullPrunedBlockStore(params, blockCount, DB_HOSTNAME, DB_NAME, DB_USERNAME, DB_PASSWORD, DB_SCHEMA);
-        }
-        else {
+        } else {
             return new PostgresFullPrunedBlockStore(params, blockCount, DB_HOSTNAME, DB_NAME, DB_USERNAME, DB_PASSWORD);
         }
     }
 
     @Override
     public void resetStore(FullPrunedBlockStore store) throws BlockStoreException {
-        ((PostgresFullPrunedBlockStore)store).resetStore();
+        ((PostgresFullPrunedBlockStore) store).resetStore();
     }
 
     @Test

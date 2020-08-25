@@ -17,19 +17,16 @@
 
 package org.bitcoinj.crypto;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.Random;
-import java.util.UUID;
-
 import org.bitcoinj.core.Utils;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Random;
+import java.util.UUID;
+
+import static org.junit.Assert.*;
 
 public class KeyCrypterScryptTest {
 
@@ -67,6 +64,7 @@ public class KeyCrypterScryptTest {
     /**
      * Test with random plain text strings and random passwords.
      * UUIDs are used and hence will only cover hex characters (and the separator hyphen).
+     *
      * @throws KeyCrypterException
      */
     @Test
@@ -82,7 +80,7 @@ public class KeyCrypterScryptTest {
 
             assertNotNull(data);
 
-            byte[] reconstructedPlainBytes = keyCrypter.decrypt(data,keyCrypter.deriveKey(password));
+            byte[] reconstructedPlainBytes = keyCrypter.decrypt(data, keyCrypter.deriveKey(password));
             assertEquals(Utils.HEX.encode(plainText.getBytes()), Utils.HEX.encode(reconstructedPlainBytes));
         }
     }

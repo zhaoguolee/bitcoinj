@@ -16,26 +16,27 @@
 
 package wallettemplate;
 
-import com.google.common.util.concurrent.*;
-import javafx.scene.input.*;
-import org.bitcoinj.core.PeerAddress;
-import org.bitcoinj.utils.AppDataDirectory;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.params.*;
-import org.bitcoinj.script.Script;
-import org.bitcoinj.utils.BriefLogFormatter;
-import org.bitcoinj.utils.Threading;
-import org.bitcoinj.wallet.DeterministicSeed;
+import com.google.common.util.concurrent.Service;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.PeerAddress;
+import org.bitcoinj.core.Utils;
+import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.params.RegTestParams;
+import org.bitcoinj.params.TestNet4Params;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.utils.AppDataDirectory;
+import org.bitcoinj.utils.BriefLogFormatter;
+import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.DeterministicSeed;
 import wallettemplate.controls.NotificationBarPane;
 import wallettemplate.utils.GuiUtils;
 import wallettemplate.utils.TextFieldValidator;
@@ -229,7 +230,9 @@ public class Main extends Application {
         return pair;
     }
 
-    /** Loads the FXML file with the given name, blurs out the main UI and puts this one on top. */
+    /**
+     * Loads the FXML file with the given name, blurs out the main UI and puts this one on top.
+     */
     public <T> OverlayUI<T> overlayUI(String name) {
         try {
             checkGuiThread();

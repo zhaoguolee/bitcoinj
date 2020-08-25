@@ -17,9 +17,10 @@
 
 package org.bitcoinj.testing;
 
+import com.google.common.util.concurrent.SettableFuture;
+import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.PeerDisconnectedEventListener;
 import org.bitcoinj.core.listeners.PreMessageReceivedEventListener;
-import org.bitcoinj.core.*;
 import org.bitcoinj.net.*;
 import org.bitcoinj.params.UnitTestParams;
 import org.bitcoinj.script.Script;
@@ -29,8 +30,6 @@ import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bitcoinj.wallet.Wallet;
-
-import com.google.common.util.concurrent.SettableFuture;
 
 import javax.annotation.Nullable;
 import javax.net.SocketFactory;
@@ -69,7 +68,9 @@ public class TestWithNetworkConnections {
         NIO_CLIENT,
         BLOCKING_CLIENT
     }
+
     private final ClientType clientType;
+
     public TestWithNetworkConnections(ClientType clientType) {
         this.clientType = clientType;
         if (clientType == ClientType.NIO_CLIENT_MANAGER)
@@ -83,7 +84,7 @@ public class TestWithNetworkConnections {
     public void setUp() throws Exception {
         setUp(new MemoryBlockStore(UNITTEST));
     }
-    
+
     public void setUp(BlockStore blockStore) throws Exception {
         BriefLogFormatter.init();
         Context.propagate(new Context(UNITTEST, 100, Coin.ZERO, false));
@@ -109,7 +110,7 @@ public class TestWithNetworkConnections {
     }
 
     protected void startPeerServers() throws IOException {
-        for (int i = 0 ; i < PEER_SERVERS ; i++) {
+        for (int i = 0; i < PEER_SERVERS; i++) {
             startPeerServer(i);
         }
     }
@@ -140,7 +141,7 @@ public class TestWithNetworkConnections {
     }
 
     protected void stopPeerServers() {
-        for (int i = 0 ; i < PEER_SERVERS ; i++)
+        for (int i = 0; i < PEER_SERVERS; i++)
             stopPeerServer(i);
     }
 

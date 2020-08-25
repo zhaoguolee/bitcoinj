@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,4 +20,5 @@ package org.bitcoinj.wallet;
  * Indicates that an attempt was made to upgrade a random wallet to deterministic, but there were no non-rotating
  * random keys to use as source material for the seed. Add a non-compromised key first!
  */
-public class AllRandomKeysRotating  extends RuntimeException {}
+public class AllRandomKeysRotating extends RuntimeException {
+}

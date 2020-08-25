@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -50,6 +50,6 @@ public class H2FullPrunedBlockChainTest extends AbstractFullPrunedBlockChainTest
 
     @Override
     public void resetStore(FullPrunedBlockStore store) throws BlockStoreException {
-        ((H2FullPrunedBlockStore)store).resetStore();
+        ((H2FullPrunedBlockStore) store).resetStore();
     }
 }

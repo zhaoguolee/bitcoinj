@@ -17,7 +17,21 @@
 
 package org.bitcoinj.tools;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.BaseEncoding;
+import com.google.common.io.Resources;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.protobuf.ByteString;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
+import joptsimple.util.DateConverter;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.listeners.BlocksDownloadedEventListener;
+import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.*;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.RegTestParams;
@@ -32,38 +46,15 @@ import org.bitcoinj.store.*;
 import org.bitcoinj.uri.BitcoinURI;
 import org.bitcoinj.uri.BitcoinURIParseException;
 import org.bitcoinj.utils.BriefLogFormatter;
-import org.bitcoinj.wallet.DeterministicKeyChain;
-import org.bitcoinj.wallet.DeterministicSeed;
-
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.BaseEncoding;
-import com.google.common.io.Resources;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.protobuf.ByteString;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import joptsimple.OptionSpec;
-import joptsimple.util.DateConverter;
-
-import org.bitcoinj.core.listeners.BlocksDownloadedEventListener;
-import org.bitcoinj.core.listeners.DownloadProgressTracker;
-import org.bitcoinj.wallet.MarriedKeyChain;
-import org.bitcoinj.wallet.Protos;
-import org.bitcoinj.wallet.SendRequest;
-import org.bitcoinj.wallet.Wallet;
-import org.bitcoinj.wallet.WalletExtension;
-import org.bitcoinj.wallet.WalletProtobufSerializer;
+import org.bitcoinj.wallet.*;
 import org.bitcoinj.wallet.Wallet.BalanceType;
 import org.bitcoinj.wallet.listeners.WalletChangeEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
 import org.bitcoinj.wallet.listeners.WalletReorganizeEventListener;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.params.KeyParameter;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -83,8 +74,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 
-import static org.bitcoinj.core.Coin.parseCoin;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.bitcoinj.core.Coin.parseCoin;
 
 /**
  * A command line tool for manipulating wallets and working with Bitcoin.
@@ -116,6 +107,7 @@ public class WalletTool {
             // Less than, greater than, less than or equal, greater than or equal.
             EQUAL, LT, GT, LTE, GTE
         }
+
         Type type;
         String value;
 
@@ -150,11 +142,16 @@ public class WalletTool {
             try {
                 Coin units = parseCoin(value);
                 switch (type) {
-                    case LT: return comparison.compareTo(units) < 0;
-                    case GT: return comparison.compareTo(units) > 0;
-                    case EQUAL: return comparison.compareTo(units) == 0;
-                    case LTE: return comparison.compareTo(units) <= 0;
-                    case GTE: return comparison.compareTo(units) >= 0;
+                    case LT:
+                        return comparison.compareTo(units) < 0;
+                    case GT:
+                        return comparison.compareTo(units) > 0;
+                    case EQUAL:
+                        return comparison.compareTo(units) == 0;
+                    case LTE:
+                        return comparison.compareTo(units) <= 0;
+                    case GTE:
+                        return comparison.compareTo(units) >= 0;
                     default:
                         throw new RuntimeException("Unreachable");
                 }
@@ -324,13 +321,13 @@ public class WalletTool {
         InputStream walletInputStream = null;
         try {
             boolean forceReset = action == ActionEnum.RESET
-                || (action == ActionEnum.SYNC
+                    || (action == ActionEnum.SYNC
                     && options.has("force"));
             WalletProtobufSerializer loader = new WalletProtobufSerializer();
             if (options.has("ignore-mandatory-extensions"))
                 loader.setRequireMandatoryExtensions(false);
             walletInputStream = new BufferedInputStream(new FileInputStream(walletFile));
-            wallet = loader.readWallet(walletInputStream, HDPath.M(), forceReset, (WalletExtension[])(null));
+            wallet = loader.readWallet(walletInputStream, HDPath.M(), forceReset, (WalletExtension[]) (null));
             if (!wallet.getParams().equals(params)) {
                 System.err.println("Wallet does not match requested network parameters: " +
                         wallet.getParams().getId() + " vs " + params.getId());
@@ -348,13 +345,27 @@ public class WalletTool {
 
         // What should we do?
         switch (action) {
-            case DUMP: dumpWallet(); break;
-            case ADD_KEY: addKey(); break;
-            case ADD_ADDR: addAddr(); break;
-            case DELETE_KEY: deleteKey(); break;
-            case CURRENT_RECEIVE_ADDR: currentReceiveAddr(); break;
-            case RESET: reset(); break;
-            case SYNC: syncChain(); break;
+            case DUMP:
+                dumpWallet();
+                break;
+            case ADD_KEY:
+                addKey();
+                break;
+            case ADD_ADDR:
+                addAddr();
+                break;
+            case DELETE_KEY:
+                deleteKey();
+                break;
+            case CURRENT_RECEIVE_ADDR:
+                currentReceiveAddr();
+                break;
+            case RESET:
+                reset();
+                break;
+            case SYNC:
+                syncChain();
+                break;
             case SEND:
                 if (options.has(paymentRequestLocation) && options.has(outputFlag)) {
                     System.err.println("--payment-request and --output cannot be used together.");
@@ -381,12 +392,24 @@ public class WalletTool {
                     return;
                 }
                 break;
-            case ENCRYPT: encrypt(); break;
-            case DECRYPT: decrypt(); break;
-            case MARRY: marry(); break;
-            case UPGRADE: upgrade(); break;
-            case ROTATE: rotate(); break;
-            case SET_CREATION_TIME: setCreationTime(); break;
+            case ENCRYPT:
+                encrypt();
+                break;
+            case DECRYPT:
+                decrypt();
+                break;
+            case MARRY:
+                marry();
+                break;
+            case UPGRADE:
+                upgrade();
+                break;
+            case ROTATE:
+                rotate();
+                break;
+            case SET_CREATION_TIME:
+                setCreationTime();
+                break;
         }
 
         if (!wallet.isConsistent()) {
@@ -402,7 +425,7 @@ public class WalletTool {
                 value = waitForFlag.value(options);
             } catch (Exception e) {
                 System.err.println("Could not understand the --waitfor flag: Valid options are WALLET_TX, BLOCK, " +
-                                   "BALANCE and EVER");
+                        "BALANCE and EVER");
                 return;
             }
             wait(value);
@@ -717,7 +740,7 @@ public class WalletTool {
             }
             try {
                 paymentRequest = org.bitcoin.protocols.payments.Protos.PaymentRequest.newBuilder().mergeFrom(stream).build();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 System.err.println("Failed to parse payment request from file " + e.getMessage());
                 System.exit(1);
             }
@@ -1178,7 +1201,7 @@ public class WalletTool {
             WalletCoinsSentEventListener, WalletReorganizeEventListener {
         private final CountDownLatch latch;
 
-        private  WalletEventListener(final CountDownLatch latch) {
+        private WalletEventListener(final CountDownLatch latch) {
             this.latch = latch;
         }
 

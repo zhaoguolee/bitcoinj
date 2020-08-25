@@ -17,11 +17,10 @@
 
 package org.bitcoinj.wallet;
 
+import com.google.common.base.MoreObjects;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptPattern;
-
-import com.google.common.base.MoreObjects;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +30,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * This class aggregates data required to spend transaction output.
- *
+ * <p>
  * For P2PKH and P2PK transactions it will have only a single key and CHECKSIG program as redeemScript.
  * For multisignature transactions there will be multiple keys one of which will be a full key and the rest are watch only,
  * redeem script will be a CHECKMULTISIG program. Keys will be sorted in the same order they appear in

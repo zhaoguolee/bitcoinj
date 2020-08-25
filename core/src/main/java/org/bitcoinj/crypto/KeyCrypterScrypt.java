@@ -23,16 +23,16 @@ import org.bitcoinj.core.Utils;
 import org.bitcoinj.wallet.Protos;
 import org.bitcoinj.wallet.Protos.ScryptParameters;
 import org.bitcoinj.wallet.Protos.Wallet.EncryptionType;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.generators.SCrypt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -84,7 +84,9 @@ public class KeyCrypterScrypt implements KeyCrypter {
 
     private static final SecureRandom secureRandom;
 
-    /** Returns SALT_LENGTH (8) bytes of random data */
+    /**
+     * Returns SALT_LENGTH (8) bytes of random data
+     */
     public static byte[] randomSalt() {
         byte[] salt = new byte[SALT_LENGTH];
         secureRandom.nextBytes(salt);
@@ -107,8 +109,7 @@ public class KeyCrypterScrypt implements KeyCrypter {
      * Encryption/Decryption using custom number of iterations parameters and a random salt.
      * As of August 2016, a useful value for mobile devices is 4096 (derivation takes about 1 second).
      *
-     * @param iterations
-     *            number of scrypt iterations
+     * @param iterations number of scrypt iterations
      */
     public KeyCrypterScrypt(int iterations) {
         Protos.ScryptParameters.Builder scryptParametersBuilder = Protos.ScryptParameters.newBuilder()
@@ -135,12 +136,12 @@ public class KeyCrypterScrypt implements KeyCrypter {
 
     /**
      * Generate AES key.
-     *
+     * <p>
      * This is a very slow operation compared to encrypt/ decrypt so it is normally worth caching the result.
      *
-     * @param password    The password to use in key generation
-     * @return            The KeyParameter containing the created AES key
-     * @throws            KeyCrypterException
+     * @param password The password to use in key generation
+     * @return The KeyParameter containing the created AES key
+     * @throws KeyCrypterException
      */
     @Override
     public KeyParameter deriveKey(CharSequence password) throws KeyCrypterException {
@@ -148,7 +149,7 @@ public class KeyCrypterScrypt implements KeyCrypter {
         try {
             passwordBytes = convertToByteArray(password);
             byte[] salt = new byte[0];
-            if ( scryptParameters.getSalt() != null) {
+            if (scryptParameters.getSalt() != null) {
                 salt = scryptParameters.getSalt().toByteArray();
             } else {
                 // Warn the user that they are not using a salt.
@@ -202,10 +203,10 @@ public class KeyCrypterScrypt implements KeyCrypter {
     /**
      * Decrypt bytes previously encrypted with this class.
      *
-     * @param dataToDecrypt    The data to decrypt
-     * @param aesKey           The AES key to use for decryption
-     * @return                 The decrypted bytes
-     * @throws                 KeyCrypterException if bytes could not be decrypted
+     * @param dataToDecrypt The data to decrypt
+     * @param aesKey        The AES key to use for decryption
+     * @return The decrypted bytes
+     * @throws KeyCrypterException if bytes could not be decrypted
      */
     @Override
     public byte[] decrypt(EncryptedData dataToDecrypt, KeyParameter aesKey) throws KeyCrypterException {
@@ -234,17 +235,17 @@ public class KeyCrypterScrypt implements KeyCrypter {
 
     /**
      * Convert a CharSequence (which are UTF16) into a byte array.
-     *
+     * <p>
      * Note: a String.getBytes() is not used to avoid creating a String of the password in the JVM.
      */
     private static byte[] convertToByteArray(CharSequence charSequence) {
         checkNotNull(charSequence);
 
         byte[] byteArray = new byte[charSequence.length() << 1];
-        for(int i = 0; i < charSequence.length(); i++) {
+        for (int i = 0; i < charSequence.length(); i++) {
             int bytePosition = i << 1;
-            byteArray[bytePosition] = (byte) ((charSequence.charAt(i)&0xFF00)>>8);
-            byteArray[bytePosition + 1] = (byte) (charSequence.charAt(i)&0x00FF);
+            byteArray[bytePosition] = (byte) ((charSequence.charAt(i) & 0xFF00) >> 8);
+            byteArray[bytePosition + 1] = (byte) (charSequence.charAt(i) & 0x00FF);
         }
         return byteArray;
     }
@@ -280,6 +281,6 @@ public class KeyCrypterScrypt implements KeyCrypter {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        return Objects.equals(scryptParameters, ((KeyCrypterScrypt)o).scryptParameters);
+        return Objects.equals(scryptParameters, ((KeyCrypterScrypt) o).scryptParameters);
     }
 }

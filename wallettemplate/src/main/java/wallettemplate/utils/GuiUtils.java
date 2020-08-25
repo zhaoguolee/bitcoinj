@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -69,7 +69,9 @@ public class GuiUtils {
             Platform.runLater(r);
     }
 
-    /** Show a GUI alert box for any unhandled exceptions that propagate out of this thread. */
+    /**
+     * Show a GUI alert box for any unhandled exceptions that propagate out of this thread.
+     */
     public static void handleCrashesOnThisThread() {
         Thread.currentThread().setUncaughtExceptionHandler((thread, exception) -> {
             GuiUtils.crashAlert(Throwables.getRootCause(exception));

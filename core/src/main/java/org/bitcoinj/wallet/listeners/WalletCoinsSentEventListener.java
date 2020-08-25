@@ -33,14 +33,14 @@ public interface WalletCoinsSentEventListener {
      * the Wallets createSend/sendCoins methods. However when you have a wallet containing only keys, and you wish
      * to replay the block chain to fill it with transactions, it's useful to find out when a transaction is discovered
      * that sends coins from the wallet.<p>
-     *
+     * <p>
      * It's safe to modify the wallet from inside this callback, but if you're replaying the block chain you should
      * be careful to avoid such modifications. Otherwise your changes may be overridden by new data from the chain.
      *
-     * @param wallet       The wallet object that this callback relates to (that sent the coins).
-     * @param tx           The transaction that sent the coins to someone else.
-     * @param prevBalance  The wallets balance before this transaction was seen.
-     * @param newBalance   The wallets balance after this transaction was seen. This is the 'estimated' balance.
+     * @param wallet      The wallet object that this callback relates to (that sent the coins).
+     * @param tx          The transaction that sent the coins to someone else.
+     * @param prevBalance The wallets balance before this transaction was seen.
+     * @param newBalance  The wallets balance after this transaction was seen. This is the 'estimated' balance.
      */
     void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance);
 }

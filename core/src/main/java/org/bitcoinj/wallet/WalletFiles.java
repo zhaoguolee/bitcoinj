@@ -17,19 +17,22 @@
 
 package org.bitcoinj.wallet;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.utils.*;
-import org.slf4j.*;
-
 import com.google.common.base.Stopwatch;
+import org.bitcoinj.core.Utils;
+import org.bitcoinj.utils.ContextPropagatingThreadFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
-import java.io.*;
+import javax.annotation.Nonnull;
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A class that handles atomic and optionally delayed writing of the wallet file to disk. In future: backups too.
@@ -85,7 +88,8 @@ public class WalletFiles {
         this.delayTimeUnit = checkNotNull(delayTimeUnit);
 
         this.saver = new Callable<Void>() {
-            @Override public Void call() throws Exception {
+            @Override
+            public Void call() throws Exception {
                 // Runs in an auto save thread.
                 if (!savePending.getAndSet(false)) {
                     // Some other scheduled request already beat us to it.
@@ -102,7 +106,9 @@ public class WalletFiles {
         };
     }
 
-    /** Get the {@link Wallet} this {@link WalletFiles} is managing. */
+    /**
+     * Get the {@link Wallet} this {@link WalletFiles} is managing.
+     */
     public Wallet getWallet() {
         return wallet;
     }
@@ -114,7 +120,9 @@ public class WalletFiles {
         this.vListener = checkNotNull(listener);
     }
 
-    /** Actually write the wallet file to disk, using an atomic rename when possible. Runs on the current thread. */
+    /**
+     * Actually write the wallet file to disk, using an atomic rename when possible. Runs on the current thread.
+     */
     public void saveNow() throws IOException {
         // Can be called by any thread. However the wallet is locked whilst saving, so we can have two saves in flight
         // but they will serialize (using different temp files).
@@ -141,14 +149,18 @@ public class WalletFiles {
         log.info("Save completed in {}", watch);
     }
 
-    /** Queues up a save in the background. Useful for not very important wallet changes. */
+    /**
+     * Queues up a save in the background. Useful for not very important wallet changes.
+     */
     public void saveLater() {
         if (executor.isShutdown() || savePending.getAndSet(true))
             return;   // Already pending.
         executor.schedule(saver, delay, delayTimeUnit);
     }
 
-    /** Shut down auto-saving. */
+    /**
+     * Shut down auto-saving.
+     */
     public void shutdownAndWait() {
         executor.shutdown();
         try {

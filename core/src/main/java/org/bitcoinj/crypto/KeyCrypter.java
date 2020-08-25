@@ -44,6 +44,7 @@ public interface KeyCrypter extends Serializable {
 
     /**
      * Create a KeyParameter (which typically contains an AES key)
+     *
      * @param password
      * @return KeyParameter The KeyParameter which typically contains the AES key to use for encrypting and decrypting
      * @throws KeyCrypterException

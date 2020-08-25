@@ -20,7 +20,10 @@ package org.bitcoinj.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -31,7 +34,7 @@ import static com.google.common.base.Preconditions.checkState;
  * <p>A Message is a data structure that can be serialized/deserialized using the Bitcoin serialization format.
  * Specific types of messages that are used both in the block chain, and on the wire, are derived from this
  * class.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public abstract class Message {
@@ -74,14 +77,13 @@ public abstract class Message {
     }
 
     /**
-     * 
-     * @param params NetworkParameters object.
-     * @param payload Bitcoin protocol formatted byte array containing message content.
-     * @param offset The location of the first payload byte within the array.
+     * @param params          NetworkParameters object.
+     * @param payload         Bitcoin protocol formatted byte array containing message content.
+     * @param offset          The location of the first payload byte within the array.
      * @param protocolVersion Bitcoin protocol version.
-     * @param serializer the serializer to use for this message.
-     * @param length The length of message payload if known.  Usually this is provided when deserializing of the wire
-     * as the length will be provided as part of the header.  If unknown then set to Message.UNKNOWN_LENGTH
+     * @param serializer      the serializer to use for this message.
+     * @param length          The length of message payload if known.  Usually this is provided when deserializing of the wire
+     *                        as the length will be provided as part of the header.  If unknown then set to Message.UNKNOWN_LENGTH
      * @throws ProtocolException
      */
     protected Message(NetworkParameters params, byte[] payload, int offset, int protocolVersion, MessageSerializer serializer, int length) throws ProtocolException {
@@ -95,12 +97,12 @@ public abstract class Message {
 
         if (this.length == UNKNOWN_LENGTH)
             checkState(false, "Length field has not been set in constructor for %s after parse.",
-                       getClass().getSimpleName());
-        
+                    getClass().getSimpleName());
+
         if (SELF_CHECK) {
             selfCheck(payload, offset);
         }
-        
+
         if (!serializer.isParseRetainMode())
             this.payload = null;
     }
@@ -119,7 +121,7 @@ public abstract class Message {
 
     protected Message(NetworkParameters params, byte[] payload, int offset) throws ProtocolException {
         this(params, payload, offset, params.getDefaultSerializer().getProtocolVersion(),
-             params.getDefaultSerializer(), UNKNOWN_LENGTH);
+                params.getDefaultSerializer(), UNKNOWN_LENGTH);
     }
 
     protected Message(NetworkParameters params, byte[] payload, int offset, MessageSerializer serializer, int length) throws ProtocolException {
@@ -170,6 +172,7 @@ public abstract class Message {
 
     /**
      * Overrides the message serializer.
+     *
      * @param serializer the new serializer
      */
     public void setSerializer(MessageSerializer serializer) {
@@ -360,7 +363,7 @@ public abstract class Message {
 
     protected byte[] readByteArray() throws ProtocolException {
         long len = readVarInt();
-        return readBytes((int)len);
+        return readBytes((int) len);
     }
 
     protected String readStr() throws ProtocolException {
@@ -378,7 +381,9 @@ public abstract class Message {
         return cursor < payload.length;
     }
 
-    /** Network parameters this message was created with. */
+    /**
+     * Network parameters this message was created with.
+     */
     public NetworkParameters getParams() {
         return params;
     }
@@ -387,7 +392,7 @@ public abstract class Message {
      * Set the serializer for this message when deserialized by Java.
      */
     private void readObject(ObjectInputStream in)
-        throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (null != params) {
             this.serializer = params.getDefaultSerializer();

@@ -17,11 +17,10 @@
 
 package org.bitcoinj.core;
 
+import com.google.common.base.MoreObjects;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.script.ScriptPattern;
-
-import com.google.common.base.MoreObjects;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,24 +36,28 @@ import static java.lang.Math.*;
  * <p>A Bloom filter is a probabilistic data structure which can be sent to another client so that it can avoid
  * sending us transactions that aren't relevant to our set of keys. This allows for significantly more efficient
  * use of available network bandwidth and CPU time.</p>
- * 
+ *
  * <p>Because a Bloom filter is probabilistic, it has a configurable false positive rate. So the filter will sometimes
  * match transactions that weren't inserted into it, but it will never fail to match transactions that were. This is
  * a useful privacy feature - if you have spare bandwidth the false positive rate can be increased so the remote peer
  * gets a noisy picture of what transactions are relevant to your wallet.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class BloomFilter extends Message {
-    /** The BLOOM_UPDATE_* constants control when the bloom filter is auto-updated by the peer using
-        it as a filter, either never, for all outputs or only for P2PK outputs (default) */
+    /**
+     * The BLOOM_UPDATE_* constants control when the bloom filter is auto-updated by the peer using
+     * it as a filter, either never, for all outputs or only for P2PK outputs (default)
+     */
     public enum BloomUpdate {
         UPDATE_NONE, // 0
         UPDATE_ALL, // 1
-        /** Only adds outpoints to the filter if the output is a P2PK/pay-to-multisig script */
+        /**
+         * Only adds outpoints to the filter if the output is a P2PK/pay-to-multisig script
+         */
         UPDATE_P2PUBKEY_ONLY //2
     }
-    
+
     private byte[] data;
     private long hashFuncs;
     private long nTweak;
@@ -72,22 +75,22 @@ public class BloomFilter extends Message {
     public BloomFilter(NetworkParameters params, byte[] payloadBytes) throws ProtocolException {
         super(params, payloadBytes, 0);
     }
-    
+
     /**
      * Constructs a filter with the given parameters which is updated on P2PK outputs only.
      */
     public BloomFilter(int elements, double falsePositiveRate, long randomNonce) {
         this(elements, falsePositiveRate, randomNonce, BloomUpdate.UPDATE_P2PUBKEY_ONLY);
     }
-    
+
     /**
      * <p>Constructs a new Bloom Filter which will provide approximately the given false positive rate when the given
      * number of elements have been inserted. If the filter would otherwise be larger than the maximum allowed size,
      * it will be automatically downsized to the maximum size.</p>
-     * 
+     *
      * <p>To check the theoretical false positive rate of a given filter, use
      * {@link BloomFilter#getFalsePositiveRate(int)}.</p>
-     * 
+     *
      * <p>The anonymity of which coins are yours to any peer which you send a BloomFilter to is controlled by the
      * false positive rate. For reference, as of block 187,000, the total number of addresses used in the chain was
      * roughly 4.5 million. Thus, if you use a false positive rate of 0.001 (0.1%), there will be, on average, 4,500
@@ -95,15 +98,15 @@ public class BloomFilter extends Message {
      * which are not actually yours. Keep in mind that a remote node can do a pretty good job estimating the order of
      * magnitude of the false positive rate of a given filter you provide it when considering the anonymity of a given
      * filter.</p>
-     * 
+     *
      * <p>In order for filtered block download to function efficiently, the number of matched transactions in any given
      * block should be less than (with some headroom) the maximum size of the MemoryPool used by the Peer
      * doing the downloading (default is {@link TxConfidenceTable#MAX_SIZE}). See the comment in processBlock(FilteredBlock)
      * for more information on this restriction.</p>
-     * 
+     *
      * <p>randomNonce is a tweak for the hash function used to prevent some theoretical DoS attacks.
      * It should be a random value, however secureness of the random value is of no great consequence.</p>
-     * 
+     *
      * <p>updateFlag is used to control filter behaviour on the server (remote node) side when it encounters a hit.
      * See {@link BloomFilter.BloomUpdate} for a brief description of each mode. The purpose
      * of this flag is to reduce network round-tripping and avoid over-dirtying the filter for the most common
@@ -112,16 +115,16 @@ public class BloomFilter extends Message {
     public BloomFilter(int elements, double falsePositiveRate, long randomNonce, BloomUpdate updateFlag) {
         // The following formulas were stolen from Wikipedia's page on Bloom Filters (with the addition of min(..., MAX_...))
         //                        Size required for a given number of elements and false-positive rate
-        int size = (int)(-1  / (pow(log(2), 2)) * elements * log(falsePositiveRate));
+        int size = (int) (-1 / (pow(log(2), 2)) * elements * log(falsePositiveRate));
         size = max(1, min(size, (int) MAX_FILTER_SIZE * 8) / 8);
         data = new byte[size];
         // Optimal number of hash functions for a given filter size and element count.
-        hashFuncs = (int)(data.length * 8 / (double)elements * log(2));
+        hashFuncs = (int) (data.length * 8 / (double) elements * log(2));
         hashFuncs = max(1, min(hashFuncs, MAX_HASH_FUNCS));
         this.nTweak = randomNonce;
-        this.nFlags = (byte)(0xff & updateFlag.ordinal());
+        this.nFlags = (byte) (0xff & updateFlag.ordinal());
     }
-    
+
     /**
      * Returns the theoretical false positive rate of this filter if were to contain the given number of elements.
      */
@@ -142,7 +145,7 @@ public class BloomFilter extends Message {
     protected void parse() throws ProtocolException {
         data = readByteArray();
         if (data.length > MAX_FILTER_SIZE)
-            throw new ProtocolException ("Bloom filter out of size range.");
+            throw new ProtocolException("Bloom filter out of size range.");
         hashFuncs = readUint32();
         if (hashFuncs > MAX_HASH_FUNCS)
             throw new ProtocolException("Bloom filter hash function count out of range");
@@ -150,7 +153,7 @@ public class BloomFilter extends Message {
         nFlags = readBytes(1)[0];
         length = cursor - offset;
     }
-    
+
     /**
      * Serializes this message to the provided stream. If you just want the raw bytes use bitcoinSerialize().
      */
@@ -172,30 +175,29 @@ public class BloomFilter extends Message {
      * See this <a href="https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp">C++ code for the original.</a>
      */
     public static int murmurHash3(byte[] data, long nTweak, int hashNum, byte[] object) {
-        int h1 = (int)(hashNum * 0xFBA4C795L + nTweak);
+        int h1 = (int) (hashNum * 0xFBA4C795L + nTweak);
         final int c1 = 0xcc9e2d51;
         final int c2 = 0x1b873593;
 
         int numBlocks = (object.length / 4) * 4;
         // body
-        for(int i = 0; i < numBlocks; i += 4) {
+        for (int i = 0; i < numBlocks; i += 4) {
             int k1 = (object[i] & 0xFF) |
-                  ((object[i+1] & 0xFF) << 8) |
-                  ((object[i+2] & 0xFF) << 16) |
-                  ((object[i+3] & 0xFF) << 24);
-            
+                    ((object[i + 1] & 0xFF) << 8) |
+                    ((object[i + 2] & 0xFF) << 16) |
+                    ((object[i + 3] & 0xFF) << 24);
+
             k1 *= c1;
             k1 = rotateLeft32(k1, 15);
             k1 *= c2;
 
             h1 ^= k1;
             h1 = rotateLeft32(h1, 13);
-            h1 = h1*5+0xe6546b64;
+            h1 = h1 * 5 + 0xe6546b64;
         }
-        
+
         int k1 = 0;
-        switch(object.length & 3)
-        {
+        switch (object.length & 3) {
             case 3:
                 k1 ^= (object[numBlocks + 2] & 0xff) << 16;
                 // Fall through.
@@ -204,7 +206,10 @@ public class BloomFilter extends Message {
                 // Fall through.
             case 1:
                 k1 ^= (object[numBlocks] & 0xff);
-                k1 *= c1; k1 = rotateLeft32(k1, 15); k1 *= c2; h1 ^= k1;
+                k1 *= c1;
+                k1 = rotateLeft32(k1, 15);
+                k1 *= c2;
+                h1 ^= k1;
                 // Fall through.
             default:
                 // Do nothing.
@@ -218,10 +223,10 @@ public class BloomFilter extends Message {
         h1 ^= h1 >>> 13;
         h1 *= 0xc2b2ae35;
         h1 ^= h1 >>> 16;
-        
-        return (int)((h1&0xFFFFFFFFL) % (data.length * 8));
+
+        return (int) ((h1 & 0xFFFFFFFFL) % (data.length * 8));
     }
-    
+
     /**
      * Returns true if the given object matches the filter either because it was inserted, or because we have a
      * false-positive.
@@ -233,20 +238,26 @@ public class BloomFilter extends Message {
         }
         return true;
     }
-    
-    /** Insert the given arbitrary data into the filter */
+
+    /**
+     * Insert the given arbitrary data into the filter
+     */
     public synchronized void insert(byte[] object) {
         for (int i = 0; i < hashFuncs; i++)
             Utils.setBitLE(data, murmurHash3(data, nTweak, i, object));
     }
 
-    /** Inserts the given key and equivalent hashed form (for the address). */
+    /**
+     * Inserts the given key and equivalent hashed form (for the address).
+     */
     public synchronized void insert(ECKey key) {
         insert(key.getPubKey());
         insert(key.getPubKeyHash());
     }
 
-    /** Inserts the given transaction outpoint. */
+    /**
+     * Inserts the given transaction outpoint.
+     */
     public synchronized void insert(TransactionOutPoint outpoint) {
         insert(outpoint.unsafeBitcoinSerialize());
     }
@@ -259,7 +270,7 @@ public class BloomFilter extends Message {
      * transaction instead of 100-300 bytes as per usual.
      */
     public synchronized void setMatchAll() {
-        data = new byte[] {(byte) 0xff};
+        data = new byte[]{(byte) 0xff};
     }
 
     /**
@@ -269,12 +280,12 @@ public class BloomFilter extends Message {
     public synchronized void merge(BloomFilter filter) {
         if (!this.matchesAll() && !filter.matchesAll()) {
             checkArgument(filter.data.length == this.data.length &&
-                          filter.hashFuncs == this.hashFuncs &&
-                          filter.nTweak == this.nTweak);
+                    filter.hashFuncs == this.hashFuncs &&
+                    filter.nTweak == this.nTweak);
             for (int i = 0; i < data.length; i++)
                 this.data[i] |= filter.data[i];
         } else {
-            this.data = new byte[] {(byte) 0xff};
+            this.data = new byte[]{(byte) 0xff};
         }
     }
 
@@ -360,7 +371,7 @@ public class BloomFilter extends Message {
         }
         return false;
     }
-    
+
     @Override
     public synchronized boolean equals(Object o) {
         if (this == o) return true;

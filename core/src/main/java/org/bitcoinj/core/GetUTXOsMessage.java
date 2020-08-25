@@ -37,12 +37,14 @@ import java.util.Objects;
  * space and time. If you want to look up unspent outputs by address, you can either query a block explorer site,
  * or you can use the {@link FullPrunedBlockChain} class to build the required indexes yourself. Bear in that it will
  * be quite slow and disk intensive to do that!</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class GetUTXOsMessage extends Message {
     public static final int MIN_PROTOCOL_VERSION = 70002;
-    /** Bitmask of service flags required for a node to support this command (0x3) */
+    /**
+     * Bitmask of service flags required for a node to support this command (0x3)
+     */
     public static final long SERVICE_FLAGS_REQUIRED = 3;
 
     private boolean includeMempool;

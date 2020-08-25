@@ -36,7 +36,7 @@ public class VarInt {
     /**
      * Constructs a new VarInt with the value parsed from the specified offset of the given buffer.
      *
-     * @param buf the buffer containing the value
+     * @param buf    the buffer containing the value
      * @param offset the offset of the value
      */
     public VarInt(byte[] buf, int offset) {

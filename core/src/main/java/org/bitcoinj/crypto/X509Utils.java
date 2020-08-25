@@ -82,7 +82,9 @@ public class X509Utils {
         }
     }
 
-    /** Returns a key store loaded from the given stream. Just a convenience around the Java APIs. */
+    /**
+     * Returns a key store loaded from the given stream. Just a convenience around the Java APIs.
+     */
     public static KeyStore loadKeyStore(String keystoreType, @Nullable String keystorePassword, InputStream is)
             throws KeyStoreException {
         try {

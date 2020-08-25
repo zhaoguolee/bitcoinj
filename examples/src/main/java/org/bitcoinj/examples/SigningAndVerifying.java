@@ -19,12 +19,8 @@ package org.bitcoinj.examples;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.script.Script;
-import org.bitcoinj.store.MemoryBlockStore;
-import org.bitcoinj.wallet.Wallet;
 
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.security.SignatureException;
 
 /**
@@ -32,7 +28,7 @@ import java.security.SignatureException;
  *
  * <a href="http://www.bitcoin.org/smf/index.php?topic=3638.0">http://www.bitcoin.org/smf/index.php?topic=3638
  * .0</a><p>
- *
+ * <p>
  * in which a private key with some coins associated with it is published. The goal is to import the private key,
  * claim the coins and then send them to a different address.
  */
@@ -76,9 +72,9 @@ public class SigningAndVerifying {
     private static boolean isSignatureValid(NetworkParameters params, String address, String message, String signature) {
         try {
             String signedAddress = "";
-            if(Address.isValidLegacyAddress(params, address)) {
+            if (Address.isValidLegacyAddress(params, address)) {
                 signedAddress = ECKey.signedMessageToKey(message, signature).toAddress(params).toBase58();
-            } else if(Address.isValidCashAddr(params, address)) {
+            } else if (Address.isValidCashAddr(params, address)) {
                 signedAddress = ECKey.signedMessageToKey(message, signature).toAddress(params).toString();
             }
 

@@ -16,12 +16,7 @@
 
 package org.bitcoinj.core.listeners;
 
-import org.bitcoinj.core.BlockChain;
-import org.bitcoinj.core.FilteredBlock;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.core.*;
 
 /**
  * Listener interface for when we receive a new block that contains a relevant
@@ -44,6 +39,7 @@ public interface TransactionReceivedInBlockListener {
     void receiveFromBlock(Transaction tx, StoredBlock block,
                           BlockChain.NewBlockType blockType,
                           int relativityOffset) throws VerificationException;
+
     /**
      * <p>Called by the {@link BlockChain} when we receive a new {@link FilteredBlock} that contains the given
      * transaction hash in its merkle tree.</p>

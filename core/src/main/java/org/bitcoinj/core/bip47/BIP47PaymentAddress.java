@@ -5,12 +5,6 @@
 
 package org.bitcoinj.core.bip47;
 
-import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.spec.InvalidKeySpecException;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -21,10 +15,17 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECPoint;
 
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
+
 /**
  * p>A {@link BIP47PaymentAddress} is derived for account deposits in a bip47 channel. It is used by a recipient's bip47 wallet to derive and watch deposits. It
  * is also used by a sender's bip47 wallet to calculate the next addresses to send a deposit to.</p>
- *
+ * <p>
  * The BIP47 BIP47PaymentAddress is at the derivation path <pre>m / 47' / coin_type' / account_id' / idx' .</pre>. </p>
  *
  * <p>Properties:</p>
@@ -47,11 +48,14 @@ public class BIP47PaymentAddress {
     private static final X9ECParameters CURVE_PARAMS = CustomNamedCurves.getByName("secp256k1");
     // create the curve
     private static final ECDomainParameters CURVE;
+
     static {
         CURVE = new ECDomainParameters(CURVE_PARAMS.getCurve(), CURVE_PARAMS.getG(), CURVE_PARAMS.getN(), CURVE_PARAMS.getH());
     }
 
-    /** Creates a BIP47PaymentAddress object that the sender will use to pay, using the hardened key at idx */
+    /**
+     * Creates a BIP47PaymentAddress object that the sender will use to pay, using the hardened key at idx
+     */
     public BIP47PaymentAddress(NetworkParameters networkParameters, BIP47PaymentCode BIP47PaymentCode, int index, byte[] privKey) throws AddressFormatException {
         this.BIP47PaymentCode = BIP47PaymentCode;
         this.index = index;
@@ -59,12 +63,16 @@ public class BIP47PaymentAddress {
         this.networkParameters = networkParameters;
     }
 
-    /** Creates a HD key to send a deposit */
+    /**
+     * Creates a HD key to send a deposit
+     */
     public ECKey getSendECKey() throws AddressFormatException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, IllegalStateException, InvalidKeySpecException, NotSecp256k1Exception {
         return this.getSendECKey(this.secretPoint());
     }
 
-    /** Derives a deposit address to watch to receive payments from BIP47PaymentCode's owner*/
+    /**
+     * Derives a deposit address to watch to receive payments from BIP47PaymentCode's owner
+     */
     public ECKey getReceiveECKey() throws AddressFormatException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, IllegalStateException, InvalidKeySpecException, NotSecp256k1Exception {
         return this.getReceiveECKey(this.secretPoint());
     }
@@ -88,7 +96,9 @@ public class BIP47PaymentAddress {
         return ecKey.getPubKeyPoint();
     }
 
-    /** Returns the scalar shared secret */
+    /**
+     * Returns the scalar shared secret
+     */
     public byte[] hashSharedSecret() throws AddressFormatException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, IllegalStateException, InvalidKeySpecException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(this.getSharedSecret().ECDHSecretAsBytes());
@@ -118,7 +128,7 @@ public class BIP47PaymentAddress {
     /* Adds two keys together */
     private BigInteger addSecp256k1(BigInteger b1, BigInteger b2) {
         BigInteger ret = b1.add(b2);
-        return ret.bitLength() > CURVE.getN().bitLength()?ret.mod(CURVE.getN()):ret;
+        return ret.bitLength() > CURVE.getN().bitLength() ? ret.mod(CURVE.getN()) : ret;
     }
 
     /* Return the ECDH shared secret between us and the owner of BIP47PaymentCode */
@@ -132,10 +142,12 @@ public class BIP47PaymentAddress {
         return b.compareTo(BigInteger.ONE) > 0 && b.bitLength() <= CURVE.getN().bitLength();
     }
 
-    /** Returns a SHA256 mask of the secret point */
+    /**
+     * Returns a SHA256 mask of the secret point
+     */
     private BigInteger secretPoint() throws AddressFormatException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, NotSecp256k1Exception {
         BigInteger s = new BigInteger(1, this.hashSharedSecret());
-        if(!this.isSecp256k1(s)) {
+        if (!this.isSecp256k1(s)) {
             throw new NotSecp256k1Exception("secret point not on Secp256k1 curve");
         } else {
             return s;

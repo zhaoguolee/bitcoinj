@@ -19,9 +19,7 @@ package org.bitcoinj.params;
 import org.bitcoinj.core.Coin;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AbstractBitcoinNetParamsTest {
     private final AbstractBitcoinNetParams BITCOIN_PARAMS = new AbstractBitcoinNetParams() {

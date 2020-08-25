@@ -16,14 +16,14 @@
 
 package org.bitcoinj.examples;
 
-import static org.fusesource.leveldbjni.JniDBFactory.*;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.Options;
+import org.iq80.leveldb.Range;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.iq80.leveldb.DB;
-import org.iq80.leveldb.Options;
-import org.iq80.leveldb.Range;
+import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
 public class LevelDbSizes {
 

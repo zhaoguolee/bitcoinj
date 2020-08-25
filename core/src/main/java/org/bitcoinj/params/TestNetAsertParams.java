@@ -43,7 +43,7 @@ public class TestNetAsertParams extends AbstractBitcoinNetParams {
         port = 10333;
         addressHeader = 111;
         p2shHeader = 196;
-        acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
+        acceptableAddressCodes = new int[]{addressHeader, p2shHeader};
         dumpedPrivateKeyHeader = 239;
         genesisBlock.setTime(1296688602L);
         genesisBlock.setDifficultyTarget(0x1d00ffffL);
@@ -53,7 +53,7 @@ public class TestNetAsertParams extends AbstractBitcoinNetParams {
         checkState(genesisHash.equals("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
 
-        dnsSeeds = new String[] {
+        dnsSeeds = new String[]{
                 "testnet-seed.bitcoinabc.org",
                 "testnet-seed-abc.bitcoinforks.org",
                 "testnet-seed.bitprim.org",
@@ -81,10 +81,11 @@ public class TestNetAsertParams extends AbstractBitcoinNetParams {
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
         maxBlockSize = 32 * 1000 * 1000;
-        maxBlockSigops = maxBlockSize/50;
+        maxBlockSigops = maxBlockSize / 50;
     }
 
     private static TestNetAsertParams instance;
+
     public static synchronized TestNetAsertParams get() {
         if (instance == null) {
             instance = new TestNetAsertParams();
@@ -100,7 +101,7 @@ public class TestNetAsertParams extends AbstractBitcoinNetParams {
     // February 16th 2012
     private static final Date testnetDiffDate = new Date(1329264000000L);
 
-    public static boolean isValidTestnetDateBlock(Block block){
+    public static boolean isValidTestnetDateBlock(Block block) {
         return block.getTime().after(testnetDiffDate);
     }
 }

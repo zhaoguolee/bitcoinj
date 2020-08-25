@@ -17,7 +17,6 @@
 package org.bitcoinj.pow.factory;
 
 import org.bitcoinj.core.Block;
-import org.bitcoinj.core.BlockChain;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.params.AbstractBitcoinNetParams;
@@ -25,7 +24,6 @@ import org.bitcoinj.pow.AbstractRuleCheckerFactory;
 import org.bitcoinj.pow.RulesPoolChecker;
 import org.bitcoinj.pow.rule.RegTestRuleChecker;
 import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
 
 public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
 
@@ -54,7 +52,7 @@ public class RuleCheckerFactory extends AbstractRuleCheckerFactory {
     public RulesPoolChecker getRuleChecker(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore) {
         if (NetworkParameters.ID_REGTEST.equals(networkParameters.getId())) {
             return this.regtestChecker;
-        } else if(AbstractBitcoinNetParams.isAsertEnabled(storedPrev, blockStore, networkParameters)) {
+        } else if (AbstractBitcoinNetParams.isAsertEnabled(storedPrev, blockStore, networkParameters)) {
             return asertRulesFactory.getRuleChecker(storedPrev, nextBlock, blockStore);
         } else if (isNewDaaActivated(storedPrev, networkParameters)) {
             return daaRulesFactory.getRuleChecker(storedPrev, nextBlock, blockStore);
