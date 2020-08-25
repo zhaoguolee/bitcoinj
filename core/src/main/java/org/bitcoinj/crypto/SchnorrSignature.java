@@ -13,6 +13,13 @@ import java.security.NoSuchAlgorithmException;
  * @author michaeltan
  */
 public class SchnorrSignature {
+    /*
+    Credit goes to:
+    https://github.com/miketwk/bip-schnorr-java
+    For core signing and verification.
+
+    I've changed a few things to mitigate timing attacks as much as possible.
+    */
     public static final BigInteger p = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", 16);
     public static final BigInteger n = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
     public static final BigInteger[] G = {
