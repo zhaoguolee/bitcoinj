@@ -15,6 +15,7 @@ This fork of bitcoincashj has many changes and fixes since the original bitcoinc
 - BIP47 Reusable Payment Codes support
 - OP_CHECKDATASIG support
 - OP_REVERSEBYTES support
+- Schnorr signatures
 - Up-to-date hardfork checkpoints
 
 It allows maintaining a wallet and sending/receiving transactions without needing a full blockchain node. It comes with full documentation and some example apps showing how to use it.
