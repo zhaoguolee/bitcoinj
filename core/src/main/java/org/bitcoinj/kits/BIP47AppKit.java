@@ -467,9 +467,14 @@ public class BIP47AppKit extends WalletKitCore {
     public Address getAddressOfReceived(Transaction tx) {
         for (final TransactionOutput output : tx.getOutputs()) {
             try {
-                if (output.isMineOrWatched(vWallet)) {
-                    final Script script = output.getScriptPubKey();
-                    return script.getToAddress(params, true);
+                boolean isMineOrWatched = output.isMineOrWatched(vWallet);
+                Address address = output.getScriptPubKey().getToAddress(params, true);
+                String cashAddress = address.toCash().toString();
+                String notifCashAddress = getAccount(0).getNotificationAddress().toCash().toString();
+                if (isMineOrWatched) {
+                    if(cashAddress.equals(notifCashAddress)) {
+                        return address;
+                    }
                 }
             } catch (final ScriptException x) {
                 // swallow
