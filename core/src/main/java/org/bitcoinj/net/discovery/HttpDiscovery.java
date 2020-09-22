@@ -17,26 +17,29 @@
 
 package org.bitcoinj.net.discovery;
 
-import com.google.common.annotations.*;
-import com.google.protobuf.*;
-import org.bitcoin.crawler.*;
-import org.bitcoinj.core.*;
-import org.slf4j.*;
-
-import javax.annotation.*;
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.zip.*;
-
+import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.InvalidProtocolBufferException;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.bitcoin.crawler.PeerSeedProtos;
+import org.bitcoinj.core.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.*;
+import javax.annotation.Nullable;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.security.SignatureException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A class that knows how to read signed sets of seeds over HTTP, using a simple protobuf based protocol. See the
@@ -47,7 +50,8 @@ public class HttpDiscovery implements PeerDiscovery {
     private static final Logger log = LoggerFactory.getLogger(HttpDiscovery.class);
 
     public static class Details {
-        @Nullable public final ECKey pubkey;
+        @Nullable
+        public final ECKey pubkey;
         public final URI uri;
 
         public Details(@Nullable ECKey pubkey, URI uri) {
@@ -76,7 +80,7 @@ public class HttpDiscovery implements PeerDiscovery {
         this(params, details, new OkHttpClient());
     }
 
-    public HttpDiscovery(NetworkParameters params, Details details,  OkHttpClient client) {
+    public HttpDiscovery(NetworkParameters params, Details details, OkHttpClient client) {
         checkArgument(details.uri.getScheme().startsWith("http"));
         this.details = details;
         this.params = params;

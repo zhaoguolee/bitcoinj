@@ -15,7 +15,8 @@ public class BIP47Address {
     private int index = 0;
     private boolean seen = false;
 
-    public BIP47Address() {}
+    public BIP47Address() {
+    }
 
     public BIP47Address(String address, int index) {
         this.address = address;

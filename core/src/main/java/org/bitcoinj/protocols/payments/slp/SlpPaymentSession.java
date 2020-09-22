@@ -25,8 +25,8 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.core.slp.SlpAddress;
 import org.bitcoinj.crypto.TrustStoreLoader;
 import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.protocols.payments.slp.SlpPaymentProtocol.PkiVerificationData;
 import org.bitcoinj.protocols.payments.PaymentProtocolException;
+import org.bitcoinj.protocols.payments.slp.SlpPaymentProtocol.PkiVerificationData;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.script.ScriptPattern;
@@ -38,7 +38,6 @@ import org.bouncycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStoreException;
@@ -85,7 +84,8 @@ public class SlpPaymentSession {
      * Stores the calculated PKI verification data, or null if none is available.
      * Only valid after the session is created with the verifyPki parameter set to true.
      */
-    @Nullable public final PkiVerificationData pkiVerificationData;
+    @Nullable
+    public final PkiVerificationData pkiVerificationData;
 
     /**
      * <p>Returns a future that will be notified with a PaymentSession object after it is fetched using the provided uri.
@@ -171,7 +171,7 @@ public class SlpPaymentSession {
             throw new PaymentProtocolException.InvalidPaymentRequestURL("null paymentRequestUrl");
         try {
             return fetchPaymentRequest(new URI(url), verifyPki, trustStoreLoader);
-        } catch(URISyntaxException e) {
+        } catch (URISyntaxException e) {
             throw new PaymentProtocolException.InvalidPaymentRequestURL(e);
         }
     }
@@ -180,7 +180,7 @@ public class SlpPaymentSession {
         return executor.submit(new Callable<SlpPaymentSession>() {
             @Override
             public SlpPaymentSession call() throws Exception {
-                HttpURLConnection connection = (HttpURLConnection)uri.toURL().openConnection();
+                HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
                 connection.setRequestProperty("Accept", SlpPaymentProtocol.MIMETYPE_PAYMENTREQUEST);
                 connection.setUseCaches(false);
                 Protos.PaymentRequest paymentRequest = Protos.PaymentRequest.parseFrom(connection.getInputStream());
@@ -241,7 +241,8 @@ public class SlpPaymentSession {
     /**
      * Returns the memo included by the merchant in the payment request, or null if not found.
      */
-    @Nullable public String getMemo() {
+    @Nullable
+    public String getMemo() {
         if (paymentDetails.hasMemo())
             return paymentDetails.getMemo();
         else
@@ -265,7 +266,8 @@ public class SlpPaymentSession {
     /**
      * Returns the expires time of the payment request, or null if none.
      */
-    @Nullable public Date getExpires() {
+    @Nullable
+    public Date getExpires() {
         if (paymentDetails.hasExpires())
             return new Date(paymentDetails.getExpires() * 1000);
         else
@@ -293,7 +295,8 @@ public class SlpPaymentSession {
     /**
      * Returns the merchant data included by the merchant in the payment request, or null if none.
      */
-    @Nullable public byte[] getMerchantData() {
+    @Nullable
+    public byte[] getMerchantData() {
         if (paymentDetails.hasMerchantData())
             return paymentDetails.getMerchantData().toByteArray();
         else
@@ -314,9 +317,9 @@ public class SlpPaymentSession {
         String tokenId = "";
         Script opReturn = this.getSlpOpReturn();
         ScriptChunk tokenIdChunk = opReturn.getChunks().get(4);
-        if(tokenIdChunk != null) {
+        if (tokenIdChunk != null) {
             byte[] chunkData = tokenIdChunk.data;
-            if(chunkData != null) {
+            if (chunkData != null) {
                 tokenId = new String(Hex.encode(tokenIdChunk.data), StandardCharsets.UTF_8);
             }
         }
@@ -328,9 +331,9 @@ public class SlpPaymentSession {
         ArrayList<ScriptChunk> tokenChunks = new ArrayList<>();
         Script opReturn = this.getSlpOpReturn();
         int tokenChunkStartIndex = 5;
-        for(int x = tokenChunkStartIndex; x < opReturn.getChunks().size(); x++) {
+        for (int x = tokenChunkStartIndex; x < opReturn.getChunks().size(); x++) {
             ScriptChunk tokenAmountChunk = opReturn.getChunks().get(x);
-            if(tokenAmountChunk != null) {
+            if (tokenAmountChunk != null) {
                 tokenChunks.add(tokenAmountChunk);
             }
         }
@@ -340,9 +343,9 @@ public class SlpPaymentSession {
     public long getTotalTokenAmount() {
         long total = 0;
         List<ScriptChunk> tokenAmountChunks = this.getRequiredTokenAmounts();
-        for(ScriptChunk tokenAmountChunk : tokenAmountChunks) {
+        for (ScriptChunk tokenAmountChunk : tokenAmountChunks) {
             byte[] chunkData = tokenAmountChunk.data;
-            if(chunkData != null) {
+            if (chunkData != null) {
                 String tokenAmountHex = new String(Hex.encode(chunkData), StandardCharsets.UTF_8);
                 long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
                 total += tokenAmountRaw;
@@ -355,9 +358,9 @@ public class SlpPaymentSession {
     public List<Long> getRawTokenAmounts() {
         ArrayList<Long> rawAmounts = new ArrayList();
         List<ScriptChunk> tokenAmountChunks = this.getRequiredTokenAmounts();
-        for(ScriptChunk tokenAmountChunk : tokenAmountChunks) {
+        for (ScriptChunk tokenAmountChunk : tokenAmountChunks) {
             byte[] chunkData = tokenAmountChunk.data;
-            if(chunkData != null) {
+            if (chunkData != null) {
                 String tokenAmountHex = new String(Hex.encode(chunkData), StandardCharsets.UTF_8);
                 long tokenAmountRaw = Long.parseLong(tokenAmountHex, 16);
                 rawAmounts.add(tokenAmountRaw);
@@ -370,15 +373,15 @@ public class SlpPaymentSession {
     public List<String> getSlpAddresses(NetworkParameters params) {
         ArrayList<String> slpAddresses = new ArrayList();
         List<TransactionOutput> txUtxos = this.getSendRequest().tx.getOutputs();
-        for(TransactionOutput utxo : txUtxos) {
-            if(!ScriptPattern.isOpReturn(utxo.getScriptPubKey())) {
+        for (TransactionOutput utxo : txUtxos) {
+            if (!ScriptPattern.isOpReturn(utxo.getScriptPubKey())) {
                 Address address;
                 address = utxo.getAddressFromP2PKHScript(params);
-                if(address == null) {
+                if (address == null) {
                     address = utxo.getAddressFromP2SH(params);
                 }
 
-                if(address != null) {
+                if (address != null) {
                     SlpAddress slpAddress = SlpAddressFactory.create().getFromBase58(params, address.toBase58());
                     slpAddresses.add(slpAddress.toString());
                 }
@@ -392,9 +395,9 @@ public class SlpPaymentSession {
         Script opReturn = null;
 
         SendRequest sendRequest = this.getSendRequest();
-        for(TransactionOutput utxo : sendRequest.tx.getOutputs()) {
+        for (TransactionOutput utxo : sendRequest.tx.getOutputs()) {
             Script outputScript = utxo.getScriptPubKey();
-            if(ScriptPattern.isOpReturn(outputScript)) {
+            if (ScriptPattern.isOpReturn(outputScript)) {
                 opReturn = outputScript;
             }
         }
@@ -409,9 +412,10 @@ public class SlpPaymentSession {
      * merchant confirming the payment.
      * Returns an object wrapping PaymentACK once received.
      * If the PaymentRequest did not specify a payment_url, returns null and does nothing.
-     * @param txns list of transactions to be included with the Payment message.
+     *
+     * @param txns       list of transactions to be included with the Payment message.
      * @param refundAddr will be used by the merchant to send money back if there was a problem.
-     * @param memo is a message to include in the payment message sent to the merchant.
+     * @param memo       is a message to include in the payment message sent to the merchant.
      */
     @Nullable
     public ListenableFuture<SlpPaymentProtocol.Ack> sendPayment(List<Transaction> txns, @Nullable Address refundAddr, @Nullable String memo)
@@ -434,9 +438,10 @@ public class SlpPaymentSession {
      * Generates a Payment message based on the information in the PaymentRequest.
      * Provide transactions built by the wallet.
      * If the PaymentRequest did not specify a payment_url, returns null.
-     * @param txns list of transactions to be included with the Payment message.
+     *
+     * @param txns       list of transactions to be included with the Payment message.
      * @param refundAddr will be used by the merchant to send money back if there was a problem.
-     * @param memo is a message to include in the payment message sent to the merchant.
+     * @param memo       is a message to include in the payment message sent to the merchant.
      */
     @Nullable
     public Protos.Payment getPayment(List<Transaction> txns, @Nullable Address refundAddr, @Nullable String memo)
@@ -511,22 +516,31 @@ public class SlpPaymentSession {
         }
     }
 
-    /** Returns the value of pkiVerificationData or null if it wasn't verified at construction time. */
-    @Nullable public PkiVerificationData verifyPki() {
+    /**
+     * Returns the value of pkiVerificationData or null if it wasn't verified at construction time.
+     */
+    @Nullable
+    public PkiVerificationData verifyPki() {
         return pkiVerificationData;
     }
 
-    /** Gets the params as read from the PaymentRequest.network field: main is the default if missing. */
+    /**
+     * Gets the params as read from the PaymentRequest.network field: main is the default if missing.
+     */
     public NetworkParameters getNetworkParameters() {
         return params;
     }
 
-    /** Returns the protobuf that this object was instantiated with. */
+    /**
+     * Returns the protobuf that this object was instantiated with.
+     */
     public Protos.PaymentRequest getPaymentRequest() {
         return paymentRequest;
     }
 
-    /** Returns the protobuf that describes the payment to be made. */
+    /**
+     * Returns the protobuf that describes the payment to be made.
+     */
     public Protos.PaymentDetails getPaymentDetails() {
         return paymentDetails;
     }

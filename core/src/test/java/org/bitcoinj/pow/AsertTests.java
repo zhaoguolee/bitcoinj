@@ -1,20 +1,12 @@
 package org.bitcoinj.pow;
 
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.AbstractBitcoinNetParams;
 import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.script.Script;
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
-
-import static org.bitcoinj.core.Utils.HEX;
-import static org.junit.Assert.assertEquals;
 
 public class AsertTests {
     public NetworkParameters networkParameters = MainNetParams.get();
@@ -110,7 +102,7 @@ public class AsertTests {
     }
 
     private void runCalculations(ArrayList<TestVector> tests, int anchorBits, BigInteger anchorTime, BigInteger anchorHeight) {
-        for(TestVector testVector : tests) {
+        for (TestVector testVector : tests) {
             BigInteger nextTarget;
             nextTarget = AbstractBitcoinNetParams.computeAsertTarget(networkParameters, anchorBits, anchorTime, anchorHeight, testVector.time, testVector.height);
             assert nextTarget.intValue() == testVector.bits;
@@ -120,7 +112,7 @@ public class AsertTests {
     public ArrayList<TestVector> getTests(String testsString) {
         ArrayList<TestVector> tests = new ArrayList<>();
         String[] testVectors = testsString.split(System.getProperty("line.separator"));
-        for(String vector : testVectors) {
+        for (String vector : testVectors) {
             String[] parts = vector.split(" ");
             BigInteger height = new BigInteger(parts[1], 10);
             BigInteger time = new BigInteger(parts[2], 10);

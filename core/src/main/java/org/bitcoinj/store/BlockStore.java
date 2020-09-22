@@ -25,10 +25,10 @@ import org.bitcoinj.core.StoredBlock;
  * An implementor of BlockStore saves StoredBlock objects to disk. Different implementations store them in
  * different ways. An in-memory implementation (MemoryBlockStore) exists for unit testing but real apps will want to
  * use implementations that save to disk.<p>
- *
+ * <p>
  * A BlockStore is a map of hashes to StoredBlock. The hash is the double digest of the Bitcoin serialization
  * of the block header, <b>not</b> the header with the extra data as well.<p>
- *
+ * <p>
  * BlockStores are thread safe.
  */
 public interface BlockStore {
@@ -57,12 +57,15 @@ public interface BlockStore {
      * Sets the {@link StoredBlock} that represents the top of the chain of greatest total work.
      */
     void setChainHead(StoredBlock chainHead) throws BlockStoreException;
-    
-    /** Closes the store. */
+
+    /**
+     * Closes the store.
+     */
     void close() throws BlockStoreException;
 
     /**
      * Get the {@link NetworkParameters} of this store.
+     *
      * @return The network params.
      */
     NetworkParameters getParams();

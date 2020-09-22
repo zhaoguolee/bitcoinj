@@ -30,7 +30,7 @@ public class CashAddressHelper {
     /**
      * The cashaddr character set for decoding.
      */
-    final static byte CHARSET_REV[] = {
+    final static byte[] CHARSET_REV = {
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 15, -1, 10, 17, 21, 20, 26, 30, 7,
@@ -222,19 +222,13 @@ public class CashAddressHelper {
         int prefixSize = 0;
         for (int i = 0; i < str.length(); ++i) {
             char c = str.charAt(i);
-            if (c >= 'a' && c <= 'z') {
+            if (c >= 'a' && c <= 'z' || c >= '0' && c <= '9') {
                 lower = true;
                 continue;
             }
 
             if (c >= 'A' && c <= 'Z') {
                 upper = true;
-                continue;
-            }
-
-            if (c >= '0' && c <= '9') {
-                // We cannot have numbers in the prefix.
-                hasNumber = true;
                 continue;
             }
 
@@ -375,10 +369,9 @@ public class CashAddressHelper {
         return true;
     }
 
-    public static String getPrefix(String address)
-    {
+    public static String getPrefix(String address) {
         int colon = address.indexOf(':');
-        if(colon != -1)
+        if (colon != -1)
             return address.substring(0, colon);
         return null;
     }

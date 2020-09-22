@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,11 @@
 
 package org.bitcoinj.examples;
 
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Message;
+import org.bitcoinj.core.Peer;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.listeners.PreMessageReceivedEventListener;
-import org.bitcoinj.core.*;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.RegTestParams;
 import org.bitcoinj.utils.BriefLogFormatter;
@@ -46,17 +49,17 @@ public class DoubleSpend {
         System.out.println(kit.wallet());
 
         kit.wallet().getBalanceFuture(COIN, Wallet.BalanceType.AVAILABLE).get();
-        Transaction tx1 = kit.wallet().createSend(LegacyAddress.fromBase58(params, "muYPFNCv7KQEG2ZLM7Z3y96kJnNyXJ53wm"), CENT);
-        Transaction tx2 = kit.wallet().createSend(LegacyAddress.fromBase58(params, "muYPFNCv7KQEG2ZLM7Z3y96kJnNyXJ53wm"), CENT.add(SATOSHI.multiply(10)));
+        Transaction tx1 = kit.wallet().createSend(Address.fromBase58(params, "muYPFNCv7KQEG2ZLM7Z3y96kJnNyXJ53wm"), CENT);
+        Transaction tx2 = kit.wallet().createSend(Address.fromBase58(params, "muYPFNCv7KQEG2ZLM7Z3y96kJnNyXJ53wm"), CENT.add(SATOSHI.multiply(10)));
         final Peer peer = kit.peerGroup().getConnectedPeers().get(0);
         peer.addPreMessageReceivedEventListener(Threading.SAME_THREAD,
-            new PreMessageReceivedEventListener() {
-                @Override
-                public Message onPreMessageReceived(Peer peer, Message m) {
-                    System.err.println("Got a message!" + m.getClass().getSimpleName() + ": " + m);
-                    return m;
+                new PreMessageReceivedEventListener() {
+                    @Override
+                    public Message onPreMessageReceived(Peer peer, Message m) {
+                        System.err.println("Got a message!" + m.getClass().getSimpleName() + ": " + m);
+                        return m;
+                    }
                 }
-            }
         );
         peer.sendMessage(tx1);
         peer.sendMessage(tx2);

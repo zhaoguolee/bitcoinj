@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,9 +18,10 @@ package org.bitcoinj.core;
 
 import org.bitcoinj.utils.ContextPropagatingThreadFactory;
 import org.bitcoinj.wallet.SendRequest;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 // TODO: Finish adding Context c'tors to all the different objects so we can start deprecating the versions that take NetworkParameters.
 // TODO: Add a working directory notion to Context and make various subsystems that want to use files default to that directory (eg. Orchid, block stores, wallet, etc).
@@ -65,9 +66,9 @@ public class Context {
     /**
      * Creates a new custom context object. This is mainly meant for unit tests for now.
      *
-     * @param params The network parameters that will be associated with this context.
-     * @param eventHorizon Number of blocks after which the library will delete data and be unable to always process reorgs. See {@link #getEventHorizon()}.
-     * @param feePerKb The default fee per 1000 virtual bytes of transaction data to pay when completing transactions. For details, see {@link SendRequest#feePerKb}.
+     * @param params               The network parameters that will be associated with this context.
+     * @param eventHorizon         Number of blocks after which the library will delete data and be unable to always process reorgs. See {@link #getEventHorizon()}.
+     * @param feePerKb             The default fee per 1000 virtual bytes of transaction data to pay when completing transactions. For details, see {@link SendRequest#feePerKb}.
      * @param ensureMinRequiredFee Whether to ensure the minimum required fee by default when completing transactions. For details, see {@link SendRequest#ensureMinRequiredFee}.
      */
     public Context(NetworkParameters params, int eventHorizon, Coin feePerKb, boolean ensureMinRequiredFee) {

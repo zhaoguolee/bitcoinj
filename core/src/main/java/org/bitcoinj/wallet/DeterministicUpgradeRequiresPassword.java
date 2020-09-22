@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,4 +21,5 @@ package org.bitcoinj.wallet;
  * users password. This is required because HD wallets are upgraded from random using the private key bytes of
  * the oldest non-rotating key, in order to make the upgrade process itself deterministic.
  */
-public class DeterministicUpgradeRequiresPassword extends RuntimeException {}
+public class DeterministicUpgradeRequiresPassword extends RuntimeException {
+}

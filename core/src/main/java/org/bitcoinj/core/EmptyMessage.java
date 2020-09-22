@@ -23,7 +23,7 @@ import java.io.OutputStream;
 /**
  * <p>Parent class for header only messages that don't have a payload.
  * Currently this includes getaddr, verack and special bitcoinj class UnknownMessage.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public abstract class EmptyMessage extends Message {
@@ -51,8 +51,8 @@ public abstract class EmptyMessage extends Message {
     }
 
     /* (non-Javadoc)
-      * @see Message#bitcoinSerialize()
-      */
+     * @see Message#bitcoinSerialize()
+     */
     @Override
     public byte[] bitcoinSerialize() {
         return new byte[0];

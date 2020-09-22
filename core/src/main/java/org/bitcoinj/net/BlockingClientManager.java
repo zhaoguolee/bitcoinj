@@ -65,13 +65,16 @@ public class BlockingClientManager extends AbstractIdleService implements Client
         }
     }
 
-    /** Sets the number of milliseconds to wait before giving up on a connect attempt */
+    /**
+     * Sets the number of milliseconds to wait before giving up on a connect attempt
+     */
     public void setConnectTimeoutMillis(int connectTimeoutMillis) {
         this.connectTimeoutMillis = connectTimeoutMillis;
     }
 
     @Override
-    protected void startUp() throws Exception { }
+    protected void startUp() throws Exception {
+    }
 
     @Override
     protected void shutDown() throws Exception {

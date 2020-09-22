@@ -22,7 +22,7 @@ import org.bitcoinj.script.Script.VerifyFlag;
 import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.FullPrunedBlockStore;
-import org.bitcoinj.utils.*;
+import org.bitcoinj.utils.ContextPropagatingThreadFactory;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletExtension;
 import org.slf4j.Logger;
@@ -30,11 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -275,7 +271,7 @@ public class FullPrunedBlockChain extends AbstractBlockChain {
                         if (verifyFlags.contains(VerifyFlag.P2SH)) {
                             if (ScriptPattern.isP2SH(prevOut.getScript()))
                                 sigOps += Script.getP2SHSigOpCount(in.getScriptBytes());
-                            if (sigOps > Block.MAX_BLOCK_SIGOPS)
+                            if (sigOps > params.getMaxBlockSigops())
                                 throw new VerificationException("Too many P2SH SigOps in block");
                         }
 
@@ -384,7 +380,7 @@ public class FullPrunedBlockChain extends AbstractBlockChain {
                 List<Future<VerificationException>> listScriptVerificationResults = new ArrayList<>(transactions.size());
                 for (final Transaction tx : transactions) {
                     final Set<VerifyFlag> verifyFlags =
-                        params.getTransactionVerificationFlags(newBlock.getHeader(), tx, getVersionTally(), Integer.SIZE);
+                            params.getTransactionVerificationFlags(newBlock.getHeader(), tx, getVersionTally(), Integer.SIZE);
                     boolean isCoinBase = tx.isCoinBase();
                     Coin valueIn = Coin.ZERO;
                     Coin valueOut = Coin.ZERO;
@@ -403,7 +399,7 @@ public class FullPrunedBlockChain extends AbstractBlockChain {
                             if (verifyFlags.contains(VerifyFlag.P2SH)) {
                                 if (ScriptPattern.isP2SH(prevOut.getScript()))
                                     sigOps += Script.getP2SHSigOpCount(in.getScriptBytes());
-                                if (sigOps > Block.MAX_BLOCK_SIGOPS)
+                                if (sigOps > params.getMaxBlockSigops())
                                     throw new VerificationException("Too many P2SH SigOps in block");
                             }
 

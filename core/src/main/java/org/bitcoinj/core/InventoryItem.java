@@ -20,12 +20,12 @@ package org.bitcoinj.core;
 import java.util.Objects;
 
 public class InventoryItem {
-    
+
     /**
      * 4 byte uint32 type field + 32 byte hash
      */
     static final int MESSAGE_LENGTH = 36;
-    
+
     public enum Type {
         ERROR(0x0), TRANSACTION(0x1), BLOCK(0x2),
         // BIP37 extension:
@@ -35,7 +35,7 @@ public class InventoryItem {
 
         public final int code;
 
-        private Type(int code) {
+        Type(int code) {
             this.code = code;
         }
 

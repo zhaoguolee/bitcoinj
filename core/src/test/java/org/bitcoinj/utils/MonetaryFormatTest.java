@@ -16,18 +16,14 @@
 
 package org.bitcoinj.utils;
 
-import static org.bitcoinj.core.Coin.CENT;
-import static org.bitcoinj.core.Coin.COIN;
-import static org.bitcoinj.core.Coin.SATOSHI;
-import static org.bitcoinj.core.Coin.ZERO;
-import static org.junit.Assert.assertEquals;
-
-import java.util.Locale;
-
+import org.bitcoinj.core.Coin;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.bitcoinj.core.Coin;
+import java.util.Locale;
+
+import static org.bitcoinj.core.Coin.*;
+import static org.junit.Assert.assertEquals;
 
 public class MonetaryFormatTest {
 

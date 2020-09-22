@@ -17,9 +17,12 @@
 
 package org.bitcoinj.wallet;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.bitcoinj.core.*;
-import org.bitcoinj.core.listeners.TransactionConfidenceEventListener;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
+import org.bitcoinj.core.listeners.TransactionConfidenceEventListener;
 import org.bitcoinj.crypto.*;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
@@ -33,26 +36,21 @@ import org.bitcoinj.testing.*;
 import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.utils.Fiat;
 import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.KeyChain.KeyPurpose;
+import org.bitcoinj.wallet.Protos.Wallet.EncryptionType;
 import org.bitcoinj.wallet.Wallet.BalanceType;
 import org.bitcoinj.wallet.WalletTransaction.Pool;
 import org.bitcoinj.wallet.listeners.KeyChainEventListener;
 import org.bitcoinj.wallet.listeners.WalletChangeEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.easymock.EasyMock;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ListenableFuture;
-
-import org.bitcoinj.wallet.KeyChain.KeyPurpose;
-import org.bitcoinj.wallet.Protos.Wallet.EncryptionType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.params.KeyParameter;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -64,12 +62,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.bitcoinj.core.Coin.*;
 import static org.bitcoinj.core.Utils.HEX;
 import static org.bitcoinj.testing.FakeTxBuilder.*;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.replay;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.junit.Assert.*;
 
 public class WalletTest extends TestWithWallet {
@@ -194,7 +192,7 @@ public class WalletTest extends TestWithWallet {
         basicSpendingCommon(wallet, myAddress, OTHER_ADDRESS, null);
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void thresholdShouldNotExceedNumberOfKeys() throws Exception {
         createMarriedWallet(3, 2);
     }
@@ -427,7 +425,7 @@ public class WalletTest extends TestWithWallet {
 
     private void basicSanityChecks(Wallet wallet, Transaction t, Address destination) throws VerificationException {
         assertEquals("Wrong number of tx inputs", 1, t.getInputs().size());
-        assertEquals("Wrong number of tx outputs",2, t.getOutputs().size());
+        assertEquals("Wrong number of tx outputs", 2, t.getOutputs().size());
         assertEquals(destination, t.getOutput(0).getScriptPubKey().getToAddress(UNITTEST));
         assertEquals(wallet.currentChangeAddress(), t.getOutputs().get(1).getScriptPubKey().getToAddress(UNITTEST));
         assertEquals(valueOf(0, 50), t.getOutputs().get(1).getValue());
@@ -444,8 +442,8 @@ public class WalletTest extends TestWithWallet {
             }
         });
 
-        t.getConfidence().markBroadcastBy(new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{1,2,3,4})));
-        t.getConfidence().markBroadcastBy(new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{10,2,3,4})));
+        t.getConfidence().markBroadcastBy(new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{1, 2, 3, 4})));
+        t.getConfidence().markBroadcastBy(new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{10, 2, 3, 4})));
         wallet.commitTx(t);
         Threading.waitForUserCode();
         assertEquals(1, wallet.getPoolSize(WalletTransaction.Pool.PENDING));
@@ -466,7 +464,7 @@ public class WalletTest extends TestWithWallet {
         wallet.completeTx(req);
         Transaction t3 = req.tx;
         assertNotEquals(t2.getOutput(1).getScriptPubKey().getToAddress(UNITTEST),
-                        t3.getOutput(1).getScriptPubKey().getToAddress(UNITTEST));
+                t3.getOutput(1).getScriptPubKey().getToAddress(UNITTEST));
         assertNotNull(t3);
         wallet.commitTx(t3);
         assertTrue(wallet.isConsistent());
@@ -551,7 +549,7 @@ public class WalletTest extends TestWithWallet {
         // because it depends on the coin selection algorithm.
         assertEquals(valueOf(4, 50), wallet.getBalance(Wallet.BalanceType.ESTIMATED));
         assertFalse(wallet.getBalance(Wallet.BalanceType.AVAILABLE).equals(
-                    wallet.getBalance(Wallet.BalanceType.ESTIMATED)));
+                wallet.getBalance(Wallet.BalanceType.ESTIMATED)));
 
         // Now confirm the transaction by including it into a block.
         sendMoneyToWallet(BlockChain.NewBlockType.BEST_CHAIN, spend);
@@ -1447,7 +1445,7 @@ public class WalletTest extends TestWithWallet {
         // Check we get only the last transaction if we request a subrange.
         transactions = wallet.getRecentTransactions(1, false);
         assertEquals(1, transactions.size());
-        assertEquals(tx2,  transactions.get(0));
+        assertEquals(tx2, transactions.get(0));
 
         // Create a spend five minutes later.
         Utils.rollMockClock(60 * 5);
@@ -1466,7 +1464,7 @@ public class WalletTest extends TestWithWallet {
         tx3.setUpdateTime(null);
         // Check we got them back in order.
         transactions = wallet.getTransactionsByTime();
-        assertEquals(tx2,  transactions.get(0));
+        assertEquals(tx2, transactions.get(0));
         assertEquals(3, transactions.size());
     }
 
@@ -2844,7 +2842,8 @@ public class WalletTest extends TestWithWallet {
             wallet.completeTx(request);
             assertEquals(ZERO, request.tx.getFee());
             fail();
-        } catch (Wallet.CouldNotAdjustDownwards e) {}
+        } catch (Wallet.CouldNotAdjustDownwards e) {
+        }
     }
 
     @Test
@@ -3092,7 +3091,7 @@ public class WalletTest extends TestWithWallet {
         completeTxPartiallySigned(Wallet.MissingSigsMode.USE_OP_ZERO, EMPTY_SIG);
     }
 
-    @Test (expected = ECKey.MissingPrivateKeyException.class)
+    @Test(expected = ECKey.MissingPrivateKeyException.class)
     public void completeTxPartiallySignedThrows() throws Exception {
         sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, CENT, myKey);
         SendRequest req = SendRequest.emptyWallet(OTHER_ADDRESS);
@@ -3117,12 +3116,12 @@ public class WalletTest extends TestWithWallet {
         completeTxPartiallySignedMarried(Wallet.MissingSigsMode.USE_OP_ZERO, EMPTY_SIG);
     }
 
-    @Test (expected = TransactionSigner.MissingSignatureException.class)
+    @Test(expected = TransactionSigner.MissingSignatureException.class)
     public void completeTxPartiallySignedMarriedThrows() throws Exception {
         completeTxPartiallySignedMarried(Wallet.MissingSigsMode.THROW, EMPTY_SIG);
     }
 
-    @Test (expected = TransactionSigner.MissingSignatureException.class)
+    @Test(expected = TransactionSigner.MissingSignatureException.class)
     public void completeTxPartiallySignedMarriedThrowsByDefault() throws Exception {
         createMarriedWallet(2, 2, false);
         myAddress = wallet.currentAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
@@ -3443,8 +3442,8 @@ public class WalletTest extends TestWithWallet {
         sendMoneyToWallet(AbstractBlockChain.NewBlockType.BEST_CHAIN, req.tx);
 
         // Check that we still have the same totalReceived, since the above tx will have sent us change back
-        assertEquals(Coin.COIN.multiply(4),wallet.getTotalReceived());
-        assertEquals(Coin.COIN.multiply(3),wallet.getTotalSent());
+        assertEquals(Coin.COIN.multiply(4), wallet.getTotalReceived());
+        assertEquals(Coin.COIN.multiply(3), wallet.getTotalSent());
 
         // TODO: test shared wallet calculation here
     }

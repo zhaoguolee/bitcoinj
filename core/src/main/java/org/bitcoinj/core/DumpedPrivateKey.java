@@ -18,12 +18,10 @@
 package org.bitcoinj.core;
 
 import com.google.common.base.Preconditions;
-
-import java.util.Arrays;
+import org.bitcoinj.params.Networks;
 
 import javax.annotation.Nullable;
-
-import org.bitcoinj.params.Networks;
+import java.util.Arrays;
 
 /**
  * Parses and generates private keys in the form used by the Bitcoin "dumpprivkey" command. This is the private key
@@ -34,14 +32,11 @@ public class DumpedPrivateKey extends PrefixedChecksummedBytes {
 
     /**
      * Construct a private key from its Base58 representation.
-     * @param params
-     *            The expected NetworkParameters or null if you don't want validation.
-     * @param base58
-     *            The textual form of the private key.
-     * @throws AddressFormatException
-     *             if the given base58 doesn't parse or the checksum is invalid
-     * @throws AddressFormatException.WrongNetwork
-     *             if the given private key is valid but for a different chain (eg testnet vs mainnet)
+     *
+     * @param params The expected NetworkParameters or null if you don't want validation.
+     * @param base58 The textual form of the private key.
+     * @throws AddressFormatException              if the given base58 doesn't parse or the checksum is invalid
+     * @throws AddressFormatException.WrongNetwork if the given private key is valid but for a different chain (eg testnet vs mainnet)
      */
     public static DumpedPrivateKey fromBase58(@Nullable NetworkParameters params, String base58)
             throws AddressFormatException, AddressFormatException.WrongNetwork {
@@ -74,7 +69,7 @@ public class DumpedPrivateKey extends PrefixedChecksummedBytes {
 
     /**
      * Returns the base58-encoded textual form, including version and checksum bytes.
-     * 
+     *
      * @return textual form
      */
     public String toBase58() {

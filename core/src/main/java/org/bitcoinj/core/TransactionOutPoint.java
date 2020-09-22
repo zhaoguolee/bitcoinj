@@ -17,27 +17,37 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.script.*;
-import org.bitcoinj.wallet.*;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptError;
+import org.bitcoinj.script.ScriptException;
+import org.bitcoinj.script.ScriptPattern;
+import org.bitcoinj.wallet.KeyBag;
+import org.bitcoinj.wallet.RedeemData;
 
-import javax.annotation.*;
-import java.io.*;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * <p>This message is a reference or pointer to an output of a different transaction.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class TransactionOutPoint extends ChildMessage {
 
     static final int MESSAGE_LENGTH = 36;
 
-    /** Hash of the transaction to which we refer. */
+    /**
+     * Hash of the transaction to which we refer.
+     */
     private Sha256Hash hash;
-    /** Which output of that transaction we are talking about. */
+    /**
+     * Which output of that transaction we are talking about.
+     */
     private long index;
 
     // This is not part of bitcoin serialization. It points to the connected transaction.
@@ -72,7 +82,7 @@ public class TransactionOutPoint extends ChildMessage {
     }
 
     /**
-    /**
+     * /**
      * Deserializes the message. This is usually part of a transaction message.
      */
     public TransactionOutPoint(NetworkParameters params, byte[] payload, int offset) throws ProtocolException {
@@ -81,8 +91,9 @@ public class TransactionOutPoint extends ChildMessage {
 
     /**
      * Deserializes the message. This is usually part of a transaction message.
-     * @param params NetworkParameters object.
-     * @param offset The location of the first payload byte within the array.
+     *
+     * @param params     NetworkParameters object.
+     * @param offset     The location of the first payload byte within the array.
      * @param serializer the serializer to use for this message.
      * @throws ProtocolException
      */
@@ -120,6 +131,7 @@ public class TransactionOutPoint extends ChildMessage {
 
     /**
      * Returns the pubkey script from the connected output.
+     *
      * @throws java.lang.NullPointerException if there is no connected output.
      */
     public byte[] getConnectedPubKeyScript() {
@@ -198,7 +210,7 @@ public class TransactionOutPoint extends ChildMessage {
     public long getIndex() {
         return index;
     }
-    
+
     public void setIndex(long index) {
         this.index = index;
     }

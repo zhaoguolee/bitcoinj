@@ -30,11 +30,9 @@ public interface KeyBag {
      * Locates a keypair from the keychain given the hash of the public key, and (optionally) by usage for a specific
      * script type. This is needed when finding out which key we need to use to redeem a transaction output.
      *
-     * @param pubKeyHash
-     *            hash of the keypair to look for
-     * @param scriptType
-     *            only look for given usage (currently {@link Script.ScriptType#P2PKH} or
-     *            {@link Script.ScriptType#P2WPKH}) or {@code null} if we don't care
+     * @param pubKeyHash hash of the keypair to look for
+     * @param scriptType only look for given usage (currently {@link Script.ScriptType#P2PKH} or
+     *                   {@link Script.ScriptType#P2WPKH}) or {@code null} if we don't care
      * @return found key or null if no such key was found.
      */
     @Nullable
@@ -52,7 +50,7 @@ public interface KeyBag {
      * Locates a redeem data (redeem script and keys) from the keychain given the hash of the script.
      * This is needed when finding out which key and script we need to use to locally sign a P2SH transaction input.
      * It is assumed that wallet should not have more than one private key for a single P2SH tx for security reasons.
-     *
+     * <p>
      * Returns RedeemData object or null if no such data was found.
      */
     @Nullable

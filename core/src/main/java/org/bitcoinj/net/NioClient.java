@@ -17,13 +17,17 @@
 
 package org.bitcoinj.net;
 
-import com.google.common.base.*;
-import com.google.common.util.concurrent.*;
-import org.slf4j.*;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.nio.*;
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
 /**
  * Creates a simple connection to a server using a {@link StreamConnection} to process data.
@@ -39,6 +43,7 @@ public class NioClient implements MessageWriteTarget {
         private MessageWriteTarget writeTarget;
         private boolean closeOnOpen = false;
         private boolean closeCalled = false;
+
         Handler(StreamConnection upstreamConnection, int connectTimeoutMillis) {
             this.upstreamConnection = upstreamConnection;
             setSocketTimeout(connectTimeoutMillis);

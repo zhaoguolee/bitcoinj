@@ -16,18 +16,7 @@
 
 package org.bitcoinj.store;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.io.*;
-import java.nio.ByteBuffer;
-
+import com.google.common.base.Stopwatch;
 import org.bitcoinj.core.*;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptException;
@@ -35,15 +24,22 @@ import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.fusesource.leveldbjni.JniDBFactory.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Stopwatch;
+import static org.fusesource.leveldbjni.JniDBFactory.bytes;
+import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
 /**
  * <p>
  * An implementation of a Fully Pruned Block Store using a leveldb implementation as the backing data store.
  * </p>
- * 
+ *
  * <p>
  * Includes number of caches to optimise the initial blockchain download.
  * </p>
@@ -74,7 +70,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
     Map<String, Long> methodCalls;
     Map<String, Long> methodTotalTime;
     int exitBlock; // Must be multiple of 1000 and causes code to exit at this
-                   // block!
+    // block!
     // ONLY used for performance benchmarking.
 
     // LRU Cache for getTransactionOutput
@@ -156,7 +152,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
             for (iterator.seek(key); iterator.hasNext(); iterator.next()) {
                 ByteBuffer bbKey = ByteBuffer.wrap(iterator.peekNext().getKey());
                 byte firstByte = bbKey.get(); // remove the KeyType.OPENOUT_ALL
-                                              // byte.
+                // byte.
                 if (key[0] != firstByte) {
                     printStat();
                     return;
@@ -228,12 +224,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
             byte arrayEntry = cache[arrayIndex];
 
             int result = arrayEntry & orBit;
-            if (result == 0) {
-                return false;
-
-            } else {
-                return true;
-            }
+            return result != 0;
         }
     }
 
@@ -243,7 +234,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
     }
 
     public LevelDBFullPrunedBlockStore(NetworkParameters params, String filename, int blockCount, long leveldbReadCache,
-            int leveldbWriteCache, int openOutCache, boolean instrument, int exitBlock) {
+                                       int leveldbWriteCache, int openOutCache, boolean instrument, int exitBlock) {
         this.params = params;
         fullStoreDepth = blockCount;
         this.instrument = instrument;
@@ -609,7 +600,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
 
         if (instrument)
             beginMethod("get");// ignore optimised case as not interesting for
-                               // tuning.
+        // tuning.
         boolean undoableResult;
 
         byte[] result = batchGet(getKey(KeyType.HEADERS_ALL, hash));
@@ -618,7 +609,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
                 endMethod("get");
             return null;
         }
-        undoableResult = (result[96] == 1 ? true : false);
+        undoableResult = (result[96] == 1);
         if (wasUndoableOnly && !undoableResult) {
             if (instrument)
                 endMethod("get");
@@ -649,7 +640,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
             }
             ByteBuffer bb = ByteBuffer.wrap(result);
             bb.getInt();// TODO Read height - but seems to be unused - maybe can
-                        // skip storing it but only 4 bytes!
+            // skip storing it but only 4 bytes!
             int txOutSize = bb.getInt();
 
             StoredUndoableBlock block;
@@ -921,7 +912,7 @@ public class LevelDBFullPrunedBlockStore implements FullPrunedBlockStore {
         byte[] key = getTxKey(KeyType.OPENOUT_ALL, hash);
         byte[] subResult = new byte[key.length];
         DBIterator iterator = db.iterator();
-        for (iterator.seek(key); iterator.hasNext();) {
+        for (iterator.seek(key); iterator.hasNext(); ) {
             byte[] result = iterator.peekNext().getKey();
             System.arraycopy(result, 0, subResult, 0, subResult.length);
             if (Arrays.equals(key, subResult)) {

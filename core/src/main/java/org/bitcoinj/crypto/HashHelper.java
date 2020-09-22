@@ -12,7 +12,7 @@ public class HashHelper {
         String hashedConcatenated = SHA256_Hex(concatenatedTest);
         String firstFourBytes = hashedConcatenated.substring(0, 8);
         long decimalNotation = getUnsignedInt(hexToDecimal(firstFourBytes));
-        String reverseDecimalNotation = new StringBuilder(decimalNotation+"").reverse().toString();
+        String reverseDecimalNotation = new StringBuilder(decimalNotation + "").reverse().toString();
         String paddedDecimal = padString(reverseDecimalNotation);
         collisionNumber = paddedDecimal;
 
@@ -20,33 +20,30 @@ public class HashHelper {
 
     }
 
-    private static String SHA256_Hex(String value)
-    {
-        try{
+    private static String SHA256_Hex(String value) {
+        try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(Hex.decode(value.getBytes()));
             return bytesToHex(md.digest());
-        } catch(Exception ex){
+        } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    private static String bytesToHex(byte[] bytes)
-    {
+    private static String bytesToHex(byte[] bytes) {
         StringBuilder result = new StringBuilder();
         for (byte b : bytes) result.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
         return result.toString();
     }
 
-    private int hexToDecimal(String hex){
+    private int hexToDecimal(String hex) {
         String digits = "0123456789ABCDEF";
         hex = hex.toUpperCase();
         int val = 0;
-        for (int i = 0; i < hex.length(); i++)
-        {
+        for (int i = 0; i < hex.length(); i++) {
             char c = hex.charAt(i);
             int d = digits.indexOf(c);
-            val = 16*val + d;
+            val = 16 * val + d;
         }
         return val;
     }
@@ -59,13 +56,11 @@ public class HashHelper {
         return x & 0x00000000ffffffffL;
     }
 
-    private String padString(String input)
-    {
+    private String padString(String input) {
         int length = input.length();
         StringBuilder newString = new StringBuilder(input);
-        if(length < 10)
-        {
-            for(int x = length; x < 10; x++)
+        if (length < 10) {
+            for (int x = length; x < 10; x++)
                 newString.append("0");
         }
 

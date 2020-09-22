@@ -25,18 +25,25 @@ import java.util.Objects;
 
 /**
  * <p>A message sent by nodes when a message we sent was rejected (ie a transaction had too little fee/was invalid/etc).</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class RejectMessage extends Message {
 
     private String message, reason;
+
     public enum RejectCode {
-        /** The message was not able to be parsed */
+        /**
+         * The message was not able to be parsed
+         */
         MALFORMED((byte) 0x01),
-        /** The message described an invalid object */
+        /**
+         * The message described an invalid object
+         */
         INVALID((byte) 0x10),
-        /** The message was obsolete or described an object which is obsolete (eg unsupported, old version, v1 block) */
+        /**
+         * The message was obsolete or described an object which is obsolete (eg unsupported, old version, v1 block)
+         */
         OBSOLETE((byte) 0x11),
         /**
          * The message was relayed multiple times or described an object which is in conflict with another.
@@ -55,14 +62,22 @@ public class RejectMessage extends Message {
          * defining them as dust (this is no longer used).
          */
         DUST((byte) 0x41),
-        /** The messages described an object which did not have sufficient fee to be relayed further. */
+        /**
+         * The messages described an object which did not have sufficient fee to be relayed further.
+         */
         INSUFFICIENTFEE((byte) 0x42),
-        /** The message described a block which was invalid according to hard-coded checkpoint blocks. */
+        /**
+         * The message described a block which was invalid according to hard-coded checkpoint blocks.
+         */
         CHECKPOINT((byte) 0x43),
         OTHER((byte) 0xff);
 
         byte code;
-        RejectCode(byte code) { this.code = code; }
+
+        RejectCode(byte code) {
+            this.code = code;
+        }
+
         static RejectCode fromCode(byte code) {
             for (RejectCode rejectCode : RejectCode.values())
                 if (rejectCode.code == code)
@@ -70,6 +85,7 @@ public class RejectMessage extends Message {
             return OTHER;
         }
     }
+
     private RejectCode code;
     private Sha256Hash messageHash;
 
@@ -77,7 +93,9 @@ public class RejectMessage extends Message {
         super(params, payload, 0);
     }
 
-    /** Constructs a reject message that fingers the object with the given hash as rejected for the given reason. */
+    /**
+     * Constructs a reject message that fingers the object with the given hash as rejected for the given reason.
+     */
     public RejectMessage(NetworkParameters params, RejectCode code, Sha256Hash hash, String message, String reason) throws ProtocolException {
         super(params);
         this.code = code;
@@ -150,7 +168,7 @@ public class RejectMessage extends Message {
     public String toString() {
         Sha256Hash hash = getRejectedObjectHash();
         return String.format(Locale.US, "Reject: %s %s for reason '%s' (%d)", getRejectedMessage(),
-            hash != null ? hash : "", getReasonString(), getReasonCode().code);
+                hash != null ? hash : "", getReasonString(), getReasonCode().code);
     }
 
     @Override
@@ -159,7 +177,7 @@ public class RejectMessage extends Message {
         if (o == null || getClass() != o.getClass()) return false;
         RejectMessage other = (RejectMessage) o;
         return message.equals(other.message) && code.equals(other.code)
-            && reason.equals(other.reason) && messageHash.equals(other.messageHash);
+                && reason.equals(other.reason) && messageHash.equals(other.messageHash);
     }
 
     @Override

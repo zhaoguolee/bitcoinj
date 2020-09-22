@@ -17,12 +17,10 @@
 
 package org.bitcoinj.examples;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.InsufficientMoneyException;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionConfidence;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.KeyCrypterException;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.MainNetParams;
@@ -32,10 +30,6 @@ import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.wallet.SendRequest;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
-
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.File;
 
@@ -71,7 +65,7 @@ public class ForwardingService {
             filePrefix = "forwarding-service";
         }
         // Parse the address given as the first parameter.
-        forwardingAddress = LegacyAddress.fromBase58(params, args[0]);
+        forwardingAddress = Address.fromBase58(params, args[0]);
 
         System.out.println("Network: " + params.getId());
         System.out.println("Forwarding address: " + forwardingAddress);
@@ -121,13 +115,14 @@ public class ForwardingService {
             }
         });
 
-        Address sendToAddress = LegacyAddress.fromKey(params, kit.wallet().currentReceiveKey());
+        Address sendToAddress = Address.fromKey(params, kit.wallet().currentReceiveKey());
         System.out.println("Send coins to: " + sendToAddress);
         System.out.println("Waiting for coins to arrive. Press Ctrl-C to quit.");
 
         try {
             Thread.sleep(Long.MAX_VALUE);
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+        }
     }
 
     private static void forwardCoins(Transaction tx) {

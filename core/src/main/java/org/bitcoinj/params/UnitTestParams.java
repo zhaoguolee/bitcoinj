@@ -17,7 +17,8 @@
 
 package org.bitcoinj.params;
 
-import org.bitcoinj.core.*;
+import org.bitcoinj.core.Block;
+import org.bitcoinj.core.Utils;
 
 import java.math.BigInteger;
 
@@ -36,7 +37,7 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
         packetMagic = 0x0b110907;
         addressHeader = 111;
         p2shHeader = 196;
-        acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
+        acceptableAddressCodes = new int[]{addressHeader, p2shHeader};
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
         genesisBlock.setTime(Utils.currentTimeSeconds());
         genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET);
@@ -66,9 +67,12 @@ public class UnitTestParams extends AbstractBitcoinNetParams {
 
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
+        maxBlockSize = 32 * 1000 * 1000;
+        maxBlockSigops = maxBlockSize / 50;
     }
 
     private static UnitTestParams instance;
+
     public static synchronized UnitTestParams get() {
         if (instance == null) {
             instance = new UnitTestParams();

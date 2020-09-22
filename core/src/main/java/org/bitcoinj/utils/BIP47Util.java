@@ -10,19 +10,13 @@ import org.bitcoinj.core.bip47.BIP47PaymentAddress;
 import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.crypto.BIP47SecretPoint;
 import org.bitcoinj.kits.BIP47AppKit;
-import org.bitcoinj.kits.SlpBIP47AppKit;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.signers.MissingSigResolutionSigner;
 import org.bitcoinj.signers.TransactionSigner;
-import org.bitcoinj.wallet.CoinSelection;
-import org.bitcoinj.wallet.CoinSelector;
-import org.bitcoinj.wallet.DecryptingKeyBag;
-import org.bitcoinj.wallet.KeyBag;
-import org.bitcoinj.wallet.RedeemData;
-import org.bitcoinj.wallet.SendRequest;
+import org.bitcoinj.wallet.*;
 import org.bitcoinj.wallet.bip47.NotSecp256k1Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,7 +189,7 @@ public class BIP47Util {
 
         if (selection3 == null && selection2 == null && selection1 == null) {
             checkNotNull(valueMissing);
-            log.warn("Insufficient value in wallet for send: needed "+valueMissing.toFriendlyString()+" more");
+            log.warn("Insufficient value in wallet for send: needed " + valueMissing.toFriendlyString() + " more");
             throw new InsufficientMoneyException(valueMissing);
         }
 
@@ -268,18 +262,18 @@ public class BIP47Util {
             Script scriptSig = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
             txIn.setScriptSig(scriptSig);
             if (i == 0) {
-                log.debug("Keys: "+redeemData.keys.size());
-                log.debug("Private key 0?: "+redeemData.keys.get(0).hasPrivKey());
+                log.debug("Keys: " + redeemData.keys.size());
+                log.debug("Private key 0?: " + redeemData.keys.get(0).hasPrivKey());
                 byte[] privKey = redeemData.getFullKey().getPrivKeyBytes();
-                log.debug("Private key: "+ HEX.encode(privKey));
-                log.debug("Public Key: "+HEX.encode(pubKey));
+                log.debug("Private key: " + HEX.encode(privKey));
+                log.debug("Public Key: " + HEX.encode(pubKey));
                 byte[] outpoint = txIn.getOutpoint().bitcoinSerialize();
 
                 byte[] mask = null;
                 try {
                     BIP47SecretPoint BIP47SecretPoint = new BIP47SecretPoint(privKey, pubKey);
-                    log.debug("Secret Point: "+HEX.encode(BIP47SecretPoint.ECDHSecretAsBytes()));
-                    log.debug("Outpoint: "+HEX.encode(outpoint));
+                    log.debug("Secret Point: " + HEX.encode(BIP47SecretPoint.ECDHSecretAsBytes()));
+                    log.debug("Outpoint: " + HEX.encode(outpoint));
                     mask = BIP47PaymentCode.getMask(BIP47SecretPoint.ECDHSecretAsBytes(), outpoint);
                 } catch (InvalidKeyException e) {
                     e.printStackTrace();
@@ -290,8 +284,8 @@ public class BIP47Util {
                 } catch (InvalidKeySpecException e) {
                     e.printStackTrace();
                 }
-                log.debug("My payment code: "+ myBIP47PaymentCode.toString());
-                log.debug("Mask: "+HEX.encode(mask));
+                log.debug("My payment code: " + myBIP47PaymentCode.toString());
+                log.debug("Mask: " + HEX.encode(mask));
                 byte[] op_return = BIP47PaymentCode.blind(myBIP47PaymentCode.getPayload(), mask);
 
                 tx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(op_return));
@@ -303,7 +297,7 @@ public class BIP47Util {
         TransactionSigner.ProposedTransaction proposal = new TransactionSigner.ProposedTransaction(tx, true);
         for (TransactionSigner signer : vWallet.getTransactionSigners()) {
             if (!signer.signInputs(proposal, maybeDecryptingKeyBag))
-                log.debug(signer.getClass().getName()+" returned false for the tx");
+                log.debug(signer.getClass().getName() + " returned false for the tx");
         }
 
         // resolve missing sigs if any
@@ -348,13 +342,17 @@ public class BIP47Util {
         return null;
     }
 
-    /** Returns true if the OP_RETURN op code begins with the byte 0x01 (version 1), */
+    /**
+     * Returns true if the OP_RETURN op code begins with the byte 0x01 (version 1),
+     */
     public static boolean isValidNotificationTransactionOpReturn(TransactionOutput transactionOutput) {
         byte[] data = getOpCodeData(transactionOutput);
         return data != null && HEX.encode(data, 0, 1).equals("01");
     }
 
-    /** Return the payload of the first op code e.g. OP_RETURN. */
+    /**
+     * Return the payload of the first op code e.g. OP_RETURN.
+     */
     private static byte[] getOpCodeData(TransactionOutput opReturnOutput) {
         List<ScriptChunk> chunks = opReturnOutput.getScriptPubKey().getChunks();
         for (ScriptChunk chunk : chunks) {
@@ -367,13 +365,13 @@ public class BIP47Util {
 
     /* Extract the payment code from an incoming notification transaction */
     public static BIP47PaymentCode getPaymentCodeInNotificationTransaction(byte[] privKeyBytes, Transaction tx) {
-        log.debug( "Getting pub key");
+        log.debug("Getting pub key");
         byte[] pubKeyBytes = tx.getInput(0).getScriptSig().getPubKey();
 
-        log.debug( "Private Key: "+ HEX.encode(privKeyBytes));
-        log.debug( "Public Key: "+HEX.encode(pubKeyBytes));
+        log.debug("Private Key: " + HEX.encode(privKeyBytes));
+        log.debug("Public Key: " + HEX.encode(pubKeyBytes));
 
-        log.debug( "Getting op_code data");
+        log.debug("Getting op_code data");
         TransactionOutput opReturnOutput = getOpCodeOutput(tx);
         if (opReturnOutput == null) {
             return null;
@@ -381,19 +379,19 @@ public class BIP47Util {
         byte[] data = getOpCodeData(opReturnOutput);
 
         try {
-            log.debug( "Getting secret point..");
+            log.debug("Getting secret point..");
             BIP47SecretPoint BIP47SecretPoint = new BIP47SecretPoint(privKeyBytes, pubKeyBytes);
-            log.debug( "Secret Point: "+ HEX.encode(BIP47SecretPoint.ECDHSecretAsBytes()));
-            log.debug( "Outpoint: "+ HEX.encode(tx.getInput(0).getOutpoint().bitcoinSerialize()));
-            log.debug( "Getting mask...");
+            log.debug("Secret Point: " + HEX.encode(BIP47SecretPoint.ECDHSecretAsBytes()));
+            log.debug("Outpoint: " + HEX.encode(tx.getInput(0).getOutpoint().bitcoinSerialize()));
+            log.debug("Getting mask...");
             byte[] s = BIP47PaymentCode.getMask(BIP47SecretPoint.ECDHSecretAsBytes(), tx.getInput(0).getOutpoint().bitcoinSerialize());
-            log.debug( "Getting payload...");
-            log.debug( "OpCode Data: "+HEX.encode(data));
-            log.debug( "Mask: "+HEX.encode(s));
+            log.debug("Getting payload...");
+            log.debug("OpCode Data: " + HEX.encode(data));
+            log.debug("Mask: " + HEX.encode(s));
             byte[] payload = BIP47PaymentCode.blind(data, s);
-            log.debug( "Getting payment code...");
+            log.debug("Getting payment code...");
             BIP47PaymentCode BIP47PaymentCode = new BIP47PaymentCode(payload);
-            log.debug( "Payment Code: "+ BIP47PaymentCode.toString());
+            log.debug("Payment Code: " + BIP47PaymentCode.toString());
             return BIP47PaymentCode;
 
         } catch (Exception e) {
@@ -402,19 +400,25 @@ public class BIP47Util {
         return null;
     }
 
-    /** Derives the receive address at idx in depositWallet for senderPaymentCode to deposit, in the wallet's bip47 0th account, i.e. <pre>m / 47' / coin_type' / 0' / idx' .</pre>. */
+    /**
+     * Derives the receive address at idx in depositWallet for senderPaymentCode to deposit, in the wallet's bip47 0th account, i.e. <pre>m / 47' / coin_type' / 0' / idx' .</pre>.
+     */
     public static BIP47PaymentAddress getReceiveAddress(BIP47AppKit depositWallet, String senderPaymentCode, int idx) throws AddressFormatException, NotSecp256k1Exception {
         ECKey accountKey = depositWallet.getAccount(0).keyAt(idx);
         return getPaymentAddress(depositWallet.params(), new BIP47PaymentCode(senderPaymentCode), 0, accountKey);
     }
 
-    /** Get the address of receiverBIP47PaymentCode's owner to send a payment to, using BTC as coin_type */
+    /**
+     * Get the address of receiverBIP47PaymentCode's owner to send a payment to, using BTC as coin_type
+     */
     public static BIP47PaymentAddress getSendAddress(BIP47AppKit spendWallet, BIP47PaymentCode receiverBIP47PaymentCode, int idx) throws AddressFormatException, NotSecp256k1Exception {
         ECKey key = spendWallet.getAccount(0).keyAt(0);
         return getPaymentAddress(spendWallet.params(), receiverBIP47PaymentCode, idx, key);
     }
 
-    /** Creates a BIP47PaymentAddress object that the sender will use to pay, using the hardened key at idx */
+    /**
+     * Creates a BIP47PaymentAddress object that the sender will use to pay, using the hardened key at idx
+     */
     private static BIP47PaymentAddress getPaymentAddress(NetworkParameters networkParameters, BIP47PaymentCode pcode, int idx, ECKey key) throws AddressFormatException, NotSecp256k1Exception {
         return new BIP47PaymentAddress(networkParameters, pcode, idx, key.getPrivKeyBytes());
     }

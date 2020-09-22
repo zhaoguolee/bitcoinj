@@ -3,18 +3,18 @@ package org.bitcoinj.net;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.crypto.HashHelper;
-import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.utils.JSONHelper;
-import org.bitcoinj.wallet.SendRequest;
 import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.annotation.Nullable;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.Proxy;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,48 +35,42 @@ public class NetHelper {
             "https://rest.bitcoin.com/v2/transaction/details/"
     };
 
-    public String getCashAccountAddress(NetworkParameters params, String cashAccount)
-    {
+    public String getCashAccountAddress(NetworkParameters params, String cashAccount) {
         return this.getCashAccountAddress(params, cashAccount, false, null);
     }
 
-    public String getCashAccountAddress(NetworkParameters params, String cashAccount, boolean forceCashAddr)
-    {
+    public String getCashAccountAddress(NetworkParameters params, String cashAccount, boolean forceCashAddr) {
         return this.getCashAccountAddress(params, cashAccount, forceCashAddr, null);
     }
 
-    public String getCashAccountAddress(NetworkParameters params, String cashAccount, Proxy proxy)
-    {
+    public String getCashAccountAddress(NetworkParameters params, String cashAccount, Proxy proxy) {
         return this.getCashAccountAddress(params, cashAccount, false, proxy);
     }
 
-    public String getCashAccountAddress(NetworkParameters params, String cashAccount, boolean forceCashAddr, @Nullable Proxy proxy)
-    {
+    public String getCashAccountAddress(NetworkParameters params, String cashAccount, boolean forceCashAddr, @Nullable Proxy proxy) {
         String[] splitAccount = cashAccount.split("#");
         String username = splitAccount[0];
         String block;
 
-        if(cashAccount.contains("."))
-        {
+        if (cashAccount.contains(".")) {
             String[] splitBlock = splitAccount[1].split("\\.");
             block = splitBlock[0];
-        }
-        else {
+        } else {
             block = splitAccount[1];
         }
         String txHex;
-        if(proxy != null) {
+        if (proxy != null) {
             txHex = getTxHexFromCashAcct(cashAccount, proxy);
         } else {
             txHex = getTxHexFromCashAcct(cashAccount);
         }
-        
-        if(txHex != null) {
+
+        if (txHex != null) {
             Transaction decodedTx = new Transaction(params, Hex.decode(txHex));
 
             String txid = decodedTx.getHashAsString();
             int txHeight;
-            if(proxy != null) {
+            if (proxy != null) {
                 txHeight = getTransactionHeight(txid, proxy);
             } else {
                 txHeight = getTransactionHeight(txid);
@@ -86,14 +80,14 @@ public class NetHelper {
             if (blockInt == (txHeight - cashAccountGenesis)) {
                 String address = "";
                 String blockHash;
-                if(proxy != null) {
+                if (proxy != null) {
                     blockHash = getTransactionsBlockHash(txid, proxy);
                 } else {
                     blockHash = getTransactionsBlockHash(txid);
                 }
                 String collision = new HashHelper().getCashAccountCollision(blockHash, txid);
                 ArrayList<String> expectedAddresses;
-                if(proxy != null) {
+                if (proxy != null) {
                     expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision, proxy);
                 } else {
                     expectedAddresses = getExpectedCashAccountAddresses(username + "#" + block + "." + collision);
@@ -101,7 +95,7 @@ public class NetHelper {
                 ArrayList<String> addresses = getAddressesFromOpReturn(decodedTx);
                 for (String s : addresses) {
                     byte[] hash160 = Hex.decode(s.substring(2));
-                    if(forceCashAddr) {
+                    if (forceCashAddr) {
                         if (!Address.isValidPaymentCode(hash160)) {
                             do {
                                 address = CashAddress.fromP2PKHHash(params, hash160).toString();
@@ -137,8 +131,7 @@ public class NetHelper {
         }
     }
 
-    private String getTransactionsBlockHash(String transactionHash)
-    {
+    private String getTransactionsBlockHash(String transactionHash) {
         int randExplorer = new Random().nextInt(blockExplorers.length);
         String blockExplorer = blockExplorers[randExplorer];
         String blockExplorerURL = blockExplorerAPIURL[randExplorer];
@@ -152,10 +145,10 @@ public class NetHelper {
             e.printStackTrace();
         }
         try {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("rest.bitcoin.com")) {
+            if (blockExplorer.equals("rest.bitcoin.com")) {
                 block = json.getString("blockhash");
             }
 
@@ -177,8 +170,7 @@ public class NetHelper {
         return block.equals("-1") ? "???" : block;
     }
 
-    private String getTransactionsBlockHash(String transactionHash, Proxy proxy)
-    {
+    private String getTransactionsBlockHash(String transactionHash, Proxy proxy) {
         int randExplorer = new Random().nextInt(blockExplorers.length);
         String blockExplorer = blockExplorers[randExplorer];
         String blockExplorerURL = blockExplorerAPIURL[randExplorer];
@@ -192,10 +184,10 @@ public class NetHelper {
             e.printStackTrace();
         }
         try {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("rest.bitcoin.com")) {
+            if (blockExplorer.equals("rest.bitcoin.com")) {
                 block = json.getString("blockhash");
             }
 
@@ -225,8 +217,7 @@ public class NetHelper {
         String name = splitAccount[0];
         String block = splitAccount[1];
 
-        if(!lookupServer.contains("rest.bitcoin.com"))
-        {
+        if (!lookupServer.contains("rest.bitcoin.com")) {
             if (!block.contains(".")) {
                 InputStream is = null;
 
@@ -237,7 +228,7 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
@@ -267,7 +258,7 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
@@ -298,8 +289,7 @@ public class NetHelper {
         String name = splitAccount[0];
         String block = splitAccount[1];
 
-        if(!lookupServer.contains("rest.bitcoin.com"))
-        {
+        if (!lookupServer.contains("rest.bitcoin.com")) {
             if (!block.contains(".")) {
                 InputStream is = null;
 
@@ -310,7 +300,7 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
@@ -339,7 +329,7 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     txHex = json.getJSONArray("results").getJSONObject(0).getString("transaction");
@@ -361,8 +351,7 @@ public class NetHelper {
         return txHex;
     }
 
-    private ArrayList<String> getAddressesFromOpReturn(Transaction tx)
-    {
+    private ArrayList<String> getAddressesFromOpReturn(Transaction tx) {
         ArrayList<String> addresses = new ArrayList<String>();
         List<TransactionOutput> outputs = tx.getOutputs();
         for (TransactionOutput output : outputs) {
@@ -373,10 +362,10 @@ public class NetHelper {
                 int chunksLength = output.getScriptPubKey().getChunks().size();
                 int addressesAmount = chunksLength - startingAddressChunk;
 
-                for(int x = 0; x < addressesAmount; x++) {
+                for (int x = 0; x < addressesAmount; x++) {
                     String address = new String(Hex.encode(Objects.requireNonNull(output.getScriptPubKey().getChunks().get(x + startingAddressChunk).data)), StandardCharsets.UTF_8);
 
-                    if(!address.isEmpty())
+                    if (!address.isEmpty())
                         addresses.add(address);
                 }
                 break;
@@ -386,8 +375,7 @@ public class NetHelper {
         return addresses;
     }
 
-    private int getTransactionHeight(String transactionHash)
-    {
+    private int getTransactionHeight(String transactionHash) {
         int randExplorer = new Random().nextInt(blockExplorers.length);
         String blockExplorer = blockExplorers[randExplorer];
         String blockExplorerURL = blockExplorerAPIURL[randExplorer];
@@ -401,10 +389,10 @@ public class NetHelper {
             e.printStackTrace();
         }
         try {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("rest.bitcoin.com")) {
+            if (blockExplorer.equals("rest.bitcoin.com")) {
                 height = json.getInt("blockheight");
             }
 
@@ -423,8 +411,7 @@ public class NetHelper {
         return height;
     }
 
-    private int getTransactionHeight(String transactionHash, Proxy proxy)
-    {
+    private int getTransactionHeight(String transactionHash, Proxy proxy) {
         int randExplorer = new Random().nextInt(blockExplorers.length);
         String blockExplorer = blockExplorers[randExplorer];
         String blockExplorerURL = blockExplorerAPIURL[randExplorer];
@@ -438,10 +425,10 @@ public class NetHelper {
             e.printStackTrace();
         }
         try {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String jsonText = JSONHelper.readJSONFile(rd);
             JSONObject json = new JSONObject(jsonText);
-            if(blockExplorer.equals("rest.bitcoin.com")) {
+            if (blockExplorer.equals("rest.bitcoin.com")) {
                 height = json.getInt("blockheight");
             }
 
@@ -468,7 +455,7 @@ public class NetHelper {
         String name = splitAccount[0];
         String block = splitAccount[1];
 
-        if(!lookupServer.contains("rest.bitcoin.com")) {
+        if (!lookupServer.contains("rest.bitcoin.com")) {
             if (!block.contains(".")) {
                 InputStream is = null;
 
@@ -479,11 +466,11 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
-                    for(int x = 0; x < paymentsLength; x++) {
+                    for (int x = 0; x < paymentsLength; x++) {
                         addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
                     }
                 } catch (JSONException | IOException var53) {
@@ -511,11 +498,11 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
-                    for(int x = 0; x < paymentsLength; x++) {
+                    for (int x = 0; x < paymentsLength; x++) {
                         addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
                     }
                 } catch (JSONException | IOException var49) {
@@ -544,7 +531,7 @@ public class NetHelper {
         String name = splitAccount[0];
         String block = splitAccount[1];
 
-        if(!lookupServer.contains("rest.bitcoin.com")) {
+        if (!lookupServer.contains("rest.bitcoin.com")) {
             if (!block.contains(".")) {
                 InputStream is = null;
 
@@ -555,11 +542,11 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
-                    for(int x = 0; x < paymentsLength; x++) {
+                    for (int x = 0; x < paymentsLength; x++) {
                         addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
                     }
                 } catch (JSONException | IOException var53) {
@@ -587,11 +574,11 @@ public class NetHelper {
                 }
 
                 try {
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                     String jsonText = org.bitcoinj.utils.JSONHelper.readJSONFile(rd);
                     JSONObject json = new JSONObject(jsonText);
                     int paymentsLength = json.getJSONObject("information").getJSONArray("payment").length();
-                    for(int x = 0; x < paymentsLength; x++) {
+                    for (int x = 0; x < paymentsLength; x++) {
                         addresses.add(json.getJSONObject("information").getJSONArray("payment").getJSONObject(x).getString("address"));
                     }
                 } catch (JSONException | IOException var49) {

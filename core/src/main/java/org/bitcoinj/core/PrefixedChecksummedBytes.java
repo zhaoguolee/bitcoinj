@@ -17,6 +17,8 @@
 
 package org.bitcoinj.core;
 
+import com.google.common.primitives.UnsignedBytes;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -25,14 +27,13 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Objects;
 
-import com.google.common.primitives.UnsignedBytes;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * <p>
  * The following format is often used to represent some type of data (e.g. key or hash of key):
  * </p>
- * 
+ *
  * <pre>
  * [prefix] [data bytes] [checksum]
  * </pre>

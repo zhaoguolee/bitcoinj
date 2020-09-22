@@ -16,14 +16,13 @@
 
 package org.bitcoinj.core;
 
-import javax.annotation.Nullable;
-
 import org.bitcoinj.core.bip47.BIP47PaymentCode;
 import org.bitcoinj.core.slp.SlpAddress;
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.ScriptType;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -35,7 +34,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * Base class for addresses, e.g. cash address ({@link CashAddress}) or legacy addresses ({@link Address}).
  * </p>
- *
  */
 public class Address extends VersionedChecksummedBytes {
     /**
@@ -59,7 +57,9 @@ public class Address extends VersionedChecksummedBytes {
         this.params = params;
     }
 
-    /** Returns an Address that represents the given P2SH script hash. */
+    /**
+     * Returns an Address that represents the given P2SH script hash.
+     */
     public static Address fromP2PKHHash(NetworkParameters params, byte[] hash160) {
         try {
             return new Address(params, params.getAddressHeader(), hash160);
@@ -68,7 +68,9 @@ public class Address extends VersionedChecksummedBytes {
         }
     }
 
-    /** Returns an Address that represents the given P2SH script hash. */
+    /**
+     * Returns an Address that represents the given P2SH script hash.
+     */
     public static Address fromP2SHHash(NetworkParameters params, byte[] hash160) {
         try {
             return new Address(params, params.getP2SHHeader(), hash160);
@@ -77,7 +79,9 @@ public class Address extends VersionedChecksummedBytes {
         }
     }
 
-    /** Returns an Address that represents the script hash extracted from the given scriptPubKey */
+    /**
+     * Returns an Address that represents the script hash extracted from the given scriptPubKey
+     */
     public static Address fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
         checkArgument(scriptPubKey.isPayToScriptHash(), "Not a P2SH script");
         return fromP2SHHash(params, scriptPubKey.getPubKeyHash());
@@ -85,14 +89,11 @@ public class Address extends VersionedChecksummedBytes {
 
     /**
      * Construct an address from its Base58 representation.
-     * @param params
-     *            The expected NetworkParameters or null if you don't want validation.
-     * @param base58
-     *            The textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL".
-     * @throws AddressFormatException
-     *             if the given base58 doesn't parse or the checksum is invalid
-     * @throws WrongNetworkException
-     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     *
+     * @param params The expected NetworkParameters or null if you don't want validation.
+     * @param base58 The textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL".
+     * @throws AddressFormatException if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException  if the given address is valid but for a different chain (eg testnet vs mainnet)
      */
     public static Address fromBase58(@Nullable NetworkParameters params, String base58) throws AddressFormatException {
         return new Address(params, base58);
@@ -102,10 +103,8 @@ public class Address extends VersionedChecksummedBytes {
      * Construct a {@link Address} that represents the public part of the given {@link ECKey}. Note that an address is
      * derived from a hash of the public key and is not the public key itself.
      *
-     * @param params
-     *            network this address is valid for
-     * @param key
-     *            only the public part is used
+     * @param params network this address is valid for
+     * @param key    only the public part is used
      * @return constructed address
      */
     public static Address fromKey(NetworkParameters params, ECKey key) {
@@ -113,62 +112,53 @@ public class Address extends VersionedChecksummedBytes {
     }
 
     /**
-     *
-     * @param params
-     *             The expected NetworkParameters to validate the address against.
-     * @param legacyAddress
-     *             The Bitcoin Cash legacy address. Starts with a "1"
-     * @return
-     *             Whether the address is valid or not.
+     * @param params        The expected NetworkParameters to validate the address against.
+     * @param legacyAddress The Bitcoin Cash legacy address. Starts with a "1"
+     * @return Whether the address is valid or not.
      */
     @Deprecated
-    public static boolean isValidLegacyAddress(NetworkParameters params, String legacyAddress)
-    {
+    public static boolean isValidLegacyAddress(NetworkParameters params, String legacyAddress) {
         try {
             fromBase58(params, legacyAddress);
             return true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }
 
-    public static boolean isValidSlpAddress(NetworkParameters params, String slpAddress)
-    {
+    public static boolean isValidSlpAddress(NetworkParameters params, String slpAddress) {
         try {
             SlpAddressFactory.create().getFromFormattedAddress(params, slpAddress);
             return true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }
 
-    public static boolean isValidCashAddr(NetworkParameters params, String cashAddress)
-    {
+    public static boolean isValidCashAddr(NetworkParameters params, String cashAddress) {
         try {
             CashAddressFactory.create().getFromFormattedAddress(params, cashAddress);
             return true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }
 
-    public static boolean isValidPaymentCode(String paymentCode)
-    {
+    public static boolean isValidPaymentCode(String paymentCode) {
         try {
             new BIP47PaymentCode(paymentCode);
             return true;
-        } catch(AddressFormatException | NullPointerException e) {
+        } catch (AddressFormatException | NullPointerException e) {
             return false;
         }
     }
 
-    public static boolean isValidPaymentCode(byte[] paymentCodeBytes)
-    {
+    public static boolean isValidPaymentCode(byte[] paymentCodeBytes) {
         try {
             BIP47PaymentCode paymentCode = new BIP47PaymentCode(paymentCodeBytes);
             new BIP47PaymentCode(paymentCode.toString());
             return true;
-        } catch(AddressFormatException | NullPointerException e) {
+        } catch (AddressFormatException | NullPointerException e) {
             return false;
         }
     }
@@ -184,7 +174,9 @@ public class Address extends VersionedChecksummedBytes {
         this.params = params;
     }
 
-    /** @deprecated Use {@link #fromBase58(NetworkParameters, String)} */
+    /**
+     * @deprecated Use {@link #fromBase58(NetworkParameters, String)}
+     */
     @Deprecated
     public Address(@Nullable NetworkParameters params, String address) throws AddressFormatException {
         super(address);
@@ -208,7 +200,9 @@ public class Address extends VersionedChecksummedBytes {
         }
     }
 
-    /** The (big endian) 20 byte hash that is the core of a Bitcoin address. */
+    /**
+     * The (big endian) 20 byte hash that is the core of a Bitcoin address.
+     */
     public byte[] getHash160() {
         return bytes;
     }
@@ -254,6 +248,7 @@ public class Address extends VersionedChecksummedBytes {
      * Given an address, examines the version byte and attempts to find a matching NetworkParameters. If you aren't sure
      * which network the address is intended for (eg, it was provided by a user), you can use this to decide if it is
      * compatible with the current wallet.
+     *
      * @return a NetworkParameters of the address
      * @throws AddressFormatException if the string wasn't of a known version
      */

@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,7 +27,9 @@ public class AlertWindowController {
     public Button cancelButton;
     public Button actionButton;
 
-    /** Initialize this alert dialog for information about a crash. */
+    /**
+     * Initialize this alert dialog for information about a crash.
+     */
     public void crashAlert(Stage stage, String crashMessage) {
         messageLabel.setText("Unfortunately, we screwed up and the app crashed. Sorry about that!");
         detailsLabel.setText(crashMessage);
@@ -37,7 +39,9 @@ public class AlertWindowController {
         okButton.setOnAction(actionEvent -> stage.close());
     }
 
-    /** Initialize this alert for general information: OK button only, nothing happens on dismissal. */
+    /**
+     * Initialize this alert for general information: OK button only, nothing happens on dismissal.
+     */
     public void informational(Stage stage, String message, String details) {
         messageLabel.setText(message);
         detailsLabel.setText(details);

@@ -18,7 +18,6 @@
 package org.bitcoinj.core;
 
 import com.google.common.io.ByteStreams;
-
 import org.bitcoinj.core.AbstractBlockChain.NewBlockType;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
@@ -40,7 +39,6 @@ import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.bitcoinj.core.Utils.HEX;
 
 public class BlockTest {
     private static final NetworkParameters TESTNET = TestNet3Params.get();
@@ -72,7 +70,7 @@ public class BlockTest {
     public void testBlockVerification() throws Exception {
         block700000.verify(Block.BLOCK_HEIGHT_GENESIS, EnumSet.noneOf(Block.VerifyFlag.class));
     }
-    
+
     @SuppressWarnings("deprecation")
     @Test
     public void testDate() throws Exception {
@@ -138,7 +136,7 @@ public class BlockTest {
         // NB: This tests the bitcoin serialization protocol.
         assertArrayEquals(block700000Bytes, block700000.bitcoinSerialize());
     }
-    
+
     @Test
     public void testUpdateLength() {
         Block block = UNITTEST.getGenesisBlock().createNextBlockWithCoinbase(Block.BLOCK_VERSION_GENESIS, new ECKey().getPubKey(), Block.BLOCK_HEIGHT_GENESIS);
@@ -150,23 +148,23 @@ public class BlockTest {
         byte[] outputScript = new byte[10];
         Arrays.fill(outputScript, (byte) ScriptOpCodes.OP_FALSE);
         tx.addOutput(new TransactionOutput(UNITTEST, null, Coin.SATOSHI, outputScript));
-        tx.addInput(new TransactionInput(UNITTEST, null, new byte[] {(byte) ScriptOpCodes.OP_FALSE},
-                new TransactionOutPoint(UNITTEST, 0, Sha256Hash.of(new byte[] { 1 }))));
+        tx.addInput(new TransactionInput(UNITTEST, null, new byte[]{(byte) ScriptOpCodes.OP_FALSE},
+                new TransactionOutPoint(UNITTEST, 0, Sha256Hash.of(new byte[]{1}))));
         int origTxLength = 8 + 2 + 8 + 1 + 10 + 40 + 1 + 1;
         assertEquals(tx.unsafeBitcoinSerialize().length, tx.length);
         assertEquals(origTxLength, tx.length);
         block.addTransaction(tx);
         assertEquals(block.unsafeBitcoinSerialize().length, block.length);
         assertEquals(origBlockLen + tx.length, block.length);
-        block.getTransactions().get(1).getInputs().get(0).setScriptBytes(new byte[] {(byte) ScriptOpCodes.OP_FALSE, (byte) ScriptOpCodes.OP_FALSE});
+        block.getTransactions().get(1).getInputs().get(0).setScriptBytes(new byte[]{(byte) ScriptOpCodes.OP_FALSE, (byte) ScriptOpCodes.OP_FALSE});
         assertEquals(block.length, origBlockLen + tx.length);
         assertEquals(tx.length, origTxLength + 1);
         block.getTransactions().get(1).getInputs().get(0).clearScriptBytes();
         assertEquals(block.length, block.unsafeBitcoinSerialize().length);
         assertEquals(block.length, origBlockLen + tx.length);
         assertEquals(tx.length, origTxLength - 1);
-        block.getTransactions().get(1).addInput(new TransactionInput(UNITTEST, null, new byte[] {(byte) ScriptOpCodes.OP_FALSE},
-                new TransactionOutPoint(UNITTEST, 0, Sha256Hash.of(new byte[] { 1 }))));
+        block.getTransactions().get(1).addInput(new TransactionInput(UNITTEST, null, new byte[]{(byte) ScriptOpCodes.OP_FALSE},
+                new TransactionOutPoint(UNITTEST, 0, Sha256Hash.of(new byte[]{1}))));
         assertEquals(block.length, origBlockLen + tx.length);
         assertEquals(tx.length, origTxLength + 41); // - 1 + 40 + 1 + 1
     }
@@ -178,7 +176,7 @@ public class BlockTest {
         // shorter than we see in most other cases.
 
         Block block = TESTNET.getDefaultSerializer().makeBlock(
-            ByteStreams.toByteArray(getClass().getResourceAsStream("block_testnet21066.dat")));
+                ByteStreams.toByteArray(getClass().getResourceAsStream("block_testnet21066.dat")));
 
         // Check block.
         assertEquals("0000000004053156021d8e42459d284220a7f6e087bf78f30179c3703ca4eefa", block.getHashAsString());
@@ -190,7 +188,7 @@ public class BlockTest {
         // are applied correctly.
 
         block = TESTNET.getDefaultSerializer().makeBlock(
-            ByteStreams.toByteArray(getClass().getResourceAsStream("block_testnet32768.dat")));
+                ByteStreams.toByteArray(getClass().getResourceAsStream("block_testnet32768.dat")));
 
         // Check block.
         assertEquals("000000007590ba495b58338a5806c2b6f10af921a70dbd814e0da3c6957c0c03", block.getHashAsString());
@@ -281,7 +279,7 @@ public class BlockTest {
     }
 
     @Test
-    public void parseBlockWithHugeDeclaredTransactionsSize() throws Exception{
+    public void parseBlockWithHugeDeclaredTransactionsSize() throws Exception {
         Block block = new Block(UNITTEST, 1, Sha256Hash.ZERO_HASH, Sha256Hash.ZERO_HASH, 1, 1, 1, new ArrayList<Transaction>()) {
             @Override
             protected void bitcoinSerializeToStream(OutputStream stream) throws IOException {

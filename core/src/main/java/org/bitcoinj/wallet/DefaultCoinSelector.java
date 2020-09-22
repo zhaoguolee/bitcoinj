@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,15 +16,14 @@
 
 package org.bitcoinj.wallet;
 
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionConfidence;
-import org.bitcoinj.core.TransactionOutput;
 import com.google.common.annotations.VisibleForTesting;
+import org.bitcoinj.core.*;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * This class implements a {@link CoinSelector} which attempts to get the highest priority
@@ -62,7 +61,8 @@ public class DefaultCoinSelector implements CoinSelector {
         return new CoinSelection(Coin.valueOf(total), selected);
     }
 
-    @VisibleForTesting static void sortOutputs(ArrayList<TransactionOutput> outputs) {
+    @VisibleForTesting
+    static void sortOutputs(ArrayList<TransactionOutput> outputs) {
         Collections.sort(outputs, new Comparator<TransactionOutput>() {
             @Override
             public int compare(TransactionOutput a, TransactionOutput b) {
@@ -85,7 +85,9 @@ public class DefaultCoinSelector implements CoinSelector {
         });
     }
 
-    /** Sub-classes can override this to just customize whether transactions are usable, but keep age sorting. */
+    /**
+     * Sub-classes can override this to just customize whether transactions are usable, but keep age sorting.
+     */
     protected boolean shouldSelect(Transaction tx) {
         if (tx != null) {
             return isSelectable(tx);
@@ -99,15 +101,17 @@ public class DefaultCoinSelector implements CoinSelector {
         TransactionConfidence.ConfidenceType type = confidence.getConfidenceType();
         return type.equals(TransactionConfidence.ConfidenceType.BUILDING) ||
 
-               type.equals(TransactionConfidence.ConfidenceType.PENDING) &&
-               confidence.getSource().equals(TransactionConfidence.Source.SELF) &&
-               // In regtest mode we expect to have only one peer, so we won't see transactions propagate.
-               (confidence.numBroadcastPeers() > 0 || tx.getParams().getId().equals(NetworkParameters.ID_REGTEST));
+                type.equals(TransactionConfidence.ConfidenceType.PENDING) &&
+                        confidence.getSource().equals(TransactionConfidence.Source.SELF) &&
+                        // In regtest mode we expect to have only one peer, so we won't see transactions propagate.
+                        (confidence.numBroadcastPeers() > 0 || tx.getParams().getId().equals(NetworkParameters.ID_REGTEST));
     }
 
     private static DefaultCoinSelector instance;
 
-    /** Returns a global static instance of the selector. */
+    /**
+     * Returns a global static instance of the selector.
+     */
     public static DefaultCoinSelector get() {
         // This doesn't have to be thread safe as the object has no state, so discarded duplicates are
         // harmless.

@@ -17,6 +17,11 @@
 
 package org.bitcoinj.core;
 
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.ECKey.ECDSASignature;
 import org.bitcoinj.crypto.EncryptedData;
 import org.bitcoinj.crypto.KeyCrypter;
@@ -25,16 +30,11 @@ import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.params.UnitTestParams;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.params.KeyParameter;
 
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -46,9 +46,9 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.bitcoinj.core.Utils.HEX;
 import static org.bitcoinj.core.Utils.reverseBytes;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.junit.Assert.*;
 
 public class ECKeyTest {
@@ -125,7 +125,7 @@ public class ECKeyTest {
 
         assertArrayEquals(decodedKey.getPrivKeyBytes(), roundtripKey.getPrivKeyBytes());
 
-        for (ECKey key : new ECKey[] {decodedKey, roundtripKey}) {
+        for (ECKey key : new ECKey[]{decodedKey, roundtripKey}) {
             byte[] message = reverseBytes(HEX.decode(
                     "11da3761e86431e4a54c176789e41f1651b324d240d599a7067bee23d328ec2a"));
             byte[] output = key.sign(Sha256Hash.wrap(message)).encodeToDER();
@@ -138,7 +138,7 @@ public class ECKeyTest {
 
         // Try to sign with one key and verify with the other.
         byte[] message = reverseBytes(HEX.decode(
-            "11da3761e86431e4a54c176789e41f1651b324d240d599a7067bee23d328ec2a"));
+                "11da3761e86431e4a54c176789e41f1651b324d240d599a7067bee23d328ec2a"));
         assertTrue(roundtripKey.verify(message, decodedKey.sign(Sha256Hash.wrap(message)).encodeToDER()));
         assertTrue(decodedKey.verify(message, roundtripKey.sign(Sha256Hash.wrap(message)).encodeToDER()));
     }
@@ -152,9 +152,9 @@ public class ECKeyTest {
         // Now re-encode and decode the ASN.1 to see if it is equivalent (it does not produce the exact same byte
         // sequence, some integers are padded now).
         ECKey roundtripKey =
-            ECKey.fromPrivateAndPrecalculatedPublic(decodedKey.getPrivKey(), decodedKey.getPubKeyPoint(), decodedKey.isCompressed());
+                ECKey.fromPrivateAndPrecalculatedPublic(decodedKey.getPrivKey(), decodedKey.getPubKeyPoint(), decodedKey.isCompressed());
 
-        for (ECKey key : new ECKey[] {decodedKey, roundtripKey}) {
+        for (ECKey key : new ECKey[]{decodedKey, roundtripKey}) {
             byte[] message = reverseBytes(HEX.decode(
                     "11da3761e86431e4a54c176789e41f1651b324d240d599a7067bee23d328ec2a"));
             byte[] output = key.sign(Sha256Hash.wrap(message)).encodeToDER();
@@ -167,7 +167,7 @@ public class ECKeyTest {
 
         // Try to sign with one key and verify with the other.
         byte[] message = reverseBytes(HEX.decode(
-            "11da3761e86431e4a54c176789e41f1651b324d240d599a7067bee23d328ec2a"));
+                "11da3761e86431e4a54c176789e41f1651b324d240d599a7067bee23d328ec2a"));
         assertTrue(roundtripKey.verify(message, decodedKey.sign(Sha256Hash.wrap(message)).encodeToDER()));
         assertTrue(decodedKey.verify(message, roundtripKey.sign(Sha256Hash.wrap(message)).encodeToDER()));
 
@@ -197,7 +197,7 @@ public class ECKeyTest {
     @Test
     public void base58Encoding_stress() throws Exception {
         // Replace the loop bound with 1000 to get some keys with leading zero byte
-        for (int i = 0 ; i < 20 ; i++) {
+        for (int i = 0; i < 20; i++) {
             ECKey key = new ECKey();
             ECKey key1 = DumpedPrivateKey.fromBase58(TESTNET,
                     key.getPrivateKeyEncoded(TESTNET).toString()).getKey();
@@ -378,7 +378,7 @@ public class ECKeyTest {
     @Test
     public void keyRecoveryWithEncryptedKey() throws Exception {
         ECKey unencryptedKey = new ECKey();
-        KeyParameter aesKey =  keyCrypter.deriveKey(PASSWORD1);
+        KeyParameter aesKey = keyCrypter.deriveKey(PASSWORD1);
         ECKey encryptedKey = unencryptedKey.encrypt(keyCrypter, aesKey);
 
         String message = "Goodbye Jupiter!";
@@ -437,7 +437,7 @@ public class ECKeyTest {
             StringBuilder sig = new StringBuilder();
             int c;
             while (in.available() > 0 && (c = in.read()) != '"')
-                sig.append((char)c);
+                sig.append((char) c);
 
             assertTrue(TransactionSignature.isEncodingCanonical(HEX.decode(sig.toString())));
         }
@@ -458,7 +458,7 @@ public class ECKeyTest {
             StringBuilder sig = new StringBuilder();
             int c;
             while (in.available() > 0 && (c = in.read()) != '"')
-                sig.append((char)c);
+                sig.append((char) c);
 
             try {
                 final String sigStr = sig.toString();

@@ -17,13 +17,12 @@
 
 package org.bitcoinj.wallet;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.BloomFilter;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.crypto.*;
+import com.google.common.collect.ImmutableList;
+import org.bitcoinj.core.*;
+import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.KeyCrypterException;
+import org.bitcoinj.crypto.KeyCrypterScrypt;
+import org.bitcoinj.crypto.MnemonicCode;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.ScriptType;
@@ -31,11 +30,9 @@ import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.KeyChain.KeyPurpose;
 import org.bitcoinj.wallet.listeners.KeyChainEventListener;
-
-import com.google.common.collect.ImmutableList;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.junit.Before;
 import org.junit.Test;
-import org.bouncycastle.crypto.params.KeyParameter;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -323,7 +320,7 @@ public class KeyChainGroupTest {
     public void bloom() throws Exception {
         ECKey key1 = group.freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
         ECKey key2 = new ECKey();
-        BloomFilter filter = group.getBloomFilter(group.getBloomFilterElementCount(), 0.001, (long)(Math.random() * Long.MAX_VALUE));
+        BloomFilter filter = group.getBloomFilter(group.getBloomFilterElementCount(), 0.001, (long) (Math.random() * Long.MAX_VALUE));
         assertTrue(filter.contains(key1.getPubKeyHash()));
         assertTrue(filter.contains(key1.getPubKey()));
         assertFalse(filter.contains(key2.getPubKey()));
@@ -366,7 +363,7 @@ public class KeyChainGroupTest {
         assertEquals(expected, group.getBloomFilterElementCount());
         Address address1 = group.freshAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
         assertEquals(expected, group.getBloomFilterElementCount());
-        BloomFilter filter = group.getBloomFilter(expected + 2, 0.001, (long)(Math.random() * Long.MAX_VALUE));
+        BloomFilter filter = group.getBloomFilter(expected + 2, 0.001, (long) (Math.random() * Long.MAX_VALUE));
         assertTrue(filter.contains(address1.getHash160()));
 
         Address address2 = group.freshAddress(KeyChain.KeyPurpose.CHANGE);
@@ -437,7 +434,7 @@ public class KeyChainGroupTest {
         assertEquals(initialKeys + ((LOOKAHEAD_SIZE + 1) * 2) + 1 /* for the seed */ + 2, protoKeys2.size());
 
         group = KeyChainGroup.fromProtobufUnencrypted(MAINNET, protoKeys1);
-        assertEquals(initialKeys + ((LOOKAHEAD_SIZE + 1)  * 2)  + 1 /* for the seed */ + 1, protoKeys1.size());
+        assertEquals(initialKeys + ((LOOKAHEAD_SIZE + 1) * 2) + 1 /* for the seed */ + 1, protoKeys1.size());
         assertTrue(group.hasKey(key1));
         assertTrue(group.hasKey(key2));
         assertEquals(key2, group.currentKey(KeyChain.KeyPurpose.CHANGE));

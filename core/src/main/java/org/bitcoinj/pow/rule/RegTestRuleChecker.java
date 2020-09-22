@@ -11,7 +11,7 @@ public class RegTestRuleChecker extends AbstractPowRulesChecker {
     }
 
     public void checkRules(StoredBlock storedPrev, Block nextBlock, BlockStore blockStore,
-                                    AbstractBlockChain blockChain) throws VerificationException, BlockStoreException {
+                           AbstractBlockChain blockChain) throws VerificationException, BlockStoreException {
         // always pass
     }
 }

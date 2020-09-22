@@ -18,17 +18,19 @@
 
 package org.bitcoinj.store;
 
-import org.bitcoinj.core.*;
+import org.bitcoinj.core.NetworkParameters;
 
-import java.sql.*;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 // Originally written for Apache Derby, but its DELETE (and general) performance was awful
+
 /**
  * A full pruned block store using the H2 pure-java embedded database.
- *
+ * <p>
  * Note that because of the heavy delete load on the database, during IBD,
  * you may see the database files grow quite large (around 1.5G).
  * H2 automatically frees some space at shutdown, so close()ing the database
@@ -73,30 +75,32 @@ public class H2FullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
             + ")";
 
     // Some indexes to speed up inserts
-    private static final String CREATE_OUTPUTS_ADDRESS_MULTI_INDEX      = "CREATE INDEX openoutputs_hash_index_height_toaddress_idx ON openoutputs (hash, index, height, toaddress)";
-    private static final String CREATE_OUTPUTS_TOADDRESS_INDEX          = "CREATE INDEX openoutputs_toaddress_idx ON openoutputs (toaddress)";
-    private static final String CREATE_OUTPUTS_ADDRESSTARGETABLE_INDEX  = "CREATE INDEX openoutputs_addresstargetable_idx ON openoutputs (addresstargetable)";
-    private static final String CREATE_OUTPUTS_HASH_INDEX               = "CREATE INDEX openoutputs_hash_idx ON openoutputs (hash)";
-    private static final String CREATE_UNDOABLE_TABLE_INDEX             = "CREATE INDEX undoableblocks_height_idx ON undoableblocks (height)";
+    private static final String CREATE_OUTPUTS_ADDRESS_MULTI_INDEX = "CREATE INDEX openoutputs_hash_index_height_toaddress_idx ON openoutputs (hash, index, height, toaddress)";
+    private static final String CREATE_OUTPUTS_TOADDRESS_INDEX = "CREATE INDEX openoutputs_toaddress_idx ON openoutputs (toaddress)";
+    private static final String CREATE_OUTPUTS_ADDRESSTARGETABLE_INDEX = "CREATE INDEX openoutputs_addresstargetable_idx ON openoutputs (addresstargetable)";
+    private static final String CREATE_OUTPUTS_HASH_INDEX = "CREATE INDEX openoutputs_hash_idx ON openoutputs (hash)";
+    private static final String CREATE_UNDOABLE_TABLE_INDEX = "CREATE INDEX undoableblocks_height_idx ON undoableblocks (height)";
 
     /**
      * Creates a new H2FullPrunedBlockStore, with given credentials for H2 database
-     * @param params A copy of the NetworkParameters used
-     * @param dbName The path to the database on disk
-     * @param username The username to use in the database
-     * @param password The username's password to use in the database
+     *
+     * @param params         A copy of the NetworkParameters used
+     * @param dbName         The path to the database on disk
+     * @param username       The username to use in the database
+     * @param password       The username's password to use in the database
      * @param fullStoreDepth The number of blocks of history stored in full (something like 1000 is pretty safe)
      * @throws BlockStoreException if the database fails to open for any reason
      */
     public H2FullPrunedBlockStore(NetworkParameters params, String dbName, String username, String password,
-            int fullStoreDepth) throws BlockStoreException {
+                                  int fullStoreDepth) throws BlockStoreException {
         super(params, DATABASE_CONNECTION_URL_PREFIX + dbName + ";create=true;LOCK_TIMEOUT=60000;DB_CLOSE_ON_EXIT=FALSE", fullStoreDepth, username, password, null);
     }
 
     /**
      * Creates a new H2FullPrunedBlockStore
-     * @param params A copy of the NetworkParameters used
-     * @param dbName The path to the database on disk
+     *
+     * @param params         A copy of the NetworkParameters used
+     * @param dbName         The path to the database on disk
      * @param fullStoreDepth The number of blocks of history stored in full (something like 1000 is pretty safe)
      * @throws BlockStoreException if the database fails to open for any reason
      */
@@ -107,12 +111,13 @@ public class H2FullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
 
     /**
      * Creates a new H2FullPrunedBlockStore with the given cache size
-     * @param params A copy of the NetworkParameters used
-     * @param dbName The path to the database on disk
+     *
+     * @param params         A copy of the NetworkParameters used
+     * @param dbName         The path to the database on disk
      * @param fullStoreDepth The number of blocks of history stored in full (something like 1000 is pretty safe)
-     * @param cacheSize The number of kilobytes to dedicate to H2 Cache (the default value of 16MB (16384) is a safe bet
-     *                  to achieve good performance/cost when importing blocks from disk, past 32MB makes little sense,
-     *                  and below 4MB sees a sharp drop in performance)
+     * @param cacheSize      The number of kilobytes to dedicate to H2 Cache (the default value of 16MB (16384) is a safe bet
+     *                       to achieve good performance/cost when importing blocks from disk, past 32MB makes little sense,
+     *                       and below 4MB sees a sharp drop in performance)
      * @throws BlockStoreException if the database fails to open for any reason
      */
     public H2FullPrunedBlockStore(NetworkParameters params, String dbName, int fullStoreDepth, int cacheSize)

@@ -17,11 +17,11 @@
 
 package org.bitcoinj.examples;
 
-import org.bitcoinj.core.listeners.PeerConnectedEventListener;
-import org.bitcoinj.core.listeners.PeerDisconnectedEventListener;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Peer;
 import org.bitcoinj.core.PeerGroup;
+import org.bitcoinj.core.listeners.PeerConnectedEventListener;
+import org.bitcoinj.core.listeners.PeerDisconnectedEventListener;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.utils.BriefLogFormatter;
@@ -186,13 +186,20 @@ public class PeerMonitor {
         @Override
         public String getColumnName(int i) {
             switch (i) {
-                case IP_ADDRESS: return "Address";
-                case PROTOCOL_VERSION: return "Protocol version";
-                case USER_AGENT: return "User Agent";
-                case CHAIN_HEIGHT: return "Chain height";
-                case PING_TIME: return "Average ping";
-                case LAST_PING_TIME: return "Last ping";
-                default: throw new RuntimeException();
+                case IP_ADDRESS:
+                    return "Address";
+                case PROTOCOL_VERSION:
+                    return "Protocol version";
+                case USER_AGENT:
+                    return "User Agent";
+                case CHAIN_HEIGHT:
+                    return "Chain height";
+                case PING_TIME:
+                    return "Average ping";
+                case LAST_PING_TIME:
+                    return "Last ping";
+                default:
+                    throw new RuntimeException();
             }
         }
 
@@ -247,7 +254,8 @@ public class PeerMonitor {
                 case LAST_PING_TIME:
                     return col == PING_TIME ? peer.getPingTime() : peer.getLastPingTime();
 
-                default: throw new RuntimeException();
+                default:
+                    throw new RuntimeException();
             }
         }
 

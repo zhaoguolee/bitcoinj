@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,10 +16,9 @@
 
 package wallettemplate;
 
-import javafx.application.Platform;
-import org.bitcoinj.crypto.KeyCrypterScrypt;
 import com.google.common.primitives.Longs;
 import com.google.protobuf.ByteString;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.ActionEvent;
@@ -30,9 +29,10 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import org.bitcoinj.crypto.KeyCrypterScrypt;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.params.KeyParameter;
 import wallettemplate.utils.KeyDerivationTasks;
 
 import java.time.Duration;
@@ -47,12 +47,18 @@ import static wallettemplate.utils.GuiUtils.*;
 public class WalletPasswordController {
     private static final Logger log = LoggerFactory.getLogger(WalletPasswordController.class);
 
-    @FXML HBox buttonsBox;
-    @FXML PasswordField pass1;
-    @FXML ImageView padlockImage;
-    @FXML ProgressIndicator progressMeter;
-    @FXML GridPane widgetGrid;
-    @FXML Label explanationLabel;
+    @FXML
+    HBox buttonsBox;
+    @FXML
+    PasswordField pass1;
+    @FXML
+    ImageView padlockImage;
+    @FXML
+    ProgressIndicator progressMeter;
+    @FXML
+    GridPane widgetGrid;
+    @FXML
+    Label explanationLabel;
 
     public Main.OverlayUI overlayUI;
 
@@ -63,7 +69,8 @@ public class WalletPasswordController {
         Platform.runLater(pass1::requestFocus);
     }
 
-    @FXML void confirmClicked(ActionEvent event) {
+    @FXML
+    void confirmClicked(ActionEvent event) {
         String password = pass1.getText();
         if (password.isEmpty() || password.length() < 4) {
             informationalAlert("Bad password", "The password you entered is empty or too short.");

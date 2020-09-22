@@ -16,19 +16,28 @@
 
 package org.bitcoinj.testing;
 
-import com.google.common.base.*;
-import com.google.common.util.concurrent.*;
+import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
-import org.bitcoinj.net.*;
-import org.bitcoinj.store.*;
-import org.bitcoinj.utils.*;
+import org.bitcoinj.net.BlockingClientManager;
+import org.bitcoinj.net.ClientConnectionManager;
+import org.bitcoinj.net.NioClientManager;
+import org.bitcoinj.store.BlockStore;
+import org.bitcoinj.store.MemoryBlockStore;
+import org.bitcoinj.utils.ContextPropagatingThreadFactory;
 import org.junit.Rule;
 import org.junit.rules.Timeout;
 
-import java.net.*;
-import java.util.concurrent.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * You can derive from this class and call peerGroup.start() in your tests to get a functional PeerGroup that can be
@@ -126,7 +135,7 @@ public class TestWithPeerGroup extends TestWithNetworkConnections {
         writeTarget.peer = peer;
         return writeTarget;
     }
-    
+
     protected InboundMessageQueuer connectPeer(int id) throws Exception {
         return connectPeer(id, remoteVersionMessage);
     }

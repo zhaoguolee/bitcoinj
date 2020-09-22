@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,7 +36,9 @@ public class UnreadableWalletException extends Exception {
     }
 
     public static class FutureVersion extends UnreadableWalletException {
-        public FutureVersion() { super("Unknown wallet version from the future."); }
+        public FutureVersion() {
+            super("Unknown wallet version from the future.");
+        }
     }
 
     public static class WrongNetwork extends UnreadableWalletException {

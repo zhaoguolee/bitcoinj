@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,12 +31,16 @@ public class ThrottledRunLater implements Runnable {
     private final Runnable runnable;
     private final AtomicBoolean pending = new AtomicBoolean();
 
-    /** Created this way, the no-args runLater will execute this classes run method. */
+    /**
+     * Created this way, the no-args runLater will execute this classes run method.
+     */
     public ThrottledRunLater() {
         this.runnable = null;
     }
 
-    /** Created this way, the no-args runLater will execute the given runnable. */
+    /**
+     * Created this way, the no-args runLater will execute the given runnable.
+     */
     public ThrottledRunLater(Runnable runnable) {
         this.runnable = runnable;
     }

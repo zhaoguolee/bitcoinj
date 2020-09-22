@@ -16,15 +16,11 @@
 
 package org.bitcoinj.core;
 
+import org.junit.Test;
+
 import static org.bitcoinj.core.Coin.*;
 import static org.bitcoinj.core.NetworkParameters.MAX_MONEY;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class CoinTest {
 
@@ -73,11 +69,13 @@ public class CoinTest {
         try {
             valueOf(1, -1);
             fail();
-        } catch (IllegalArgumentException e) {}
+        } catch (IllegalArgumentException e) {
+        }
         try {
             valueOf(-1, 0);
             fail();
-        } catch (IllegalArgumentException e) {}
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     @Test

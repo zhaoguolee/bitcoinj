@@ -31,8 +31,9 @@ import javafx.scene.paint.Color;
 public class QRCodeImages {
     /**
      * Create an Image from a Bitcoin URI
-     * @param uri Bitcoin URI
-     * @param width width of image
+     *
+     * @param uri    Bitcoin URI
+     * @param width  width of image
      * @param height height of image
      * @return a javafx Image
      */
@@ -42,6 +43,7 @@ public class QRCodeImages {
 
     /**
      * Create a BitMatrix from a Bitcoin URI
+     *
      * @param uri Bitcoin URI
      * @return A BitMatrix for the QRCode for the URI
      */
@@ -58,6 +60,7 @@ public class QRCodeImages {
 
     /**
      * Create a JavaFX Image from a BitMatrix
+     *
      * @param matrix the matrix
      * @return the QRCode Image
      */
@@ -67,7 +70,7 @@ public class QRCodeImages {
         WritableImage image = new WritableImage(width, height);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                Color color = matrix.get(x,y) ? Color.BLACK : Color.WHITE;
+                Color color = matrix.get(x, y) ? Color.BLACK : Color.WHITE;
                 image.getPixelWriter().setColor(x, y, color);
             }
         }

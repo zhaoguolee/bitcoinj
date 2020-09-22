@@ -16,13 +16,10 @@
 package org.bitcoinj.core;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.bitcoinj.core.slp.SlpAddress;
 import org.bitcoinj.params.Networks;
-import org.bitcoinj.script.Script;
 
 import javax.annotation.Nullable;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.bitcoinj.core.Address.isAcceptableVersion;
 import static org.bitcoinj.core.CashAddressHelper.ConvertBits;
 import static org.bitcoinj.core.SlpAddressHelper.convertBits;
@@ -38,14 +35,11 @@ public class CashAddressFactory {
 
     /**
      * Construct an address from its Base58 representation.
-     * @param params
-     *            The expected NetworkParameters or null if you don't want validation.
-     * @param base58
-     *            The textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL".
-     * @throws AddressFormatException
-     *             if the given base58 doesn't parse or the checksum is invalid
-     * @throws WrongNetworkException
-     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     *
+     * @param params The expected NetworkParameters or null if you don't want validation.
+     * @param base58 The textual form of the address, such as "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL".
+     * @throws AddressFormatException if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException  if the given address is valid but for a different chain (eg testnet vs mainnet)
      */
     public CashAddress getFromBase58(@Nullable NetworkParameters params, String base58)
             throws AddressFormatException {
@@ -72,14 +66,11 @@ public class CashAddressFactory {
 
     /**
      * Construct an address from its cashaddr representation.
-     * @param params
-     *            The expected NetworkParameters or null if you don't want validation.
-     * @param addr
-     *            The textual form of the address, such as "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h".
-     * @throws AddressFormatException
-     *             if the given base58 doesn't parse or the checksum is invalid
-     * @throws WrongNetworkException
-     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     *
+     * @param params The expected NetworkParameters or null if you don't want validation.
+     * @param addr   The textual form of the address, such as "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h".
+     * @throws AddressFormatException if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException  if the given address is valid but for a different chain (eg testnet vs mainnet)
      */
     public CashAddress getFromFormattedAddress(@Nullable NetworkParameters params, String addr)
             throws AddressFormatException {
@@ -124,7 +115,7 @@ public class CashAddressFactory {
         int hashSize = calculateHashSizeFromVersionByte(versionByte);
         cashAddressValidator.checkDataLength(data, hashSize);
 
-        byte result[] = new byte[data.length - 1];
+        byte[] result = new byte[data.length - 1];
         System.arraycopy(data, 1, result, 0, data.length - 1);
         CashAddress.CashAddressType type = getAddressTypeFromVersionByte(versionByte);
 
@@ -133,14 +124,11 @@ public class CashAddressFactory {
 
     /**
      * Construct an address from its slp representation.
-     * @param params
-     *            The expected NetworkParameters or null if you don't want validation.
-     * @param addr
-     *            The textual form of the address, such as "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h".
-     * @throws AddressFormatException
-     *             if the given base58 doesn't parse or the checksum is invalid
-     * @throws WrongNetworkException
-     *             if the given address is valid but for a different chain (eg testnet vs mainnet)
+     *
+     * @param params The expected NetworkParameters or null if you don't want validation.
+     * @param addr   The textual form of the address, such as "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h".
+     * @throws AddressFormatException if the given base58 doesn't parse or the checksum is invalid
+     * @throws WrongNetworkException  if the given address is valid but for a different chain (eg testnet vs mainnet)
      */
     public CashAddress getFromSlpAddress(@Nullable NetworkParameters params, String addr)
             throws AddressFormatException {
@@ -212,13 +200,11 @@ public class CashAddressFactory {
         return hash_size;
     }
 
-    private boolean isAcceptablePrefix(NetworkParameters params, String prefix)
-    {
+    private boolean isAcceptablePrefix(NetworkParameters params, String prefix) {
         return params.getCashAddrPrefix().equals(prefix.toLowerCase());
     }
 
-    private boolean isAcceptableSlpPrefix(NetworkParameters params, String prefix)
-    {
+    private boolean isAcceptableSlpPrefix(NetworkParameters params, String prefix) {
         return params.getSimpleledgerPrefix().equals(prefix.toLowerCase());
     }
 }

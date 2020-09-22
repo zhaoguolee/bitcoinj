@@ -17,13 +17,13 @@
 
 package org.bitcoinj.protocols.payments;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.protobuf.ByteString;
+import org.bitcoin.protocols.payments.Protos;
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.TrustStoreLoader;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.protobuf.ByteString;
-import org.bitcoin.protocols.payments.Protos;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -117,7 +117,7 @@ public class PaymentSessionTest {
         txns.add(tx);
         try {
             paymentSession.sendPayment(txns, null, null);
-        } catch(PaymentProtocolException.Expired e) {
+        } catch (PaymentProtocolException.Expired e) {
             assertEquals(0, paymentSession.getPaymentLog().size());
             assertEquals(e.getMessage(), "PaymentRequest is expired");
             return;

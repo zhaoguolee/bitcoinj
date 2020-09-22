@@ -16,14 +16,14 @@
 
 package org.bitcoinj.core;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.base.Objects;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-import com.google.common.base.Objects;
-import com.google.common.primitives.Ints;
-import com.google.common.primitives.UnsignedBytes;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * <p>In Bitcoin the following format is often used to represent some type of key:</p>
@@ -86,7 +86,7 @@ public class VersionedChecksummedBytes implements Serializable, Cloneable, Compa
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This implementation narrows the return type to <code>VersionedChecksummedBytes</code>
      * and allows subclasses to throw <code>CloneNotSupportedException</code> even though it
      * is never thrown by this implementation.
@@ -98,7 +98,7 @@ public class VersionedChecksummedBytes implements Serializable, Cloneable, Compa
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This implementation uses an optimized Google Guava method to compare <code>bytes</code>.
      */
     @Override

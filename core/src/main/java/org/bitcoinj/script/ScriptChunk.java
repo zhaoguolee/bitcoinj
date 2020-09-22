@@ -20,7 +20,6 @@ package org.bitcoinj.script;
 import org.bitcoinj.core.Utils;
 
 import javax.annotation.Nullable;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,7 +33,9 @@ import static org.bitcoinj.script.ScriptOpCodes.*;
  * A script element that is either a data push (signature, pubkey, etc) or a non-push (logic, numeric, etc) operation.
  */
 public class ScriptChunk {
-    /** Operation to be executed. Opcodes are defined in {@link ScriptOpCodes}. */
+    /**
+     * Operation to be executed. Opcodes are defined in {@link ScriptOpCodes}.
+     */
     public final int opcode;
     /**
      * For push operations, this is the vector to be pushed on the stack. For {@link ScriptOpCodes#OP_0}, the vector is
@@ -66,7 +67,9 @@ public class ScriptChunk {
         return opcode <= OP_16;
     }
 
-    /** If this chunk is an OP_N opcode returns the equivalent integer value. */
+    /**
+     * If this chunk is an OP_N opcode returns the equivalent integer value.
+     */
     public int decodeOpN() {
         return Script.decodeFromOpN(opcode);
     }

@@ -17,19 +17,19 @@
 
 package org.bitcoinj.crypto;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import static org.bitcoinj.core.Utils.HEX;
 import static org.bitcoinj.core.Utils.WHITESPACE_SPLITTER;
 
 /**
  * Test the various guard clauses of {@link MnemonicCode}.
- *
+ * <p>
  * See {@link MnemonicCodeVectorsTest} test vectors.
  */
 public class MnemonicCodeTest {
@@ -45,7 +45,7 @@ public class MnemonicCodeTest {
     public void testBadEntropyLength() throws Exception {
         byte[] entropy = HEX.decode("7f7f7f7f7f7f7f7f7f7f7f7f7f7f");
         mc.toMnemonic(entropy);
-    }    
+    }
 
     @Test(expected = MnemonicException.MnemonicLengthException.class)
     public void testBadLength() throws Exception {

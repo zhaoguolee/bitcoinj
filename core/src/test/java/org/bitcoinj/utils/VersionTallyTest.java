@@ -25,9 +25,11 @@ import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.MemoryBlockStore;
 import org.bitcoinj.testing.FakeTxBuilder;
-import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class VersionTallyTest {
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
@@ -82,7 +84,7 @@ public class VersionTallyTest {
             assertEquals(i, instance.getCountAtOrAbove(2).intValue());
             instance.add(2);
         }
- 
+
         // Inject a rogue 1
         instance.add(1);
         assertEquals(UNITTEST.getMajorityWindow() - 1, instance.getCountAtOrAbove(2).intValue());

@@ -17,15 +17,13 @@
 
 package org.bitcoinj.core;
 
-import static org.bitcoinj.core.Utils.HEX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.bitcoinj.params.UnitTestParams;
+import org.junit.Test;
 
 import java.net.InetAddress;
 
-import org.bitcoinj.params.UnitTestParams;
-import org.junit.Test;
+import static org.bitcoinj.core.Utils.HEX;
+import static org.junit.Assert.*;
 
 public class VersionMessageTest {
     private static final NetworkParameters UNITTEST = UnitTestParams.get();

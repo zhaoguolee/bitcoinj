@@ -17,18 +17,13 @@
 
 package org.bitcoinj.crypto;
 
+import com.google.common.base.Stopwatch;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Stopwatch;
-
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -52,7 +47,9 @@ public class MnemonicCode {
     private static final String BIP39_ENGLISH_RESOURCE_NAME = "mnemonic/wordlist/english.txt";
     private static final String BIP39_ENGLISH_SHA256 = "ad90bf3beb7b0eb7e5acd74727dc0da96e0a280a258354e7293fb7e211ac03db";
 
-    /** UNIX time for when the BIP39 standard was finalised. This can be used as a default seed birthday. */
+    /**
+     * UNIX time for when the BIP39 standard was finalised. This can be used as a default seed birthday.
+     */
     public static long BIP39_STANDARDISATION_TIME_SECS = 1381276800;
 
     private static final int PBKDF2_ROUNDS = 2048;
@@ -71,7 +68,9 @@ public class MnemonicCode {
         }
     }
 
-    /** Initialise from the included word list. Won't work on Android. */
+    /**
+     * Initialise from the included word list. Won't work on Android.
+     */
     public MnemonicCode() throws IOException {
         this(openDefaultWords(), BIP39_ENGLISH_SHA256);
     }
@@ -166,7 +165,7 @@ public class MnemonicCode {
             for (int ii = 0; ii < 11; ++ii)
                 concatBits[(wordindex * 11) + ii] = (ndx & (1 << (10 - ii))) != 0;
             ++wordindex;
-        }        
+        }
 
         int checksumLengthBits = concatLenBits / 33;
         int entropyLengthBits = concatLenBits - checksumLengthBits;
@@ -205,7 +204,7 @@ public class MnemonicCode {
 
         byte[] hash = Sha256Hash.hash(entropy);
         boolean[] hashBits = bytesToBits(hash);
-        
+
         boolean[] entropyBits = bytesToBits(entropy);
         int checksumLengthBits = entropyBits.length / 32;
 
@@ -230,8 +229,8 @@ public class MnemonicCode {
             }
             words.add(this.wordList.get(index));
         }
-            
-        return words;        
+
+        return words;
     }
 
     /**

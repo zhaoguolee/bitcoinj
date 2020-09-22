@@ -11,7 +11,7 @@ public class SlpAddressHelper {
     /**
      * The cashaddr character set for decoding.
      */
-    final static byte CHARSET_REV[] = {
+    final static byte[] CHARSET_REV = {
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 15, -1, 10, 17, 21, 20, 26, 30, 7,
@@ -355,10 +355,9 @@ public class SlpAddressHelper {
         return true;
     }
 
-    public static String getPrefix(String address)
-    {
+    public static String getPrefix(String address) {
         int colon = address.indexOf(':');
-        if(colon != -1)
+        if (colon != -1)
             return address.substring(0, colon);
         return null;
     }

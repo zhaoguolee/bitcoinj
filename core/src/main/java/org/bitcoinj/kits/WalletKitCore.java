@@ -36,8 +36,10 @@ public class WalletKitCore extends AbstractIdleService {
     protected KeyChainGroupStructure structure;
 
     protected WalletProtobufSerializer.WalletFactory walletFactory;
-    @Nullable protected DeterministicSeed restoreFromSeed;
-    @Nullable protected DeterministicKey restoreFromKey;
+    @Nullable
+    protected DeterministicSeed restoreFromSeed;
+    @Nullable
+    protected DeterministicKey restoreFromKey;
     protected File directory;
     protected volatile File vWalletFile;
     protected String filePrefix;
@@ -53,7 +55,8 @@ public class WalletKitCore extends AbstractIdleService {
     protected volatile SPVBlockStore vStore;
     protected volatile Wallet vWallet;
     protected volatile PeerGroup vPeerGroup;
-    @Nullable protected PeerDiscovery discovery;
+    @Nullable
+    protected PeerDiscovery discovery;
 
     public boolean useTor = false;
     public String torProxyIp = "127.0.0.1";
@@ -143,14 +146,18 @@ public class WalletKitCore extends AbstractIdleService {
         return directory;
     }
 
-    /** Will only connect to the given addresses. Cannot be called after startup. */
+    /**
+     * Will only connect to the given addresses. Cannot be called after startup.
+     */
     public WalletKitCore setPeerNodes(PeerAddress... addresses) {
         checkState(state() == State.NEW, "Cannot call after startup");
         this.peerAddresses = addresses;
         return this;
     }
 
-    /** Will only connect to localhost. Cannot be called after startup. */
+    /**
+     * Will only connect to localhost. Cannot be called after startup.
+     */
     public WalletKitCore connectToLocalHost() {
         try {
             final InetAddress localHost = InetAddress.getLocalHost();
@@ -161,7 +168,9 @@ public class WalletKitCore extends AbstractIdleService {
         }
     }
 
-    /** If true, the wallet will save itself to disk automatically whenever it changes. */
+    /**
+     * If true, the wallet will save itself to disk automatically whenever it changes.
+     */
     public WalletKitCore setAutoSave(boolean value) {
         checkState(state() == State.NEW, "Cannot call after startup");
         useAutoSave = value;
@@ -178,7 +187,9 @@ public class WalletKitCore extends AbstractIdleService {
         return this;
     }
 
-    /** If true, will register a shutdown hook to stop the library. Defaults to true. */
+    /**
+     * If true, will register a shutdown hook to stop the library. Defaults to true.
+     */
     public WalletKitCore setAutoStop(boolean autoStop) {
         this.autoStop = autoStop;
         return this;
@@ -209,8 +220,9 @@ public class WalletKitCore extends AbstractIdleService {
 
     /**
      * Sets the string that will appear in the subver field of the version message.
+     *
      * @param userAgent A short string that should be the name of your app, e.g. "My Wallet"
-     * @param version A short string that contains the version number, e.g. "1.0-BETA"
+     * @param version   A short string that contains the version number, e.g. "1.0-BETA"
      */
     public WalletKitCore setUserAgent(String userAgent, String version) {
         this.userAgent = checkNotNull(userAgent);
@@ -290,9 +302,7 @@ public class WalletKitCore extends AbstractIdleService {
                             log.info("Clearing the chain file in preparation for restore.");
                             vStore.clear();
                         }
-                    }
-                    else
-                    {
+                    } else {
                         time = vWallet.getEarliestKeyCreationTime();
                     }
                     if (time > 0)
@@ -457,10 +467,11 @@ public class WalletKitCore extends AbstractIdleService {
      * This method is invoked on a background thread after all objects are initialised, but before the peer group
      * or block chain download is started. You can tweak the objects configuration here.
      */
-    protected void onSetupCompleted() { }
+    protected void onSetupCompleted() {
+    }
 
     protected PeerGroup createPeerGroup() {
-        if(useTor) {
+        if (useTor) {
             System.setProperty("socksProxyHost", torProxyIp);
             System.setProperty("socksProxyPort", torProxyPort);
             return new PeerGroup(this.vWallet.getParams(), this.vChain, new BlockingClientManager());
@@ -471,7 +482,8 @@ public class WalletKitCore extends AbstractIdleService {
 
     protected void installShutdownHook() {
         if (autoStop) Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 try {
                     WalletKitCore.this.stopAsync();
                     WalletKitCore.this.awaitTerminated();

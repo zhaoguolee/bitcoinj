@@ -16,12 +16,12 @@
 
 package org.bitcoinj.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 import java.util.Locale;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class Bech32Test {
     @Test
@@ -62,14 +62,14 @@ public class Bech32Test {
 
     private static final String[] INVALID = {
             " 1nwldj5", // HRP character out of range
-            new String(new char[] { 0x7f }) + "1axkwrx", // HRP character out of range
-            new String(new char[] { 0x80 }) + "1eym55h", // HRP character out of range
+            new String(new char[]{0x7f}) + "1axkwrx", // HRP character out of range
+            new String(new char[]{0x80}) + "1eym55h", // HRP character out of range
             "an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1569pvx", // overall max length exceeded
             "pzry9x0s0muk", // No separator character
             "1pzry9x0s0muk", // Empty HRP
             "x1b4n0q5v", // Invalid data character
             "li1dgmt3", // Too short checksum
-            "de1lg7wt" + new String(new char[] { 0xff }), // Invalid character in checksum
+            "de1lg7wt" + new String(new char[]{0xff}), // Invalid character in checksum
             "A1G7SGD8", // checksum calculated with uppercase form of HRP
             "10a06t8", // empty HRP
             "1qzzfhee", // empty HRP

@@ -33,22 +33,22 @@ public class SeedPeersTest {
     private static final NetworkParameters MAINNET = MainNetParams.get();
 
     @Test
-    public void getPeer_one() throws Exception{
+    public void getPeer_one() throws Exception {
         SeedPeers seedPeers = new SeedPeers(MAINNET);
         assertThat(seedPeers.getPeer(), notNullValue());
     }
-    
+
     @Test
-    public void getPeer_all() throws Exception{
+    public void getPeer_all() throws Exception {
         SeedPeers seedPeers = new SeedPeers(MAINNET);
         for (int i = 0; i < MAINNET.getAddrSeeds().length; ++i) {
-            assertThat("Failed on index: "+i, seedPeers.getPeer(), notNullValue());
+            assertThat("Failed on index: " + i, seedPeers.getPeer(), notNullValue());
         }
         assertThat(seedPeers.getPeer(), equalTo(null));
     }
-    
+
     @Test
-    public void getPeers_length() throws Exception{
+    public void getPeers_length() throws Exception {
         SeedPeers seedPeers = new SeedPeers(MAINNET);
         List<InetSocketAddress> addresses = seedPeers.getPeers(0, 0, TimeUnit.SECONDS);
         assertThat(addresses.size(), equalTo(MAINNET.getAddrSeeds().length));

@@ -17,20 +17,27 @@
 
 package org.bitcoinj.core;
 
-import com.google.common.util.concurrent.*;
+import com.google.common.util.concurrent.AtomicDouble;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.bitcoinj.core.listeners.TransactionConfidenceEventListener;
-import org.bitcoinj.testing.*;
-import org.bitcoinj.utils.*;
+import org.bitcoinj.testing.FakeTxBuilder;
+import org.bitcoinj.testing.InboundMessageQueuer;
+import org.bitcoinj.testing.TestWithPeerGroup;
+import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.SendRequest;
 import org.bitcoinj.wallet.Wallet;
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.bitcoinj.core.Coin.*;
 import static org.junit.Assert.*;
 
@@ -38,8 +45,8 @@ import static org.junit.Assert.*;
 public class TransactionBroadcastTest extends TestWithPeerGroup {
     @Parameterized.Parameters
     public static Collection<ClientType[]> parameters() {
-        return Arrays.asList(new ClientType[] {ClientType.NIO_CLIENT_MANAGER},
-                             new ClientType[] {ClientType.BLOCKING_CLIENT_MANAGER});
+        return Arrays.asList(new ClientType[]{ClientType.NIO_CLIENT_MANAGER},
+                new ClientType[]{ClientType.BLOCKING_CLIENT_MANAGER});
     }
 
     public TransactionBroadcastTest(ClientType clientType) {
@@ -65,7 +72,7 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
 
     @Test
     public void fourPeers() throws Exception {
-        InboundMessageQueuer[] channels = { connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4) };
+        InboundMessageQueuer[] channels = {connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4)};
         Transaction tx = FakeTxBuilder.createFakeTx(UNITTEST);
         tx.getConfidence().setSource(TransactionConfidence.Source.SELF);
         TransactionBroadcast broadcast = new TransactionBroadcast(peerGroup, tx);
@@ -108,7 +115,7 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
         // Check that if we register a progress callback on a broadcast after the broadcast has started, it's invoked
         // immediately with the latest state. This avoids API users writing accidentally racy code when they use
         // a convenience method like peerGroup.broadcastTransaction.
-        InboundMessageQueuer[] channels = { connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4) };
+        InboundMessageQueuer[] channels = {connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4)};
         Transaction tx = FakeTxBuilder.createFakeTx(UNITTEST, CENT, address);
         tx.getConfidence().setSource(TransactionConfidence.Source.SELF);
         TransactionBroadcast broadcast = peerGroup.broadcastTransaction(tx);
@@ -126,7 +133,7 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
 
     @Test
     public void rejectHandling() throws Exception {
-        InboundMessageQueuer[] channels = { connectPeer(0), connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4) };
+        InboundMessageQueuer[] channels = {connectPeer(0), connectPeer(1), connectPeer(2), connectPeer(3), connectPeer(4)};
         Transaction tx = FakeTxBuilder.createFakeTx(UNITTEST);
         TransactionBroadcast broadcast = new TransactionBroadcast(peerGroup, tx);
         ListenableFuture<Transaction> future = broadcast.broadcast();
@@ -165,7 +172,7 @@ public class TransactionBroadcastTest extends TestWithPeerGroup {
         Transaction t1;
         {
             Message m;
-            while (!((m = outbound(p1)) instanceof Transaction));
+            while (!((m = outbound(p1)) instanceof Transaction)) ;
             t1 = (Transaction) m;
         }
         assertFalse(sendResult.broadcastComplete.isDone());

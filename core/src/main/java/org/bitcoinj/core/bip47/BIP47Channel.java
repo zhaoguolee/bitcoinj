@@ -5,10 +5,9 @@
 
 package org.bitcoinj.core.bip47;
 
-import org.bitcoinj.core.Sha256Hash;
-
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.kits.BIP47AppKit;
 import org.bitcoinj.kits.SlpBIP47AppKit;
 import org.bitcoinj.params.MainNetParams;
@@ -42,7 +41,9 @@ public class BIP47Channel {
     private Sha256Hash ntxHash;
 
     private static final Logger log = LoggerFactory.getLogger(BIP47Channel.class);
-    public BIP47Channel() {}
+
+    public BIP47Channel() {
+    }
 
     public BIP47Channel(String paymentCode) {
         BIP47Account bip47Account = new BIP47Account(MainNetParams.get(), paymentCode);
@@ -53,7 +54,7 @@ public class BIP47Channel {
     public BIP47Channel(String notificationAddress, Sha256Hash ntxTxid) {
         this.notificationAddress = notificationAddress;
 
-        if(ntxTxid != null) {
+        if (ntxTxid != null) {
             this.setNtxHash(ntxTxid);
         }
     }
@@ -62,9 +63,13 @@ public class BIP47Channel {
         return paymentCode;
     }
 
-    public String getNotificationAddress() { return notificationAddress; }
+    public String getNotificationAddress() {
+        return notificationAddress;
+    }
 
-    public void setNotificationAddress(String na) { notificationAddress = na; }
+    public void setNotificationAddress(String na) {
+        notificationAddress = na;
+    }
 
     public void setPaymentCode(String pc) {
         paymentCode = pc;
@@ -107,7 +112,7 @@ public class BIP47Channel {
     }
 
     public BIP47Address getIncomingAddress(String address) {
-        for (BIP47Address bip47Address: incomingAddresses) {
+        for (BIP47Address bip47Address : incomingAddresses) {
             if (bip47Address.getAddress().equals(address)) {
                 return bip47Address;
             }
@@ -140,7 +145,9 @@ public class BIP47Channel {
         status = STATUS_NOT_SENT;
     }
 
-    public Sha256Hash getNtxHash() { return ntxHash; }
+    public Sha256Hash getNtxHash() {
+        return ntxHash;
+    }
 
     public void setNtxHash(Sha256Hash ntxHash) {
         this.ntxHash = ntxHash;

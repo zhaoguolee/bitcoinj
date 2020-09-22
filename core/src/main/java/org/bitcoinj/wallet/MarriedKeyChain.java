@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,6 @@ package org.bitcoinj.wallet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
-
 import org.bitcoinj.core.BloomFilter;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -31,16 +30,13 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bouncycastle.crypto.params.KeyParameter;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * <p>A multi-signature keychain using synchronized HD keys (a.k.a HDM)</p>
@@ -62,7 +58,9 @@ public class MarriedKeyChain extends DeterministicKeyChain {
 
     private List<DeterministicKeyChain> followingKeyChains;
 
-    /** Builds a {@link MarriedKeyChain} */
+    /**
+     * Builds a {@link MarriedKeyChain}
+     */
     public static class Builder<T extends Builder<T>> extends DeterministicKeyChain.Builder<T> {
         private List<DeterministicKey> followingKeys;
         private int threshold;
@@ -75,7 +73,7 @@ public class MarriedKeyChain extends DeterministicKeyChain {
             return self();
         }
 
-        public T followingKeys(DeterministicKey followingKey, DeterministicKey ...followingKeys) {
+        public T followingKeys(DeterministicKey followingKey, DeterministicKey... followingKeys) {
             this.followingKeys = Lists.asList(followingKey, followingKeys);
             return self();
         }
@@ -147,7 +145,9 @@ public class MarriedKeyChain extends DeterministicKeyChain {
         return true;
     }
 
-    /** Create a new married key and return the matching output script */
+    /**
+     * Create a new married key and return the matching output script
+     */
     @Override
     public Script freshOutputScript(KeyPurpose purpose) {
         DeterministicKey followedKey = getKey(purpose);
@@ -172,7 +172,9 @@ public class MarriedKeyChain extends DeterministicKeyChain {
         return keys.build();
     }
 
-    /** Get the redeem data for a key in this married chain */
+    /**
+     * Get the redeem data for a key in this married chain
+     */
     @Override
     public RedeemData getRedeemData(DeterministicKey followedKey) {
         List<ECKey> marriedKeys = getMarriedKeysWithFollowed(followedKey);
@@ -234,7 +236,7 @@ public class MarriedKeyChain extends DeterministicKeyChain {
 
     @Override
     protected void formatAddresses(boolean includeLookahead, boolean includePrivateKeys, @Nullable KeyParameter aesKey,
-            NetworkParameters params, StringBuilder builder) {
+                                   NetworkParameters params, StringBuilder builder) {
         for (DeterministicKeyChain followingChain : followingKeyChains)
             builder.append("Following chain:  ").append(followingChain.getWatchingKey().serializePubB58(params))
                     .append('\n');

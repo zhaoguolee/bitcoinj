@@ -17,27 +17,19 @@
 
 package org.bitcoinj.kits;
 
-import com.google.common.collect.*;
-import com.google.common.io.Closeables;
-import com.google.common.util.concurrent.*;
-import org.bitcoinj.core.listeners.*;
-import org.bitcoinj.core.*;
-import org.bitcoinj.crypto.DeterministicKey;
-import org.bitcoinj.net.BlockingClientManager;
-import org.bitcoinj.net.discovery.*;
+import org.bitcoinj.core.BlockChain;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.store.*;
-import org.bitcoinj.wallet.*;
-import org.slf4j.*;
+import org.bitcoinj.store.SPVBlockStore;
+import org.bitcoinj.wallet.KeyChainGroupStructure;
+import org.bitcoinj.wallet.Wallet;
 
-import javax.annotation.*;
-import java.io.*;
-import java.net.*;
-import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.*;
+import javax.annotation.Nullable;
+import java.io.File;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * <p>Utility class that wraps the boilerplate needed to set up a new SPV bitcoinj app. Instantiate it with a directory
@@ -73,7 +65,7 @@ public class WalletAppKit extends WalletKitCore {
      * Creates a new WalletAppKit, with a newly created {@link Context}. Files will be stored in the given directory.
      */
     public WalletAppKit(NetworkParameters params, Script.ScriptType preferredOutputScriptType,
-            @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
+                        @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
         this(new Context(params), preferredOutputScriptType, structure, directory, filePrefix);
     }
 
@@ -81,7 +73,7 @@ public class WalletAppKit extends WalletKitCore {
      * Creates a new WalletAppKit, with the given {@link Context}. Files will be stored in the given directory.
      */
     public WalletAppKit(Context context, Script.ScriptType preferredOutputScriptType,
-            @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
+                        @Nullable KeyChainGroupStructure structure, File directory, String filePrefix) {
         this.context = context;
         this.params = checkNotNull(context.getParams());
         this.preferredOutputScriptType = checkNotNull(preferredOutputScriptType);

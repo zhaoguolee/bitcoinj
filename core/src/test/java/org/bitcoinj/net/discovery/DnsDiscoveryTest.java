@@ -16,21 +16,21 @@
 
 package org.bitcoinj.net.discovery;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import org.bitcoinj.params.MainNetParams;
+import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.bitcoinj.params.MainNetParams;
-import org.junit.Test;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DnsDiscoveryTest {
 
     @Test
     public void testBuildDiscoveries() throws PeerDiscoveryException {
-        String[] seeds = new String[] { "seed.bitcoin.sipa.be", "dnsseed.bluematt.me" };
+        String[] seeds = new String[]{"seed.bitcoin.sipa.be", "dnsseed.bluematt.me"};
         DnsDiscovery dnsDiscovery = new DnsDiscovery(seeds, MainNetParams.get());
         assertTrue(dnsDiscovery.seeds.size() == 2);
         for (PeerDiscovery peerDiscovery : dnsDiscovery.seeds) {

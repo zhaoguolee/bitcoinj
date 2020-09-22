@@ -32,31 +32,45 @@ import java.util.Objects;
 
 /**
  * <p>A VersionMessage holds information exchanged during connection setup with another peer. Most of the fields are not
- * particularly interesting. The subVer field, since BIP 14, acts as a User-Agent string would. You can and should 
+ * particularly interesting. The subVer field, since BIP 14, acts as a User-Agent string would. You can and should
  * append to or change the subVer for your own software so other implementations can identify it, and you can look at
  * the subVer field received from other nodes to see what they are running.</p>
  *
  * <p>After creating yourself a VersionMessage, you can pass it to {@link PeerGroup#setVersionMessage(VersionMessage)}
  * to ensure it will be used for each new connection.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class VersionMessage extends Message {
 
-    /** The version of this library release, as a string. */
+    /**
+     * The version of this library release, as a string.
+     */
     public static final String BITCOINJ_VERSION = "0.22.4";
-    /** The value that is prepended to the subVer field of this application. */
+    /**
+     * The value that is prepended to the subVer field of this application.
+     */
     public static final String LIBRARY_SUBVER = "/bitcoincashj:" + BITCOINJ_VERSION + "/";
 
-    /** A service bit that denotes whether the peer has a full copy of the block chain or not. */
+    /**
+     * A service bit that denotes whether the peer has a full copy of the block chain or not.
+     */
     public static final int NODE_NETWORK = 1 << 0;
-    /** A service bit that denotes whether the peer supports the getutxos message or not. */
+    /**
+     * A service bit that denotes whether the peer supports the getutxos message or not.
+     */
     public static final int NODE_GETUTXOS = 1 << 1;
-    /** A service bit that denotes whether the peer supports BIP37 bloom filters or not. The service bit is defined in BIP111. */
+    /**
+     * A service bit that denotes whether the peer supports BIP37 bloom filters or not. The service bit is defined in BIP111.
+     */
     public static final int NODE_BLOOM = 1 << 2;
-    /** A service bit that denotes whether the peer has at least the last two days worth of blockchain (BIP159). */
+    /**
+     * A service bit that denotes whether the peer has at least the last two days worth of blockchain (BIP159).
+     */
     public static final int NODE_NETWORK_LIMITED = 1 << 10;
-    /** A service bit used by Bitcoin-ABC to announce Bitcoin Cash nodes. */
+    /**
+     * A service bit used by Bitcoin-ABC to announce Bitcoin Cash nodes.
+     */
     public static final int NODE_BITCOIN_CASH = 1 << 5;
 
     /**
@@ -101,7 +115,7 @@ public class VersionMessage extends Message {
     // It doesn't really make sense to ever lazily parse a version message or to retain the backing bytes.
     // If you're receiving this on the wire you need to check the protocol version and it will never need to be sent
     // back down the wire.
-    
+
     public VersionMessage(NetworkParameters params, int newBestHeight) {
         super(params);
         clientVersion = serializer.getProtocolVersion();
@@ -201,7 +215,7 @@ public class VersionMessage extends Message {
     @Override
     public int hashCode() {
         return Objects.hash(bestHeight, clientVersion, localServices,
-            time, subVer, receivingAddr, fromAddr, relayTxesBeforeFilter);
+                time, subVer, receivingAddr, fromAddr, relayTxesBeforeFilter);
     }
 
     @Override
@@ -284,18 +298,20 @@ public class VersionMessage extends Message {
         if (clientVersion >= params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER)
                 && clientVersion < params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.BLOOM_FILTER_BIP111))
             return true;
-        if ((localServices & NODE_BLOOM) == NODE_BLOOM)
-            return true;
-        return false;
+        return (localServices & NODE_BLOOM) == NODE_BLOOM;
     }
 
-    /** Returns true if the protocol version and service bits both indicate support for the getutxos message. */
+    /**
+     * Returns true if the protocol version and service bits both indicate support for the getutxos message.
+     */
     public boolean isGetUTXOsSupported() {
         return clientVersion >= GetUTXOsMessage.MIN_PROTOCOL_VERSION &&
                 (localServices & NODE_GETUTXOS) == NODE_GETUTXOS;
     }
 
-    /** Returns true if a peer can be asked for blocks and transactions including witness data. */
+    /**
+     * Returns true if a peer can be asked for blocks and transactions including witness data.
+     */
     public boolean isWitnessSupported() {
         return false;
     }
@@ -308,7 +324,9 @@ public class VersionMessage extends Message {
         return (localServices & NODE_NETWORK) == NODE_NETWORK;
     }
 
-    /** Returns true if the peer has at least the last two days worth of blockchain (BIP159). */
+    /**
+     * Returns true if the peer has at least the last two days worth of blockchain (BIP159).
+     */
     public boolean hasLimitedBlockChain() {
         return hasBlockChain() || (localServices & NODE_NETWORK_LIMITED) == NODE_NETWORK_LIMITED;
     }

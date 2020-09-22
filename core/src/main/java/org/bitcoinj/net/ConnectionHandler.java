@@ -56,14 +56,21 @@ class ConnectionHandler implements MessageWriteTarget {
 
     private static final int OUTBOUND_BUFFER_BYTE_COUNT = Message.MAX_SIZE + 24; // 24 byte message header
 
-    @GuardedBy("lock") private final ByteBuffer readBuff;
-    @GuardedBy("lock") private final SocketChannel channel;
-    @GuardedBy("lock") private final SelectionKey key;
-    @GuardedBy("lock") StreamConnection connection;
-    @GuardedBy("lock") private boolean closeCalled = false;
+    @GuardedBy("lock")
+    private final ByteBuffer readBuff;
+    @GuardedBy("lock")
+    private final SocketChannel channel;
+    @GuardedBy("lock")
+    private final SelectionKey key;
+    @GuardedBy("lock")
+    StreamConnection connection;
+    @GuardedBy("lock")
+    private boolean closeCalled = false;
 
-    @GuardedBy("lock") private long bytesToWriteRemaining = 0;
-    @GuardedBy("lock") private final LinkedList<BytesAndFuture> bytesToWrite = new LinkedList<>();
+    @GuardedBy("lock")
+    private long bytesToWriteRemaining = 0;
+    @GuardedBy("lock")
+    private final LinkedList<BytesAndFuture> bytesToWrite = new LinkedList<>();
 
     private static class BytesAndFuture {
         public final ByteBuffer bytes;
@@ -85,7 +92,7 @@ class ConnectionHandler implements MessageWriteTarget {
 
     private ConnectionHandler(@Nullable StreamConnection connection, SelectionKey key) {
         this.key = key;
-        this.channel = checkNotNull(((SocketChannel)key.channel()));
+        this.channel = checkNotNull(((SocketChannel) key.channel()));
         if (connection == null) {
             readBuff = null;
             return;
@@ -214,7 +221,7 @@ class ConnectionHandler implements MessageWriteTarget {
     // Runs unlocked as the caller is single-threaded (or if not, should enforce that handleKey is only called
     // atomically for a given ConnectionHandler)
     public static void handleKey(SelectionKey key) {
-        ConnectionHandler handler = ((ConnectionHandler)key.attachment());
+        ConnectionHandler handler = ((ConnectionHandler) key.attachment());
         try {
             if (handler == null)
                 return;

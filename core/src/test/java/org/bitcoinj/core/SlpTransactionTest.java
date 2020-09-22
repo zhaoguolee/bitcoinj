@@ -1,15 +1,9 @@
 package org.bitcoinj.core;
 
-import org.bitcoinj.core.bip47.BIP47PaymentCode;
-import org.bitcoinj.core.slp.SlpAddress;
 import org.bitcoinj.core.slp.SlpTransaction;
-import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.TestNet3Params;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class SlpTransactionTest {
 

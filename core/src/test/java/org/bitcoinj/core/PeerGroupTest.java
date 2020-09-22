@@ -18,25 +18,38 @@
 package org.bitcoinj.core;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.*;
-import com.google.common.util.concurrent.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.bitcoinj.core.listeners.*;
-import org.bitcoinj.net.discovery.*;
+import org.bitcoinj.net.discovery.PeerDiscovery;
+import org.bitcoinj.net.discovery.PeerDiscoveryException;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.testing.*;
-import org.bitcoinj.utils.*;
+import org.bitcoinj.testing.FakeTxBuilder;
+import org.bitcoinj.testing.InboundMessageQueuer;
+import org.bitcoinj.testing.TestWithPeerGroup;
+import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.Wallet;
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.bitcoinj.core.Coin.*;
+import static org.bitcoinj.core.Coin.COIN;
+import static org.bitcoinj.core.Coin.valueOf;
 import static org.junit.Assert.*;
 
 
@@ -65,8 +78,8 @@ public class PeerGroupTest extends TestWithPeerGroup {
 
     @Parameterized.Parameters
     public static Collection<ClientType[]> parameters() {
-        return Arrays.asList(new ClientType[] {ClientType.NIO_CLIENT_MANAGER},
-                             new ClientType[] {ClientType.BLOCKING_CLIENT_MANAGER});
+        return Arrays.asList(new ClientType[]{ClientType.NIO_CLIENT_MANAGER},
+                new ClientType[]{ClientType.BLOCKING_CLIENT_MANAGER});
     }
 
     public PeerGroupTest(ClientType clientType) {
@@ -174,6 +187,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
             public List<InetSocketAddress> getPeers(long services, long unused, TimeUnit unused2) throws PeerDiscoveryException {
                 return addresses;
             }
+
             public void shutdown() {
             }
         };
@@ -204,7 +218,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
         // Create a couple of peers.
         InboundMessageQueuer p1 = connectPeer(1);
         InboundMessageQueuer p2 = connectPeer(2);
-        
+
         // Check the peer accessors.
         assertEquals(2, peerGroup.numConnectedPeers());
         Set<Peer> tmp = new HashSet<>(peerGroup.getConnectedPeers());
@@ -234,7 +248,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
         assertEquals(value, wallet.getBalance(Wallet.BalanceType.ESTIMATED));
     }
 
-    
+
     @Test
     public void receiveTxBroadcastOnAddedWallet() throws Exception {
         // Check that when we receive transactions on all our peers, we do the right thing.
@@ -242,11 +256,11 @@ public class PeerGroupTest extends TestWithPeerGroup {
 
         // Create a peer.
         InboundMessageQueuer p1 = connectPeer(1);
-        
+
         Wallet wallet2 = Wallet.createDeterministic(UNITTEST, Script.ScriptType.P2PKH);
         ECKey key2 = wallet2.freshReceiveKey();
         Address address2 = Address.fromKey(UNITTEST, key2);
-        
+
         peerGroup.addWallet(wallet2);
         blockChain.addWallet(wallet2);
 
@@ -268,7 +282,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
         pingAndWait(p1);
         assertEquals(value, wallet2.getBalance(Wallet.BalanceType.ESTIMATED));
     }
-    
+
     @Test
     public void singleDownloadPeer1() throws Exception {
         // Check that we don't attempt to retrieve blocks on multiple peers.
@@ -292,7 +306,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
         // Only peer 1 tries to download it.
         inbound(p1, inv);
         pingAndWait(p1);
-        
+
         assertTrue(outbound(p1) instanceof GetDataMessage);
         assertNull(outbound(p2));
         // Peer 1 goes away, peer 2 becomes the download peer and thus queries the remote mempool.
@@ -326,7 +340,8 @@ public class PeerGroupTest extends TestWithPeerGroup {
         Block b3 = FakeTxBuilder.makeSolvedTestBlock(b2);
 
         // Expect a zero hash getblocks on p1. This is how the process starts.
-        peerGroup.startBlockChainDownload(new AbstractPeerDataEventListener() {});
+        peerGroup.startBlockChainDownload(new AbstractPeerDataEventListener() {
+        });
         peerGroup.startBlockChainDownloadFromPeer(peerGroup.getConnectedPeers().iterator().next());
         GetBlocksMessage getblocks = (GetBlocksMessage) outbound(p1);
         assertEquals(Sha256Hash.ZERO_HASH, getblocks.getStopHash());
@@ -335,7 +350,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
         inv.addBlock(b1);
         inv.addBlock(b2);
         inv.addBlock(b3);
-        
+
         inbound(p1, inv);
         assertTrue(outbound(p1) instanceof GetDataMessage);
         // We hand back the first block.
@@ -760,8 +775,7 @@ public class PeerGroupTest extends TestWithPeerGroup {
         ServerSocket local = null;
         try {
             local = new ServerSocket(UNITTEST.getPort(), 100, InetAddress.getLoopbackAddress());
-        }
-        catch(BindException e) { // Port already in use, skipping this test.
+        } catch (BindException e) { // Port already in use, skipping this test.
             return;
         }
 

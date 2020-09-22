@@ -1,19 +1,15 @@
 package org.bitcoinj.net;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 public class SlpDbProcessor {
-    private String[] slpDbInstances = new String[] {"slpdb.fountainhead.cash", "slpserve.imaginary.cash"};
+    private String[] slpDbInstances = new String[]{"slpdb.fountainhead.cash", "slpserve.imaginary.cash"};
     private String slpDbEndpoint = "/q/";
 
     public SlpDbProcessor() {
@@ -33,7 +29,7 @@ public class SlpDbProcessor {
         int tries = 12;
         int backOff = 1000;
         JSONObject tokenObj = null;
-        for(int x = tries; x > 0; x--) {
+        for (int x = tries; x > 0; x--) {
             int randServer = new Random().nextInt(slpDbInstances.length);
             String slpDbServer = slpDbInstances[randServer];
 
@@ -42,7 +38,7 @@ public class SlpDbProcessor {
                 String jsonText = readData(rd);
                 JSONArray tokenArray = new JSONObject(jsonText).getJSONArray("t");
 
-                if(tokenArray.length() > 0) {
+                if (tokenArray.length() > 0) {
                     tokenObj = tokenArray.getJSONObject(0);
                     break;
                 }
@@ -65,7 +61,7 @@ public class SlpDbProcessor {
         int tries = 12;
         int backOff = 1000;
         //while(!valid && tries > 0) {
-        for(int x = tries; x > 0; x--) {
+        for (int x = tries; x > 0; x--) {
             int randServer = new Random().nextInt(slpDbInstances.length);
             String slpDbServer = slpDbInstances[randServer];
             try (InputStream is = new URL("https://" + slpDbServer + slpDbEndpoint + base64Query).openStream()) {

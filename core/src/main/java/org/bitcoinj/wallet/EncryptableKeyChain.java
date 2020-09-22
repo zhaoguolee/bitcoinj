@@ -60,9 +60,12 @@ public interface EncryptableKeyChain extends KeyChain {
     EncryptableKeyChain toDecrypted(KeyParameter aesKey);
 
     boolean checkPassword(CharSequence password);
+
     boolean checkAESKey(KeyParameter aesKey);
 
-    /** Returns the key crypter used by this key chain, or null if it's not encrypted. */
+    /**
+     * Returns the key crypter used by this key chain, or null if it's not encrypted.
+     */
     @Nullable
     KeyCrypter getKeyCrypter();
 }

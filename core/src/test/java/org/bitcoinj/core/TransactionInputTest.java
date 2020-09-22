@@ -16,21 +16,19 @@
 
 package org.bitcoinj.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import java.util.List;
-
+import com.google.common.collect.Lists;
 import org.bitcoinj.params.UnitTestParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.testing.FakeTxBuilder;
-import org.bitcoinj.wallet.AllowUnconfirmedCoinSelector;
 import org.bitcoinj.wallet.SendRequest;
 import org.bitcoinj.wallet.Wallet;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class TransactionInputTest {
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
@@ -62,7 +60,7 @@ public class TransactionInputTest {
     public void testUTXOWalletDisconnect() throws Exception {
         Wallet w = Wallet.createDeterministic(new Context(UNITTEST), Script.ScriptType.P2PKH);
         Address a = w.currentReceiveAddress();
-        final UTXO utxo = new UTXO(Sha256Hash.of(new byte[] { 1, 2, 3 }), 1, Coin.COIN, 0, false,
+        final UTXO utxo = new UTXO(Sha256Hash.of(new byte[]{1, 2, 3}), 1, Coin.COIN, 0, false,
                 ScriptBuilder.createOutputScript(a));
         w.setUTXOProvider(new UTXOProvider() {
             @Override

@@ -8,7 +8,6 @@ import org.bitcoinj.script.ScriptPattern;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,7 +45,7 @@ public class SlpOpReturn {
         this.tx = tx;
         opReturn = tx.getOutput(opReturnLocation).getScriptPubKey();
 
-        if(ScriptPattern.isOpReturn(opReturn)) {
+        if (ScriptPattern.isOpReturn(opReturn)) {
             this.setSlpTxType(opReturn);
             this.setTokenId(opReturn);
             this.collectSlpUtxos(opReturn);
@@ -58,11 +57,11 @@ public class SlpOpReturn {
 
     private void setTokenId(Script opReturn) {
         if (ScriptPattern.isOpReturn(opReturn)) {
-            if(this.getSlpTxType() == SlpTxType.SEND || this.getSlpTxType() == SlpTxType.MINT) {
+            if (this.getSlpTxType() == SlpTxType.SEND || this.getSlpTxType() == SlpTxType.MINT) {
                 ScriptChunk tokenIdChunk = opReturn.getChunks().get(tokenIdChunkLocation);
                 assert tokenIdChunk.data != null;
                 this.tokenId = new String(Hex.encode(tokenIdChunk.data));
-            } else if(this.getSlpTxType() == SlpTxType.GENESIS) {
+            } else if (this.getSlpTxType() == SlpTxType.GENESIS) {
                 this.tokenId = this.tx.getTxId().toString();
             }
         }
@@ -76,7 +75,7 @@ public class SlpOpReturn {
             ScriptChunk protocolChunk = opReturn.getChunks().get(protocolChunkLocation);
             if (protocolChunk != null && protocolChunk.data != null) {
                 String protocolId = new String(Hex.encode(protocolChunk.data), StandardCharsets.UTF_8);
-                if(protocolId.equals(slpProtocolId)) {
+                if (protocolId.equals(slpProtocolId)) {
                     ScriptChunk tokenTypeChunk = opReturn.getChunks().get(slpTokenTypeChunkLocation);
                     if (tokenTypeChunk != null && tokenTypeChunk.data != null) {
                         String tokenType = new String(Hex.encode(tokenTypeChunk.data), StandardCharsets.UTF_8);
@@ -98,7 +97,7 @@ public class SlpOpReturn {
                     ScriptChunk slpTxTypeChunk = opReturn.getChunks().get(slpTxTypeChunkLocation);
                     if (slpTxTypeChunk != null && slpTxTypeChunk.data != null) {
                         String txType = new String(Hex.encode(slpTxTypeChunk.data), StandardCharsets.UTF_8);
-                        switch(txType) {
+                        switch (txType) {
                             case genesisTxTypeId:
                                 this.slpTxType = SlpTxType.GENESIS;
                                 break;
@@ -117,7 +116,7 @@ public class SlpOpReturn {
 
     private void collectSlpUtxos(Script opReturn) {
         int chunkOffset = 0;
-        switch(this.slpTxType) {
+        switch (this.slpTxType) {
             case GENESIS:
                 chunkOffset = 10;
                 break;
@@ -134,15 +133,15 @@ public class SlpOpReturn {
 
     private void findMintingBaton(Script opReturn) {
         byte[] mintingBatonVoutData = null;
-        if(this.getSlpTxType() == SlpTxType.GENESIS) {
+        if (this.getSlpTxType() == SlpTxType.GENESIS) {
             mintingBatonVoutData = opReturn.getChunks().get(mintBatonVoutGenesisChunkLocation).data;
-        } else if(this.getSlpTxType() == SlpTxType.MINT) {
+        } else if (this.getSlpTxType() == SlpTxType.MINT) {
             mintingBatonVoutData = opReturn.getChunks().get(mintBatonVoutMintChunkLocation).data;
         }
 
-        if(mintingBatonVoutData != null) {
+        if (mintingBatonVoutData != null) {
             String voutHex = new String(Hex.encode(mintingBatonVoutData), StandardCharsets.UTF_8);
-            if(!voutHex.equals("")) {
+            if (!voutHex.equals("")) {
                 int vout = Integer.parseInt(voutHex, 16);
                 this.hasMintingBaton = true;
                 this.mintingBatonUtxo = this.getTx().getOutput(vout);
@@ -153,7 +152,7 @@ public class SlpOpReturn {
 
     public long getRawAmountOfUtxo(int slpUtxoIndex) {
         int chunkOffset = 0;
-        switch(this.slpTxType) {
+        switch (this.slpTxType) {
             case GENESIS:
                 chunkOffset = 10;
                 break;

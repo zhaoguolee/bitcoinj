@@ -16,14 +16,16 @@
 
 package org.bitcoinj.testing;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.utils.Threading;
-import org.bitcoinj.wallet.Wallet;
-
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionBroadcast;
+import org.bitcoinj.core.TransactionBroadcaster;
+import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.Wallet;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
@@ -47,7 +49,9 @@ public class MockTransactionBroadcaster implements TransactionBroadcaster {
             this.future = future;
         }
 
-        /** Tells the broadcasting code that the broadcast was a success, just does future.set(tx) */
+        /**
+         * Tells the broadcasting code that the broadcast was a success, just does future.set(tx)
+         */
         public void succeed() {
             future.set(tx);
         }
@@ -55,7 +59,9 @@ public class MockTransactionBroadcaster implements TransactionBroadcaster {
 
     private final LinkedBlockingQueue<TxFuturePair> broadcasts = new LinkedBlockingQueue<>();
 
-    /** Sets this mock broadcaster on the given wallet. */
+    /**
+     * Sets this mock broadcaster on the given wallet.
+     */
     public MockTransactionBroadcaster(Wallet wallet) {
         // This code achieves nothing directly, but it sets up the broadcaster/peergroup > wallet lock ordering
         // so inversions can be caught.

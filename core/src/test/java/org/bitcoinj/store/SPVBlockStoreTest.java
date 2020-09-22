@@ -17,21 +17,18 @@
 
 package org.bitcoinj.store;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
+import com.google.common.base.Stopwatch;
+import org.bitcoinj.core.*;
+import org.bitcoinj.params.UnitTestParams;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.params.UnitTestParams;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.base.Stopwatch;
+import static org.junit.Assert.*;
 
 public class SPVBlockStoreTest {
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
@@ -131,7 +128,7 @@ public class SPVBlockStoreTest {
         for (int i = 0; i < ITERATIONS; i++) {
             // Using i as the nonce so that the block hashes are different.
             Block block = new Block(UNITTEST, 0, Sha256Hash.ZERO_HASH, Sha256Hash.ZERO_HASH, 0, 0, i,
-                    Collections.<Transaction> emptyList());
+                    Collections.<Transaction>emptyList());
             StoredBlock b = new StoredBlock(block, BigInteger.ZERO, i);
             store.put(b);
             store.setChainHead(b);

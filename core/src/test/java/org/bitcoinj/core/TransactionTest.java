@@ -17,22 +17,27 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.core.TransactionConfidence.*;
-import org.bitcoinj.crypto.TransactionSignature;
-import org.bitcoinj.params.*;
-import org.bitcoinj.script.*;
-import org.bitcoinj.testing.*;
-import org.easymock.*;
-import org.junit.*;
+import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
+import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.params.UnitTestParams;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
+import org.bitcoinj.script.ScriptError;
+import org.bitcoinj.script.ScriptException;
+import org.bitcoinj.testing.FakeTxBuilder;
+import org.easymock.EasyMock;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.*;
-import static org.bitcoinj.core.Utils.HEX;
 
+import static org.bitcoinj.core.Utils.HEX;
 import static org.bitcoinj.core.Utils.uint32ToByteStreamLE;
-import static org.easymock.EasyMock.*;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.*;
 
 /**
@@ -68,7 +73,7 @@ public class TransactionTest {
 
     @Test(expected = VerificationException.LargerThanMaxBlockSize.class)
     public void tooHuge() throws Exception {
-        tx.getInput(0).setScriptBytes(new byte[Block.MAX_BLOCK_SIZE]);
+        tx.getInput(0).setScriptBytes(new byte[UNITTEST.getMaxBlockSize()]);
         tx.verify();
     }
 
@@ -150,7 +155,9 @@ public class TransactionTest {
 
     private int getCombinedLength(List<? extends Message> list) {
         int sumOfAllMsgSizes = 0;
-        for (Message m: list) { sumOfAllMsgSizes += m.getMessageSize() + 1; }
+        for (Message m : list) {
+            sumOfAllMsgSizes += m.getMessageSize() + 1;
+        }
         return sumOfAllMsgSizes;
     }
 
@@ -286,7 +293,7 @@ public class TransactionTest {
     public void testCoinbaseHeightCheckWithDamagedScript() throws VerificationException {
         // Coinbase transaction from block 224,430
         final byte[] transactionBytes = HEX.decode(
-            "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff3b03ae6c0300044bd7031a0400000000522cfabe6d6d00000000000000b7b8bf0100000068692066726f6d20706f6f6c7365727665726aac1eeeed88ffffffff01e0587597000000001976a91421c0d001728b3feaf115515b7c135e779e9f442f88ac00000000");
+                "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff3b03ae6c0300044bd7031a0400000000522cfabe6d6d00000000000000b7b8bf0100000068692066726f6d20706f6f6c7365727665726aac1eeeed88ffffffff01e0587597000000001976a91421c0d001728b3feaf115515b7c135e779e9f442f88ac00000000");
         final int height = 224430;
         final Transaction transaction = UNITTEST.getDefaultSerializer().makeTransaction(transactionBytes);
         transaction.checkCoinBaseHeight(height);
@@ -309,7 +316,7 @@ public class TransactionTest {
     public void testHashForSignatureThreadSafety() {
         Block genesis = UNITTEST.getGenesisBlock();
         Block block1 = genesis.createNextBlock(Address.fromKey(UNITTEST, new ECKey()),
-                    genesis.getTransactions().get(0).getOutput(0).getOutPointFor());
+                genesis.getTransactions().get(0).getOutput(0).getOutPointFor());
 
         final Transaction tx = block1.getTransactions().get(1);
         final Sha256Hash txHash = tx.getTxId();
@@ -322,7 +329,7 @@ public class TransactionTest {
         for (int i = 0; i < 100; i++) {
             // ensure the transaction object itself was not modified; if it was, the hash will change
             assertEquals(txHash, tx.getTxId());
-            new Thread(){
+            new Thread() {
                 public void run() {
                     assertEquals(
                             txNormalizedHash,

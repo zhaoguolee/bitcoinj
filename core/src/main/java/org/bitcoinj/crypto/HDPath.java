@@ -19,12 +19,7 @@ package org.bitcoinj.crypto;
 import com.google.common.base.Splitter;
 
 import javax.annotation.Nonnull;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * HD Key derivation path. {@code HDPath} can be used to represent a full path or a relative path.
@@ -53,7 +48,7 @@ public class HDPath extends AbstractList<ChildNumber> {
      * Constructs a path for a public or private key.
      *
      * @param hasPrivateKey Whether it is a path to a private key or not
-     * @param list List of children in the path
+     * @param list          List of children in the path
      */
     public HDPath(boolean hasPrivateKey, List<ChildNumber> list) {
         this.hasPrivateKey = hasPrivateKey;
@@ -73,7 +68,7 @@ public class HDPath extends AbstractList<ChildNumber> {
      * Returns a path for a public or private key.
      *
      * @param hasPrivateKey Whether it is a path to a private key or not
-     * @param list List of children in the path
+     * @param list          List of children in the path
      */
     private static HDPath of(boolean hasPrivateKey, List<ChildNumber> list) {
         return new HDPath(hasPrivateKey, list);
@@ -149,9 +144,9 @@ public class HDPath extends AbstractList<ChildNumber> {
 
     /**
      * Create an HDPath from a path string. The path string is a human-friendly representation of the deterministic path. For example:
-     *
+     * <p>
      * "44H / 0H / 0H / 1 / 1"
-     *
+     * <p>
      * Where a letter "H" means hardened key. Spaces are ignored.
      */
     public static HDPath parsePath(@Nonnull String path) {
@@ -189,7 +184,7 @@ public class HDPath extends AbstractList<ChildNumber> {
     /**
      * Extend the path by appending additional ChildNumber objects.
      *
-     * @param child1 the first child to append
+     * @param child1   the first child to append
      * @param children zero or more additional children to append
      * @return A new immutable path
      */

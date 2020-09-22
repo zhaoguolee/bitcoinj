@@ -16,22 +16,18 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.params.*;
-import org.bitcoinj.testing.*;
-import org.bitcoinj.utils.*;
-import org.junit.*;
+import org.bitcoinj.params.UnitTestParams;
+import org.bitcoinj.testing.FakeTxBuilder;
+import org.bitcoinj.utils.BriefLogFormatter;
+import org.bitcoinj.utils.Threading;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.net.*;
+import java.net.InetAddress;
 
 import static org.bitcoinj.core.Coin.COIN;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.*;
 
 public class TxConfidenceTableTest {
     private static final NetworkParameters UNITTEST = UnitTestParams.get();
@@ -52,9 +48,9 @@ public class TxConfidenceTableTest {
         tx2 = FakeTxBuilder.createFakeTxWithChangeAddress(UNITTEST, COIN, to, change);
         assertEquals(tx1.getTxId(), tx2.getTxId());
 
-        address1 = new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[] { 127, 0, 0, 1 }));
-        address2 = new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[] { 127, 0, 0, 2 }));
-        address3 = new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[] { 127, 0, 0, 3 }));
+        address1 = new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{127, 0, 0, 1}));
+        address2 = new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{127, 0, 0, 2}));
+        address3 = new PeerAddress(UNITTEST, InetAddress.getByAddress(new byte[]{127, 0, 0, 3}));
     }
 
     @Test

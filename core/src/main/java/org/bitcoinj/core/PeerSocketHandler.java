@@ -16,15 +16,11 @@
 
 package org.bitcoinj.core;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.bitcoinj.net.AbstractTimeoutHandler;
-import org.bitcoinj.net.MessageWriteTarget;
-import org.bitcoinj.net.NioClient;
-import org.bitcoinj.net.NioClientManager;
-import org.bitcoinj.net.StreamConnection;
+import org.bitcoinj.net.*;
 import org.bitcoinj.utils.Threading;
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +48,8 @@ public abstract class PeerSocketHandler extends AbstractTimeoutHandler implement
     // If we close() before we know our writeTarget, set this to true to call writeTarget.closeConnection() right away.
     private boolean closePending = false;
     // writeTarget will be thread-safe, and may call into PeerGroup, which calls us, so we should call it unlocked
-    @VisibleForTesting protected MessageWriteTarget writeTarget = null;
+    @VisibleForTesting
+    protected MessageWriteTarget writeTarget = null;
 
     // The ByteBuffers passed to us from the writeTarget are static in size, and usually smaller than some messages we
     // will receive. For SPV clients, this should be rare (ie we're mostly dealing with small transactions), but for
@@ -225,7 +222,9 @@ public abstract class PeerSocketHandler extends AbstractTimeoutHandler implement
         return peerAddress;
     }
 
-    /** Catch any exceptions, logging them and then closing the channel. */
+    /**
+     * Catch any exceptions, logging them and then closing the channel.
+     */
     private void exceptionCaught(Exception e) {
         PeerAddress addr = getAddress();
         String s = addr == null ? "?" : addr.toString();

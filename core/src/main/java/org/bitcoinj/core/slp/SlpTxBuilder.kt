@@ -2,8 +2,8 @@ package org.bitcoinj.core.slp
 
 import io.reactivex.Single
 import org.bitcoinj.core.*
-import org.bitcoinj.kits.SlpBIP47AppKit
 import org.bitcoinj.kits.SlpAppKit
+import org.bitcoinj.kits.SlpBIP47AppKit
 import org.bitcoinj.protocols.payments.slp.SlpPaymentSession
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptBuilder
@@ -25,7 +25,7 @@ class SlpTxBuilder {
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
-                        if(allowUnconfirmed)
+                        if (allowUnconfirmed)
                             req.allowUnconfirmed()
 
                         req.aesKey = aesKey
@@ -68,7 +68,7 @@ class SlpTxBuilder {
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
-                        if(allowUnconfirmed)
+                        if (allowUnconfirmed)
                             req.allowUnconfirmed()
 
                         req.aesKey = aesKey
@@ -110,7 +110,7 @@ class SlpTxBuilder {
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
-                        if(allowUnconfirmed)
+                        if (allowUnconfirmed)
                             req.allowUnconfirmed()
 
                         req.aesKey = aesKey
@@ -128,9 +128,9 @@ class SlpTxBuilder {
                                 .addChunk(ScriptChunk(type.size, type))
                                 .data("SEND".toByteArray())
                                 .data(Hex.decode(tokenId))
-                                for(x in rawTokens.indices) {
-                                    scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(rawTokens[x]).array())
-                                }
+                        for (x in rawTokens.indices) {
+                            scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(rawTokens[x]).array())
+                        }
 
                         if (it.quantities.size == 2) {
                             scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(it.quantities[1].toLong()).array())
@@ -140,7 +140,7 @@ class SlpTxBuilder {
 
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
-                        for(x in addresses.indices) {
+                        for (x in addresses.indices) {
                             val addrTo = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.wallet().params, addresses[x]).toCash()
                             req.tx.addOutput(slpAppKit.wallet().params.minNonDustOutput, addrTo)
                         }
@@ -170,7 +170,7 @@ class SlpTxBuilder {
                         // Add OP RETURN and receiver output
                         val req = SendRequest.createSlpTransaction(slpAppKit.wallet().params)
 
-                        if(allowUnconfirmed)
+                        if (allowUnconfirmed)
                             req.allowUnconfirmed()
 
                         req.aesKey = aesKey
@@ -188,7 +188,7 @@ class SlpTxBuilder {
                                 .addChunk(ScriptChunk(type.size, type))
                                 .data("SEND".toByteArray())
                                 .data(Hex.decode(tokenId))
-                        for(x in rawTokens.indices) {
+                        for (x in rawTokens.indices) {
                             scriptBuilder = scriptBuilder.data(ByteBuffer.allocate(PUSHDATA_BYTES).putLong(rawTokens[x]).array())
                         }
 
@@ -200,7 +200,7 @@ class SlpTxBuilder {
 
                         req.tx.addOutput(Coin.ZERO, opReturnScript)
 
-                        for(x in addresses.indices) {
+                        for (x in addresses.indices) {
                             val addrTo = SlpAddressFactory.create().getFromFormattedAddress(slpAppKit.params(), addresses[x]).toCash()
                             req.tx.addOutput(slpAppKit.params().minNonDustOutput, addrTo)
                         }
@@ -229,9 +229,10 @@ class SlpTxBuilder {
         const val DUST_LIMIT: Long = 546
 
         fun sendTokenUtxoSelection(tokenId: String, numTokens: Double, slpAppKit: SlpAppKit): Single<SendTokenUtxoSelection> {
-            return Single.fromCallable { // Wrap for now to protect against blocking non reactive calls
+            return Single.fromCallable {
+                // Wrap for now to protect against blocking non reactive calls
                 val tokenDetails: SlpToken = slpAppKit.getSlpToken(tokenId)
-                val sendTokensRaw =  toRawAmount(numTokens.toBigDecimal(), tokenDetails)
+                val sendTokensRaw = toRawAmount(numTokens.toBigDecimal(), tokenDetails)
                 var sendSatoshi = DUST_LIMIT // At least one dust limit output to the token receiver
 
                 val utxos = slpAppKit.wallet().utxos
@@ -292,9 +293,10 @@ class SlpTxBuilder {
         }
 
         fun sendTokenUtxoSelection(tokenId: String, numTokens: Double, slpAppKit: SlpBIP47AppKit): Single<SendTokenUtxoSelection> {
-            return Single.fromCallable { // Wrap for now to protect against blocking non reactive calls
+            return Single.fromCallable {
+                // Wrap for now to protect against blocking non reactive calls
                 val tokenDetails: SlpToken = slpAppKit.getSlpToken(tokenId)
-                val sendTokensRaw =  toRawAmount(numTokens.toBigDecimal(), tokenDetails)
+                val sendTokensRaw = toRawAmount(numTokens.toBigDecimal(), tokenDetails)
                 var sendSatoshi = DUST_LIMIT // At least one dust limit output to the token receiver
 
                 val utxos = slpAppKit.wallet().utxos
@@ -355,16 +357,17 @@ class SlpTxBuilder {
         }
 
         fun sendTokenUtxoSelectionBip70(tokenId: String, tokensRaw: List<Long>, slpAppKit: SlpAppKit): Single<SendTokenUtxoSelection> {
-            return Single.fromCallable { // Wrap for now to protect against blocking non reactive calls
+            return Single.fromCallable {
+                // Wrap for now to protect against blocking non reactive calls
                 val tokenDetails: SlpToken = slpAppKit.getSlpToken(tokenId)
                 var numTokens: Long = 0
                 var sendSatoshi: Long = 0
-                for(x in tokensRaw.indices) {
+                for (x in tokensRaw.indices) {
                     numTokens += tokensRaw[x]
                     sendSatoshi += DUST_LIMIT
 
                 }
-                val sendTokensRaw =  numTokens.toULong()
+                val sendTokensRaw = numTokens.toULong()
                 val utxos = slpAppKit.wallet().utxos
 
                 // First select enough token utxo's and just take what we get in terms of BCH
@@ -423,16 +426,17 @@ class SlpTxBuilder {
         }
 
         fun sendTokenUtxoSelectionBip70(tokenId: String, tokensRaw: List<Long>, slpAppKit: SlpBIP47AppKit): Single<SendTokenUtxoSelection> {
-            return Single.fromCallable { // Wrap for now to protect against blocking non reactive calls
+            return Single.fromCallable {
+                // Wrap for now to protect against blocking non reactive calls
                 val tokenDetails: SlpToken = slpAppKit.getSlpToken(tokenId)
                 var numTokens: Long = 0
                 var sendSatoshi: Long = 0
-                for(x in tokensRaw.indices) {
+                for (x in tokensRaw.indices) {
                     numTokens += tokensRaw[x]
                     sendSatoshi += DUST_LIMIT
 
                 }
-                val sendTokensRaw =  numTokens.toULong()
+                val sendTokensRaw = numTokens.toULong()
                 val utxos = slpAppKit.wallet().utxos
 
                 // First select enough token utxo's and just take what we get in terms of BCH
@@ -492,9 +496,13 @@ class SlpTxBuilder {
 
         fun toRawAmount(amount: BigDecimal, slpToken: SlpToken): ULong {
             var amt = amount
-            if (amt > maxRawAmount) { throw IllegalArgumentException("amount larger than 8 unsigned bytes") }
-            else if(slpToken.decimals == 0) { amt = amount.toInt().toBigDecimal() }
-            else if (amt.scale() - 1 > slpToken.decimals) { throw IllegalArgumentException("${slpToken.ticker} supports maximum ${slpToken.decimals} decimals but amount is $amount") }
+            if (amt > maxRawAmount) {
+                throw IllegalArgumentException("amount larger than 8 unsigned bytes")
+            } else if (slpToken.decimals == 0) {
+                amt = amount.toInt().toBigDecimal()
+            } else if (amt.scale() - 1 > slpToken.decimals) {
+                throw IllegalArgumentException("${slpToken.ticker} supports maximum ${slpToken.decimals} decimals but amount is $amount")
+            }
             return amt.scaleByPowerOfTen(slpToken.decimals).toLong().toULong()
         }
 

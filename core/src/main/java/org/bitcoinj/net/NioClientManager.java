@@ -17,17 +17,24 @@
 package org.bitcoinj.net;
 
 import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.*;
-import org.bitcoinj.utils.*;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import org.bitcoinj.utils.ContextPropagatingThreadFactory;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketAddress;
-import java.nio.channels.*;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A class which manages a set of client connections. Uses Java NIO to select network events and processes them in a
@@ -44,8 +51,13 @@ public class NioClientManager extends AbstractExecutionThreadService implements 
         SocketAddress address;
         SettableFuture<SocketAddress> future = SettableFuture.create();
 
-        PendingConnect(SocketChannel sc, StreamConnection connection, SocketAddress address) { this.sc = sc; this.connection = connection; this.address = address; }
+        PendingConnect(SocketChannel sc, StreamConnection connection, SocketAddress address) {
+            this.sc = sc;
+            this.connection = connection;
+            this.address = address;
+        }
     }
+
     final Queue<PendingConnect> newConnectionChannels = new LinkedBlockingQueue<>();
 
     // Added to/removed from by the individual ConnectionHandler's, thus must by synchronized on its own.

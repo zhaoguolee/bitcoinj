@@ -1,6 +1,6 @@
 /*
  * Copyright by the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +17,13 @@
 package org.bitcoinj.store;
 
 import org.bitcoinj.core.*;
-import org.fusesource.leveldbjni.*;
+import org.fusesource.leveldbjni.JniDBFactory;
 import org.iq80.leveldb.*;
 
-import javax.annotation.*;
-import java.io.*;
-import java.nio.*;
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * An SPV block store that writes every header it sees to a <a href="https://github.com/fusesource/leveldbjni">LevelDB</a>.
@@ -38,12 +39,16 @@ public class LevelDBBlockStore implements BlockStore {
     private final ByteBuffer buffer = ByteBuffer.allocate(StoredBlock.COMPACT_SERIALIZED_SIZE);
     private final File path;
 
-    /** Creates a LevelDB SPV block store using the JNI/C++ version of LevelDB. */
+    /**
+     * Creates a LevelDB SPV block store using the JNI/C++ version of LevelDB.
+     */
     public LevelDBBlockStore(Context context, File directory) throws BlockStoreException {
         this(context, directory, JniDBFactory.factory);
     }
 
-    /** Creates a LevelDB SPV block store using the given factory, which is useful if you want a pure Java version. */
+    /**
+     * Creates a LevelDB SPV block store using the given factory, which is useful if you want a pure Java version.
+     */
     public LevelDBBlockStore(Context context, File directory, DBFactory dbFactory) throws BlockStoreException {
         this.context = context;
         this.path = directory;
@@ -83,7 +88,8 @@ public class LevelDBBlockStore implements BlockStore {
         db.put(block.getHeader().getHash().getBytes(), buffer.array());
     }
 
-    @Override @Nullable
+    @Override
+    @Nullable
     public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
         byte[] bits = db.get(hash.getBytes());
         if (bits == null)
@@ -110,7 +116,9 @@ public class LevelDBBlockStore implements BlockStore {
         }
     }
 
-    /** Erases the contents of the database (but NOT the underlying files themselves) and then reinitialises with the genesis block. */
+    /**
+     * Erases the contents of the database (but NOT the underlying files themselves) and then reinitialises with the genesis block.
+     */
     public synchronized void reset() throws BlockStoreException {
         try {
             WriteBatch batch = db.createWriteBatch();

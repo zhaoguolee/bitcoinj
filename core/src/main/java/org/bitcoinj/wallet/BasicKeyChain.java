@@ -17,6 +17,8 @@
 
 package org.bitcoinj.wallet;
 
+import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
 import org.bitcoinj.core.BloomFilter;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -24,9 +26,6 @@ import org.bitcoinj.crypto.*;
 import org.bitcoinj.utils.ListenerRegistration;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.listeners.KeyChainEventListener;
-
-import com.google.common.collect.ImmutableList;
-import com.google.protobuf.ByteString;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 import javax.annotation.Nullable;
@@ -48,7 +47,8 @@ public class BasicKeyChain implements EncryptableKeyChain {
     // Maps used to let us quickly look up a key given data we find in transactions or the block chain.
     private final LinkedHashMap<ByteString, ECKey> hashToKeys;
     private final LinkedHashMap<ByteString, ECKey> pubkeyToKeys;
-    @Nullable private final KeyCrypter keyCrypter;
+    @Nullable
+    private final KeyCrypter keyCrypter;
     private boolean isWatching;
 
     private final CopyOnWriteArrayList<ListenerRegistration<KeyChainEventListener>> listeners;
@@ -64,7 +64,9 @@ public class BasicKeyChain implements EncryptableKeyChain {
         listeners = new CopyOnWriteArrayList<>();
     }
 
-    /** Returns the {@link KeyCrypter} in use or null if the key chain is not encrypted. */
+    /**
+     * Returns the {@link KeyCrypter} in use or null if the key chain is not encrypted.
+     */
     @Override
     @Nullable
     public KeyCrypter getKeyCrypter() {
@@ -122,7 +124,9 @@ public class BasicKeyChain implements EncryptableKeyChain {
         }
     }
 
-    /** Returns a copy of the list of keys that this chain is managing. */
+    /**
+     * Returns a copy of the list of keys that this chain is managing.
+     */
     public List<ECKey> getKeys() {
         lock.lock();
         try {
@@ -232,7 +236,9 @@ public class BasicKeyChain implements EncryptableKeyChain {
         return pubkeyToKeys.size();
     }
 
-    /** Whether this basic key chain is empty, full of regular (usable for signing) keys, or full of watching keys. */
+    /**
+     * Whether this basic key chain is empty, full of regular (usable for signing) keys, or full of watching keys.
+     */
     public enum State {
         EMPTY,
         WATCHING,
@@ -257,6 +263,7 @@ public class BasicKeyChain implements EncryptableKeyChain {
     /**
      * Removes the given key from the keychain. Be very careful with this - losing a private key <b>destroys the
      * money associated with it</b>.
+     *
      * @return Whether the key was removed or not.
      */
     public boolean removeKey(ECKey key) {
@@ -312,7 +319,8 @@ public class BasicKeyChain implements EncryptableKeyChain {
         return result;
     }
 
-    /*package*/ static Protos.Key.Builder serializeEncryptableItem(EncryptableItem item) {
+    /*package*/
+    static Protos.Key.Builder serializeEncryptableItem(EncryptableItem item) {
         Protos.Key.Builder proto = Protos.Key.newBuilder();
         proto.setCreationTimestamp(item.getCreationTimeSeconds() * 1000);
         if (item.isEncrypted() && item.getEncryptedData() != null) {
@@ -350,8 +358,9 @@ public class BasicKeyChain implements EncryptableKeyChain {
     /**
      * Returns a new BasicKeyChain that contains all basic, ORIGINAL type keys and also any encrypted keys extracted
      * from the list. Unrecognised key types are ignored.
+     *
      * @throws org.bitcoinj.wallet.UnreadableWalletException.BadPassword if the password doesn't seem to match
-     * @throws org.bitcoinj.wallet.UnreadableWalletException if the data structures are corrupted/inconsistent
+     * @throws org.bitcoinj.wallet.UnreadableWalletException             if the data structures are corrupted/inconsistent
      */
     public static BasicKeyChain fromProtobufEncrypted(List<Protos.Key> keys, KeyCrypter crypter) throws UnreadableWalletException {
         BasicKeyChain chain = new BasicKeyChain(checkNotNull(crypter));
@@ -453,8 +462,8 @@ public class BasicKeyChain implements EncryptableKeyChain {
      * {@link KeyCrypterScrypt}.
      *
      * @param keyCrypter The KeyCrypter that specifies how to encrypt/ decrypt a key
-     * @param aesKey AES key to use (normally created using KeyCrypter#deriveKey and cached as it is time consuming
-     *               to create from a password)
+     * @param aesKey     AES key to use (normally created using KeyCrypter#deriveKey and cached as it is time consuming
+     *                   to create from a password)
      * @throws KeyCrypterException Thrown if the wallet encryption fails. If so, the wallet state is unchanged.
      */
     @Override
@@ -508,6 +517,7 @@ public class BasicKeyChain implements EncryptableKeyChain {
 
     /**
      * Returns whether the given password is correct for this key chain.
+     *
      * @throws IllegalStateException if the chain is not encrypted at all.
      */
     @Override
@@ -584,7 +594,9 @@ public class BasicKeyChain implements EncryptableKeyChain {
     //
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /** Returns the first ECKey created after the given UNIX time, or null if there is none. */
+    /**
+     * Returns the first ECKey created after the given UNIX time, or null if there is none.
+     */
     @Nullable
     public ECKey findOldestKeyAfter(long timeSecs) {
         lock.lock();
@@ -603,7 +615,9 @@ public class BasicKeyChain implements EncryptableKeyChain {
         }
     }
 
-    /** Returns a list of all ECKeys created after the given UNIX time. */
+    /**
+     * Returns a list of all ECKeys created after the given UNIX time.
+     */
     public List<ECKey> findKeysBefore(long timeSecs) {
         lock.lock();
         try {

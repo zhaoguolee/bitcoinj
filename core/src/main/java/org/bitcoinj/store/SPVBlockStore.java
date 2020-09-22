@@ -17,16 +17,23 @@
 package org.bitcoinj.store;
 
 import org.bitcoinj.core.*;
-import org.bitcoinj.utils.*;
-import org.slf4j.*;
+import org.bitcoinj.utils.Threading;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.locks.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -41,7 +48,9 @@ public class SPVBlockStore implements BlockStore {
     private static final Logger log = LoggerFactory.getLogger(SPVBlockStore.class);
     protected final ReentrantLock lock = Threading.lock(SPVBlockStore.class);
 
-    /** The default number of headers that will be stored in the ring buffer. */
+    /**
+     * The default number of headers that will be stored in the ring buffer.
+     */
     public static final int DEFAULT_CAPACITY = 10000;
     public static final String HEADER_MAGIC = "SPVB";
 
@@ -82,6 +91,7 @@ public class SPVBlockStore implements BlockStore {
     /**
      * Creates and initializes an SPV block store that can hold {@link #DEFAULT_CAPACITY} block headers. Will create the
      * given file if it's missing. This operation will block on disk.
+     *
      * @param file file to use for the block store
      * @throws BlockStoreException if something goes wrong
      */
@@ -92,9 +102,10 @@ public class SPVBlockStore implements BlockStore {
     /**
      * Creates and initializes an SPV block store that can hold a given amount of blocks. Will create the given file if
      * it's missing. This operation will block on disk.
-     * @param file file to use for the block store
+     *
+     * @param file     file to use for the block store
      * @param capacity custom capacity in number of block headers
-     * @param grow wether or not to migrate an existing block store of different capacity
+     * @param grow     wether or not to migrate an existing block store of different capacity
      * @throws BlockStoreException if something goes wrong
      */
     public SPVBlockStore(NetworkParameters params, File file, int capacity, boolean grow) throws BlockStoreException {
@@ -159,7 +170,7 @@ public class SPVBlockStore implements BlockStore {
 
     private void initNewStore(NetworkParameters params) throws Exception {
         byte[] header;
-        header = HEADER_MAGIC.getBytes("US-ASCII");
+        header = HEADER_MAGIC.getBytes(StandardCharsets.US_ASCII);
         buffer.put(header);
         // Insert the genesis block.
         lock.lock();
@@ -174,7 +185,9 @@ public class SPVBlockStore implements BlockStore {
         setChainHead(storedGenesis);
     }
 
-    /** Returns the size in bytes of the file that is used to store the chain with the current parameters. */
+    /**
+     * Returns the size in bytes of the file that is used to store the chain with the current parameters.
+     */
     public static final int getFileSize(int capacity) {
         return RECORD_SIZE * capacity + FILE_PROLOGUE_BYTES /* extra kilobyte for stuff */;
     }
@@ -198,7 +211,9 @@ public class SPVBlockStore implements BlockStore {
             block.serializeCompact(buffer);
             setRingCursor(buffer, buffer.position());
             blockCache.put(hash, block);
-        } finally { lock.unlock(); }
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
@@ -242,7 +257,9 @@ public class SPVBlockStore implements BlockStore {
             return null;
         } catch (ProtocolException e) {
             throw new RuntimeException(e);  // Cannot happen.
-        } finally { lock.unlock(); }
+        } finally {
+            lock.unlock();
+        }
     }
 
     protected StoredBlock lastChainHead = null;
@@ -265,7 +282,9 @@ public class SPVBlockStore implements BlockStore {
                 lastChainHead = block;
             }
             return lastChainHead;
-        } finally { lock.unlock(); }
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
@@ -279,7 +298,9 @@ public class SPVBlockStore implements BlockStore {
             byte[] headHash = chainHead.getHeader().getHash().getBytes();
             buffer.position(8);
             buffer.put(headHash);
-        } finally { lock.unlock(); }
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
@@ -314,7 +335,9 @@ public class SPVBlockStore implements BlockStore {
     //   80 bytes of block header data
     protected static final int FILE_PROLOGUE_BYTES = 1024;
 
-    /** Returns the offset from the file start where the latest block should be written (end of prev block). */
+    /**
+     * Returns the offset from the file start where the latest block should be written (end of prev block).
+     */
     private int getRingCursor(ByteBuffer buffer) {
         int c = buffer.getInt(4);
         checkState(c >= FILE_PROLOGUE_BYTES, "Integer overflow");
@@ -336,11 +359,13 @@ public class SPVBlockStore implements BlockStore {
             buffer.position(0);
             long fileLength = randomAccessFile.length();
             for (int i = 0; i < fileLength; i++) {
-                buffer.put((byte)0);
+                buffer.put((byte) 0);
             }
             // Initialize store again
             buffer.position(0);
             initNewStore(params);
-        } finally { lock.unlock(); }
+        } finally {
+            lock.unlock();
+        }
     }
 }

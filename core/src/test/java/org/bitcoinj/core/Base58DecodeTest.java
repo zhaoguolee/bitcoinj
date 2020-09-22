@@ -51,7 +51,7 @@ public class Base58DecodeTest {
     @Test
     public void testDecode() {
         byte[] actualBytes = Base58.decode(input);
-        assertArrayEquals(input,  actualBytes, expected);
+        assertArrayEquals(input, actualBytes, expected);
     }
 
     @Test

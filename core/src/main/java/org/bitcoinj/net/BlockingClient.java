@@ -16,18 +16,24 @@
 
 package org.bitcoinj.net;
 
-import com.google.common.util.concurrent.*;
-import org.bitcoinj.core.*;
-import org.slf4j.*;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.Peer;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
-import javax.net.*;
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.util.*;
+import javax.annotation.Nullable;
+import javax.net.SocketFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Set;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * <p>Creates a simple connection to a server using a {@link StreamConnection} to process data.</p>
@@ -54,9 +60,9 @@ public class BlockingClient implements MessageWriteTarget {
      *
      * @param connectTimeoutMillis The connect timeout set on the connection (in milliseconds). 0 is interpreted as no
      *                             timeout.
-     * @param socketFactory An object that creates {@link Socket} objects on demand, which may be customised to control
-     *                      how this client connects to the internet. If not sure, use SocketFactory.getDefault()
-     * @param clientSet A set which this object will add itself to after initialization, and then remove itself from
+     * @param socketFactory        An object that creates {@link Socket} objects on demand, which may be customised to control
+     *                             how this client connects to the internet. If not sure, use SocketFactory.getDefault()
+     * @param clientSet            A set which this object will add itself to after initialization, and then remove itself from
      */
     public BlockingClient(final SocketAddress serverAddress, final StreamConnection connection,
                           final int connectTimeoutMillis, final SocketFactory socketFactory,
@@ -156,7 +162,9 @@ public class BlockingClient implements MessageWriteTarget {
         }
     }
 
-    /** Returns a future that completes once connection has occurred at the socket level or with an exception if failed to connect. */
+    /**
+     * Returns a future that completes once connection has occurred at the socket level or with an exception if failed to connect.
+     */
     public ListenableFuture<SocketAddress> getConnectFuture() {
         return connectFuture;
     }

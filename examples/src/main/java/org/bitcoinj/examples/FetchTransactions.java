@@ -17,12 +17,12 @@
 
 package org.bitcoinj.examples;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.bitcoinj.core.*;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.MemoryBlockStore;
 import org.bitcoinj.utils.BriefLogFormatter;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import java.net.InetAddress;
 import java.util.List;

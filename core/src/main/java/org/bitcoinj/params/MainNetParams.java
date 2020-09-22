@@ -21,12 +21,12 @@
 
 package org.bitcoinj.params;
 
-        import org.bitcoinj.core.Sha256Hash;
-        import org.bitcoinj.core.Utils;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Utils;
 
-        import java.math.BigInteger;
+import java.math.BigInteger;
 
-        import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Parameters for the main production network on which people trade goods and services.
@@ -43,7 +43,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         dumpedPrivateKeyHeader = 128;
         addressHeader = 0;
         p2shHeader = 5;
-        acceptableAddressCodes = new int[] { addressHeader, p2shHeader };
+        acceptableAddressCodes = new int[]{addressHeader, p2shHeader};
         port = 8333;
         packetMagic = 0xe3e1f3e8L;
         bip32HeaderP2PKHpub = 0x0488b21e; // The 4 byte header that serializes in base58 to "xpub".
@@ -75,7 +75,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         checkpoints.put(609136, Sha256Hash.wrap("000000000000000000b48bb207faac5ac655c313e41ac909322eaa694f5bc5b1")); //November 15, 2019
         checkpoints.put(635259, Sha256Hash.wrap("00000000000000000033dfef1fc2d6a5d5520b078c55193a9bf498c5b27530f7")); //May 15, 2020
 
-        dnsSeeds = new String[] {
+        dnsSeeds = new String[]{
                 "seed-bch.bitcoinforks.org",
                 "seed.bchd.cash",
                 "btccash-seeder.bitcoinunlimited.info"
@@ -98,9 +98,12 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         asertUpdateTime = 1605441600L;
         asertHalfLife = 2L * 24L * 60L * 60L;
         allowMinDifficultyBlocks = false;
+        maxBlockSize = 32 * 1000 * 1000;
+        maxBlockSigops = maxBlockSize / 50;
     }
 
     private static MainNetParams instance;
+
     public static synchronized MainNetParams get() {
         if (instance == null) {
             instance = new MainNetParams();

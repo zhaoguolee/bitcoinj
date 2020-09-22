@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Recalculation is slow because the fields are cumulative - to find the chainWork you have to iterate over every
  * block in the chain back to the genesis block, which involves lots of seeking/loading etc. So we just keep a
  * running total: it's a disk space vs cpu/io tradeoff.<p>
- *
+ * <p>
  * StoredBlocks are put inside a {@link BlockStore} which saves them to memory or disk.
  */
 public class StoredBlock {
@@ -50,9 +50,9 @@ public class StoredBlock {
     /**
      * Create a StoredBlock from a (header-only) {@link Block}, chain work value, and block height
      *
-     * @param header A Block object with only a header (no transactions should be included)
+     * @param header    A Block object with only a header (no transactions should be included)
      * @param chainWork Calculated chainWork for this block
-     * @param height block height for this block
+     * @param height    block height for this block
      */
     public StoredBlock(Block header, BigInteger chainWork, int height) {
         this.header = header;
@@ -83,7 +83,9 @@ public class StoredBlock {
         return height;
     }
 
-    /** Returns true if this objects chainWork is higher than the others. */
+    /**
+     * Returns true if this objects chainWork is higher than the others.
+     */
     public boolean moreWorkThan(StoredBlock other) {
         return chainWork.compareTo(other.chainWork) > 0;
     }
@@ -122,7 +124,9 @@ public class StoredBlock {
         return store.get(getHeader().getPrevBlockHash());
     }
 
-    /** Serializes the stored block to a custom packed format. Used by {@link CheckpointManager}. */
+    /**
+     * Serializes the stored block to a custom packed format. Used by {@link CheckpointManager}.
+     */
     public void serializeCompact(ByteBuffer buffer) {
         byte[] chainWorkBytes = getChainWork().toByteArray();
         checkState(chainWorkBytes.length <= CHAIN_WORK_BYTES, "Ran out of space to store chain work!");
@@ -138,7 +142,9 @@ public class StoredBlock {
         buffer.put(bytes, 0, Block.HEADER_SIZE);  // Trim the trailing 00 byte (zero transactions).
     }
 
-    /** De-serializes the stored block from a custom packed format. Used by {@link CheckpointManager}. */
+    /**
+     * De-serializes the stored block from a custom packed format. Used by {@link CheckpointManager}.
+     */
     public static StoredBlock deserializeCompact(NetworkParameters params, ByteBuffer buffer) throws ProtocolException {
         byte[] chainWorkBytes = new byte[StoredBlock.CHAIN_WORK_BYTES];
         buffer.get(chainWorkBytes);

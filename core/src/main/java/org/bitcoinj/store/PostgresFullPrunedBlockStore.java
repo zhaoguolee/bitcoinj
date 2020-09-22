@@ -81,23 +81,23 @@ public class PostgresFullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
             ")\n";
 
     // Some indexes to speed up inserts
-    private static final String CREATE_OUTPUTS_ADDRESS_MULTI_INDEX      = "CREATE INDEX openoutputs_hash_index_num_height_toaddress_idx ON openoutputs USING btree (hash, \"index\", height, toaddress)";
-    private static final String CREATE_OUTPUTS_TOADDRESS_INDEX          = "CREATE INDEX openoutputs_toaddress_idx ON openoutputs USING btree (toaddress)";
-    private static final String CREATE_OUTPUTS_ADDRESSTARGETABLE_INDEX  = "CREATE INDEX openoutputs_addresstargetable_idx ON openoutputs USING btree (addresstargetable)";
-    private static final String CREATE_OUTPUTS_HASH_INDEX               = "CREATE INDEX openoutputs_hash_idx ON openoutputs USING btree (hash)";
-    private static final String CREATE_UNDOABLE_TABLE_INDEX             = "CREATE INDEX undoableblocks_height_idx ON undoableBlocks USING btree (height)";
+    private static final String CREATE_OUTPUTS_ADDRESS_MULTI_INDEX = "CREATE INDEX openoutputs_hash_index_num_height_toaddress_idx ON openoutputs USING btree (hash, \"index\", height, toaddress)";
+    private static final String CREATE_OUTPUTS_TOADDRESS_INDEX = "CREATE INDEX openoutputs_toaddress_idx ON openoutputs USING btree (toaddress)";
+    private static final String CREATE_OUTPUTS_ADDRESSTARGETABLE_INDEX = "CREATE INDEX openoutputs_addresstargetable_idx ON openoutputs USING btree (addresstargetable)";
+    private static final String CREATE_OUTPUTS_HASH_INDEX = "CREATE INDEX openoutputs_hash_idx ON openoutputs USING btree (hash)";
+    private static final String CREATE_UNDOABLE_TABLE_INDEX = "CREATE INDEX undoableblocks_height_idx ON undoableBlocks USING btree (height)";
 
-    private static final String SELECT_UNDOABLEBLOCKS_EXISTS_SQL        = "select 1 from undoableblocks where hash = ?";
+    private static final String SELECT_UNDOABLEBLOCKS_EXISTS_SQL = "select 1 from undoableblocks where hash = ?";
 
     /**
      * Creates a new PostgresFullPrunedBlockStore.
      *
-     * @param params A copy of the NetworkParameters used
+     * @param params         A copy of the NetworkParameters used
      * @param fullStoreDepth The number of blocks of history stored in full (something like 1000 is pretty safe)
-     * @param hostname The hostname of the database to connect to
-     * @param dbName The database to connect to
-     * @param username The database username
-     * @param password The password to the database
+     * @param hostname       The hostname of the database to connect to
+     * @param dbName         The database to connect to
+     * @param username       The database username
+     * @param password       The password to the database
      * @throws BlockStoreException if the database fails to open for any reason
      */
     public PostgresFullPrunedBlockStore(NetworkParameters params, int fullStoreDepth, String hostname, String dbName,
@@ -112,13 +112,13 @@ public class PostgresFullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
      * <a href="http://www.postgres.org/docs/9.3/static/ddl-schemas.html">the postgres schema docs</a> for more on
      * schemas.</p>
      *
-     * @param params A copy of the NetworkParameters used.
+     * @param params         A copy of the NetworkParameters used.
      * @param fullStoreDepth The number of blocks of history stored in full (something like 1000 is pretty safe).
-     * @param hostname The hostname of the database to connect to.
-     * @param dbName The database to connect to.
-     * @param username The database username.
-     * @param password The password to the database.
-     * @param schemaName The name of the schema to put the tables in.  May be null if no schema is being used.
+     * @param hostname       The hostname of the database to connect to.
+     * @param dbName         The database to connect to.
+     * @param username       The database username.
+     * @param password       The password to the database.
+     * @param schemaName     The name of the schema to put the tables in.  May be null if no schema is being used.
      * @throws BlockStoreException If the database fails to open for any reason.
      */
     public PostgresFullPrunedBlockStore(NetworkParameters params, int fullStoreDepth, String hostname, String dbName,
@@ -156,7 +156,7 @@ public class PostgresFullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
     protected List<String> getCreateSchemeSQL() {
         List<String> sqlStatements = new ArrayList<>();
         sqlStatements.add("CREATE SCHEMA IF NOT EXISTS " + schemaName);
-        sqlStatements.add("set search_path to '" + schemaName +"'");
+        sqlStatements.add("set search_path to '" + schemaName + "'");
         return sqlStatements;
     }
 
@@ -200,8 +200,7 @@ public class PostgresFullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
             findS.setBytes(1, hashBytes);
 
             ResultSet rs = findS.executeQuery();
-            if (rs.next())
-            {
+            if (rs.next()) {
                 // We already have this output, update it.
                 findS.close();
 
@@ -233,7 +232,7 @@ public class PostgresFullPrunedBlockStore extends DatabaseFullPrunedBlockStore {
             s.setInt(2, height);
 
             if (log.isDebugEnabled())
-                log.debug("Inserting undoable block with hash: " + Utils.HEX.encode(hashBytes)  + " at height " + height);
+                log.debug("Inserting undoable block with hash: " + Utils.HEX.encode(hashBytes) + " at height " + height);
 
             if (transactions == null) {
                 s.setBytes(3, txOutChanges);

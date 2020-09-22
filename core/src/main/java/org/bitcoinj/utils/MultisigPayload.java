@@ -1,7 +1,6 @@
 package org.bitcoinj.utils;
 
 import org.bitcoinj.core.MultisigInput;
-import org.bitcoinj.crypto.MultisigSignature;
 
 import java.util.ArrayList;
 

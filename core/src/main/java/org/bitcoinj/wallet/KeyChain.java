@@ -35,7 +35,9 @@ import java.util.concurrent.Executor;
  * deterministically from a seed (and thus the notion of importing a key is meaningless).</p>
  */
 public interface KeyChain {
-    /** Returns true if the given key is in the chain. */
+    /**
+     * Returns true if the given key is in the chain.
+     */
     boolean hasKey(ECKey key);
 
     enum KeyPurpose {
@@ -45,25 +47,39 @@ public interface KeyChain {
         AUTHENTICATION
     }
 
-    /** Obtains a number of key/s intended for the given purpose. The chain may create new key/s, derive, or re-use an old one. */
+    /**
+     * Obtains a number of key/s intended for the given purpose. The chain may create new key/s, derive, or re-use an old one.
+     */
     List<? extends ECKey> getKeys(KeyPurpose purpose, int numberOfKeys);
 
-    /** Obtains a key intended for the given purpose. The chain may create a new key, derive one, or re-use an old one. */
+    /**
+     * Obtains a key intended for the given purpose. The chain may create a new key, derive one, or re-use an old one.
+     */
     ECKey getKey(KeyPurpose purpose);
 
-    /** Returns a list of keys serialized to the bitcoinj protobuf format. */
+    /**
+     * Returns a list of keys serialized to the bitcoinj protobuf format.
+     */
     List<Protos.Key> serializeToProtobuf();
 
-    /** Adds a listener for events that are run when keys are added, on the user thread. */
+    /**
+     * Adds a listener for events that are run when keys are added, on the user thread.
+     */
     void addEventListener(KeyChainEventListener listener);
 
-    /** Adds a listener for events that are run when keys are added, on the given executor. */
+    /**
+     * Adds a listener for events that are run when keys are added, on the given executor.
+     */
     void addEventListener(KeyChainEventListener listener, Executor executor);
 
-    /** Removes a listener for events that are run when keys are added. */
+    /**
+     * Removes a listener for events that are run when keys are added.
+     */
     boolean removeEventListener(KeyChainEventListener listener);
 
-    /** Returns the number of keys this key chain manages. */
+    /**
+     * Returns the number of keys this key chain manages.
+     */
     int numKeys();
 
     /**

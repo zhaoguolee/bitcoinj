@@ -112,5 +112,5 @@ class DummySerializer extends MessageSerializer {
     public void serialize(Message message, OutputStream out) throws IOException {
         throw new UnsupportedOperationException(DEFAULT_EXCEPTION_MESSAGE);
     }
-    
+
 }

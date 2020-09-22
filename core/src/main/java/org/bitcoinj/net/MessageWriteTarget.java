@@ -29,6 +29,7 @@ public interface MessageWriteTarget {
      * have been written to the OS network buffer.
      */
     ListenableFuture writeBytes(byte[] message) throws IOException;
+
     /**
      * Closes the connection to the server, triggering the {@link StreamConnection#connectionClosed()}
      * event on the network-handling thread where all callbacks occur.

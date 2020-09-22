@@ -17,8 +17,7 @@
 
 package org.bitcoinj.wallet;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import com.google.common.base.MoreObjects;
 import org.bitcoin.protocols.payments.Protos.PaymentDetails;
 import org.bitcoinj.core.*;
 import org.bitcoinj.net.NetHelper;
@@ -30,13 +29,13 @@ import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.wallet.KeyChain.KeyPurpose;
 import org.bitcoinj.wallet.Wallet.MissingSigsMode;
 import org.bouncycastle.crypto.params.KeyParameter;
-
-import com.google.common.base.MoreObjects;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A SendRequest gives the wallet information about precisely how to send money to a recipient or set of recipients.
@@ -152,6 +151,7 @@ public class SendRequest {
     /**
      * Specifies what to do with missing signatures left after completing this request. Default strategy is to
      * throw an exception on missing signature ({@link MissingSigsMode#THROW}).
+     *
      * @see MissingSigsMode
      */
     public MissingSigsMode missingSigsMode = MissingSigsMode.THROW;
@@ -176,7 +176,8 @@ public class SendRequest {
     // Tracks if this has been passed to wallet.completeTx already: just a safety check.
     boolean completed;
 
-    private SendRequest() {}
+    private SendRequest() {
+    }
 
     /**
      * <p>Creates a new SendRequest to the given address for the given value.</p>
@@ -189,6 +190,10 @@ public class SendRequest {
         return to(MainNetParams.get(), recipient.toString(), value, null);
     }
 
+    public static SendRequest to(NetworkParameters params, Address recipient, Coin value) throws NullPointerException, AddressFormatException {
+        return to(params, recipient.toString(), value, null);
+    }
+
     public static SendRequest to(NetworkParameters params, String recipient, Coin value) throws NullPointerException, AddressFormatException {
         return to(params, recipient, value, null);
     }
@@ -199,8 +204,7 @@ public class SendRequest {
         SendRequest req = new SendRequest();
         Address destination = null;
 
-        if(recipient.contains("#"))
-        {
+        if (recipient.contains("#")) {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
             destination = AddressFactory.create().getAddress(params, cashAcctAddress);
         } else {
@@ -229,7 +233,9 @@ public class SendRequest {
         return req;
     }
 
-    /** Simply wraps a pre-built incomplete transaction provided by you. */
+    /**
+     * Simply wraps a pre-built incomplete transaction provided by you.
+     */
     public static SendRequest forTx(Transaction tx) {
         SendRequest req = new SendRequest();
         req.tx = tx;
@@ -238,6 +244,10 @@ public class SendRequest {
 
     public static SendRequest emptyWallet(Address recipient) throws NullPointerException, AddressFormatException {
         return emptyWallet(MainNetParams.get(), recipient.toString(), null);
+    }
+
+    public static SendRequest emptyWallet(NetworkParameters params, Address recipient) throws NullPointerException, AddressFormatException {
+        return emptyWallet(params, recipient.toString(), null);
     }
 
     public static SendRequest emptyWallet(NetworkParameters params, String recipient) throws NullPointerException, AddressFormatException {
@@ -250,8 +260,7 @@ public class SendRequest {
         SendRequest req = new SendRequest();
         Address destination = null;
 
-        if(recipient.contains("#"))
-        {
+        if (recipient.contains("#")) {
             String cashAcctAddress = proxy != null ? netHelper.getCashAccountAddress(params, recipient, proxy) : netHelper.getCashAccountAddress(params, recipient);
             destination = AddressFactory.create().getAddress(params, cashAcctAddress);
         } else {
@@ -313,24 +322,29 @@ public class SendRequest {
         return req;
     }
 
-    /** Copy data from payment request. */
+    /**
+     * Copy data from payment request.
+     */
     public SendRequest fromPaymentDetails(PaymentDetails paymentDetails) {
         if (paymentDetails.hasMemo())
             this.memo = paymentDetails.getMemo();
         return this;
     }
 
-    /** Use Version 2 Transactions with forkid signatures **/
+    /**
+     * Use Version 2 Transactions with forkid signatures
+     **/
     private boolean useForkId = false;
 
-    public void setUseForkId(boolean useForkId)
-    {
+    public void setUseForkId(boolean useForkId) {
         this.useForkId = useForkId;
-        if(tx != null)
+        if (tx != null)
             tx.setVersion(Transaction.CURRENT_VERSION);
     }
 
-    public boolean getUseForkId() { return useForkId; }
+    public boolean getUseForkId() {
+        return useForkId;
+    }
 
     @Override
     public String toString() {

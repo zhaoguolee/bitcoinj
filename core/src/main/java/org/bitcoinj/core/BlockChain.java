@@ -17,8 +17,6 @@
 
 package org.bitcoinj.core;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.MemoryBlockStore;
@@ -30,6 +28,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 // TODO: Rename this class to SPVBlockChain at some point.
 
 /**
@@ -38,7 +38,9 @@ import java.util.List;
  * all of the block chain. Really, this class should be called SPVBlockChain but for backwards compatibility it is not.
  */
 public class BlockChain extends AbstractBlockChain {
-    /** Keeps a map of block hashes to StoredBlocks. */
+    /**
+     * Keeps a map of block hashes to StoredBlocks.
+     */
     protected final BlockStore blockStore;
 
     /**
@@ -55,7 +57,9 @@ public class BlockChain extends AbstractBlockChain {
         addWallet(wallet);
     }
 
-    /** See {@link #BlockChain(Context, Wallet, BlockStore)}} */
+    /**
+     * See {@link #BlockChain(Context, Wallet, BlockStore)}}
+     */
     public BlockChain(NetworkParameters params, Wallet wallet, BlockStore blockStore) throws BlockStoreException {
         this(Context.getOrCreate(params), wallet, blockStore);
     }
@@ -68,7 +72,9 @@ public class BlockChain extends AbstractBlockChain {
         this(context, new ArrayList<Wallet>(), blockStore);
     }
 
-    /** See {@link #BlockChain(Context, BlockStore)} */
+    /**
+     * See {@link #BlockChain(Context, BlockStore)}
+     */
     public BlockChain(NetworkParameters params, BlockStore blockStore) throws BlockStoreException {
         this(params, new ArrayList<Wallet>(), blockStore);
     }
@@ -81,7 +87,9 @@ public class BlockChain extends AbstractBlockChain {
         this.blockStore = blockStore;
     }
 
-    /** See {@link #BlockChain(Context, List, BlockStore)} */
+    /**
+     * See {@link #BlockChain(Context, List, BlockStore)}
+     */
     public BlockChain(NetworkParameters params, List<? extends Wallet> wallets, BlockStore blockStore) throws BlockStoreException {
         this(Context.getOrCreate(params), wallets, blockStore);
     }
@@ -93,7 +101,7 @@ public class BlockChain extends AbstractBlockChain {
         blockStore.put(newBlock);
         return newBlock;
     }
-    
+
     @Override
     protected StoredBlock addToBlockStore(StoredBlock storedPrev, Block blockHeader)
             throws BlockStoreException, VerificationException {

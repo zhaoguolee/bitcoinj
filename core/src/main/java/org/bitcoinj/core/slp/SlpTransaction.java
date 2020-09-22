@@ -1,17 +1,16 @@
 package org.bitcoinj.core.slp;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.net.SlpDbValidTransaction;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.script.ScriptChunk;
 import org.bitcoinj.script.ScriptException;
-import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletTransaction;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +24,7 @@ public class SlpTransaction {
         this.tx = tx;
         this.slpOpReturn = new SlpOpReturn(tx);
 
-        if(SlpOpReturn.isSlpTx(tx)) {
+        if (SlpOpReturn.isSlpTx(tx)) {
             this.collectSlpUtxos(tx.getOutputs(), this.slpOpReturn.getOpReturn());
         } else {
             throw new NullPointerException("Not an SLP transaction.");
@@ -34,7 +33,7 @@ public class SlpTransaction {
 
     private void collectSlpUtxos(List<TransactionOutput> utxos, Script opReturn) {
         int chunkOffset = 0;
-        switch(this.slpOpReturn.getSlpTxType()) {
+        switch (this.slpOpReturn.getSlpTxType()) {
             case GENESIS:
                 chunkOffset = 10;
                 break;
@@ -48,7 +47,7 @@ public class SlpTransaction {
 
         int tokenUtxosCount = opReturn.getChunks().size() - chunkOffset;
 
-        for(int x = 0; x < tokenUtxosCount; x++) {
+        for (int x = 0; x < tokenUtxosCount; x++) {
             int tokenUtxoChunkLocation = x + chunkOffset;
             TransactionOutput utxo = utxos.get(x + 1);
             long tokenAmountRaw = Long.parseLong(new String(Hex.encode(Objects.requireNonNull(opReturn.getChunks().get(tokenUtxoChunkLocation).data))), 16);
@@ -100,10 +99,10 @@ public class SlpTransaction {
                 continue;
 
             Transaction parentTransaction = connected.getParentTransaction();
-            if(parentTransaction != null && SlpOpReturn.isSlpTx(parentTransaction)) {
+            if (parentTransaction != null && SlpOpReturn.isSlpTx(parentTransaction)) {
                 SlpTransaction parentSlpTransaction = new SlpTransaction(parentTransaction);
-                for(SlpUTXO slpUTXO : parentSlpTransaction.getSlpUtxos()) {
-                    if(slpUTXO.getTxUtxo() == connected) {
+                for (SlpUTXO slpUTXO : parentSlpTransaction.getSlpUtxos()) {
+                    if (slpUTXO.getTxUtxo() == connected) {
                         value += slpUTXO.getTokenAmountRaw();
                     }
                 }

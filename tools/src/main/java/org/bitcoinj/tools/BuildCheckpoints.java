@@ -17,8 +17,12 @@
 
 package org.bitcoinj.tools;
 
-import org.bitcoinj.core.listeners.NewBestBlockListener;
+import com.google.common.io.Resources;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.listeners.NewBestBlockListener;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.RegTestParams;
@@ -27,25 +31,17 @@ import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.MemoryBlockStore;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
-import com.google.common.io.Resources;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import joptsimple.OptionSpec;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.Future;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -174,8 +170,8 @@ public class BuildCheckpoints {
     private static void writeBinaryCheckpoints(TreeMap<Integer, StoredBlock> checkpoints, File file) throws Exception {
         MessageDigest digest = Sha256Hash.newDigest();
         try (FileOutputStream fileOutputStream = new FileOutputStream(file, false);
-                DigestOutputStream digestOutputStream = new DigestOutputStream(fileOutputStream, digest);
-                DataOutputStream dataOutputStream = new DataOutputStream(digestOutputStream)) {
+             DigestOutputStream digestOutputStream = new DigestOutputStream(fileOutputStream, digest);
+             DataOutputStream dataOutputStream = new DataOutputStream(digestOutputStream)) {
             digestOutputStream.on(false);
             dataOutputStream.writeBytes("CHECKPOINTS 1");
             dataOutputStream.writeInt(0); // Number of signatures to read. Do this later.

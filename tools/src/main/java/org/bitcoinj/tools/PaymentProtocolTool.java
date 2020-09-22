@@ -16,13 +16,13 @@
 
 package org.bitcoinj.tools;
 
+import org.bitcoin.protocols.payments.Protos;
 import org.bitcoinj.crypto.TrustStoreLoader;
 import org.bitcoinj.protocols.payments.PaymentProtocol;
 import org.bitcoinj.protocols.payments.PaymentProtocolException;
 import org.bitcoinj.protocols.payments.PaymentSession;
 import org.bitcoinj.uri.BitcoinURI;
 import org.bitcoinj.uri.BitcoinURIParseException;
-import org.bitcoin.protocols.payments.Protos;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -36,7 +36,9 @@ import java.util.concurrent.ExecutionException;
 
 import static java.lang.String.format;
 
-/** Takes a URL or bitcoin URI and prints information about the payment request. */
+/**
+ * Takes a URL or bitcoin URI and prints information about the payment request.
+ */
 public class PaymentProtocolTool {
     public static void main(String[] args) {
         if (args.length < 1) {

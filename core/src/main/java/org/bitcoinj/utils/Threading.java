@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.CycleDetectingLockFactory;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-import org.bitcoinj.core.*;
+import org.bitcoinj.core.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +65,8 @@ public class Threading {
     public static void waitForUserCode() {
         final CountDownLatch latch = new CountDownLatch(1);
         USER_THREAD.execute(new Runnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 latch.countDown();
             }
         });
@@ -97,7 +98,8 @@ public class Threading {
             start();
         }
 
-        @SuppressWarnings("InfiniteLoopStatement") @Override
+        @SuppressWarnings("InfiniteLoopStatement")
+        @Override
         public void run() {
             while (true) {
                 Runnable task = Uninterruptibles.takeUninterruptibly(tasks);
@@ -117,10 +119,10 @@ public class Threading {
             final int size = tasks.size();
             if (size == WARNING_THRESHOLD) {
                 log.warn(
-                    "User thread has {} pending tasks, memory exhaustion may occur.\n" +
-                    "If you see this message, check your memory consumption and see if it's problematic or excessively spikey.\n" +
-                    "If it is, check for deadlocked or slow event handlers. If it isn't, try adjusting the constant \n" +
-                    "Threading.UserThread.WARNING_THRESHOLD upwards until it's a suitable level for your app, or Integer.MAX_VALUE to disable." , size);
+                        "User thread has {} pending tasks, memory exhaustion may occur.\n" +
+                                "If you see this message, check your memory consumption and see if it's problematic or excessively spikey.\n" +
+                                "If it is, check for deadlocked or slow event handlers. If it isn't, try adjusting the constant \n" +
+                                "Threading.UserThread.WARNING_THRESHOLD upwards until it's a suitable level for your app, or Integer.MAX_VALUE to disable.", size);
             }
             Uninterruptibles.putUninterruptibly(tasks, command);
         }
@@ -188,7 +190,9 @@ public class Threading {
     //
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /** A caching thread pool that creates daemon threads, which won't keep the JVM alive waiting for more work. */
+    /**
+     * A caching thread pool that creates daemon threads, which won't keep the JVM alive waiting for more work.
+     */
     public static ListeningExecutorService THREAD_POOL = MoreExecutors.listeningDecorator(
             Executors.newCachedThreadPool(new ThreadFactory() {
                 @Override

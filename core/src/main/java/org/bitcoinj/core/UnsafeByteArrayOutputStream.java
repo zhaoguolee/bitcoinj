@@ -114,7 +114,7 @@ public class UnsafeByteArrayOutputStream extends ByteArrayOutputStream {
      * @see java.io.ByteArrayOutputStream#size()
      */
     @Override
-    public byte toByteArray()[] {
+    public byte[] toByteArray() {
         return count == buf.length ? buf : copyOf(buf, count);
     }
 
@@ -122,7 +122,7 @@ public class UnsafeByteArrayOutputStream extends ByteArrayOutputStream {
      * Returns the current size of the buffer.
      *
      * @return the value of the {@code count} field, which is the number
-     *         of valid bytes in this output stream.
+     * of valid bytes in this output stream.
      * @see java.io.ByteArrayOutputStream#count
      */
     @Override

@@ -26,15 +26,15 @@ import java.util.Set;
  * The private keys are held by a small group of core Bitcoin developers, and alerts may be broadcast in the event of
  * an available upgrade or a serious network problem. Alerts have an expiration time, data that specifies what
  * set of software versions it matches and the ability to cancel them by broadcasting another type of alert.<p>
- *
+ * <p>
  * The right course of action on receiving an alert is usually to either ensure a human will see it (display on screen,
  * log, email), or if you decide to use alerts for notifications that are specific to your app in some way, to parse it.
  * For example, you could treat it as an upgrade notification specific to your app. Satoshi designed alerts to ensure
  * that software upgrades could be distributed independently of a hard-coded website, in order to allow everything to
  * be purely peer-to-peer. You don't have to use this of course, and indeed it often makes more sense not to.</p>
- *     
+ *
  * <p>Before doing anything with an alert, you should check {@link AlertMessage#isSignatureValid()}.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public class AlertMessage extends Message {
@@ -152,6 +152,7 @@ public class AlertMessage extends Message {
     /**
      * The numeric identifier of this alert. Each alert should have a unique ID, but the signer can choose any number.
      * If an alert is broadcast with a cancel field higher than this ID, this alert is considered cancelled.
+     *
      * @return uint32
      */
     public long getId() {
@@ -164,6 +165,7 @@ public class AlertMessage extends Message {
 
     /**
      * A marker that results in any alerts with an ID lower than this value to be considered cancelled.
+     *
      * @return uint32
      */
     public long getCancel() {
@@ -178,6 +180,7 @@ public class AlertMessage extends Message {
      * The inclusive lower bound on software versions that are considered for the purposes of this alert. Bitcoin Core
      * compares this against a protocol version field, but as long as the subVer field is used to restrict it your
      * alerts could use any version numbers.
+     *
      * @return uint32
      */
     public long getMinVer() {
@@ -203,6 +206,7 @@ public class AlertMessage extends Message {
 
     /**
      * Provides an integer ordering amongst simultaneously active alerts.
+     *
      * @return uint32
      */
     public long getPriority() {
@@ -247,7 +251,7 @@ public class AlertMessage extends Message {
     public void setReserved(String reserved) {
         this.reserved = reserved;
     }
-    
+
     public long getVersion() {
         return version;
     }

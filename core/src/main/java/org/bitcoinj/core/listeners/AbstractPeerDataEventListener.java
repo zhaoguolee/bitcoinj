@@ -18,8 +18,8 @@ package org.bitcoinj.core.listeners;
 
 import org.bitcoinj.core.*;
 
-import javax.annotation.*;
-import java.util.*;
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Deprecated: implement the more specific event listener interfaces instead to fill out only what you need

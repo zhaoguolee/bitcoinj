@@ -17,23 +17,23 @@
 
 package org.bitcoinj.wallet;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.io.Resources;
 import org.bitcoinj.core.*;
-import org.bitcoinj.crypto.*;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.HDKeyDerivation;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.UnitTestParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.listeners.AbstractKeyChainEventListener;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.io.Resources;
-
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.junit.Before;
 import org.junit.Test;
-import org.bouncycastle.crypto.params.KeyParameter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -216,11 +216,11 @@ public class DeterministicKeyChainTest {
         // 1 mnemonic/seed, 1 master key, 1 account key, 2 internal keys, 3 derived, 20 lookahead and 5 lookahead threshold.
         int numItems =
                 1  // mnemonic/seed
-              + 1  // master key
-              + 1  // account key
-              + 2  // ext/int parent keys
-              + (chain.getLookaheadSize() + chain.getLookaheadThreshold()) * 2   // lookahead zone on each chain
-        ;
+                        + 1  // master key
+                        + 1  // account key
+                        + 2  // ext/int parent keys
+                        + (chain.getLookaheadSize() + chain.getLookaheadThreshold()) * 2   // lookahead zone on each chain
+                ;
         assertEquals(numItems, keys.size());
 
         // Get another key that will be lost during round-tripping, to ensure we can derive it again.
@@ -258,7 +258,7 @@ public class DeterministicKeyChainTest {
                 + 1 // account key
                 + 2 // ext/int parent keys
                 + (bip44chain.getLookaheadSize() + bip44chain.getLookaheadThreshold()) * 2 // lookahead zone on each chain
-        ;
+                ;
         assertEquals(numItems, keys.size());
 
         // Get another key that will be lost during round-tripping, to ensure we can derive it again.
@@ -571,12 +571,12 @@ public class DeterministicKeyChainTest {
 
     /**
      * verifySpendableKeyChain
-     *
+     * <p>
      * firstReceiveKey and secondReceiveKey are the first two keys of the external chain of a known key chain
      * firstChangeKey and secondChangeKey are the first two keys of the internal chain of a known key chain
      * keyChain is a DeterministicKeyChain loaded from a serialized format or derived in some other way from
      * the known key chain
-     *
+     * <p>
      * This method verifies that known keys match a newly created keyChain and that keyChain's protobuf
      * matches the serializationFile.
      */
@@ -627,8 +627,8 @@ public class DeterministicKeyChainTest {
 
         int numEntries =
                 (((chain.getLookaheadSize() + chain.getLookaheadThreshold()) * 2)   // * 2 because of internal/external
-              + chain.numLeafKeysIssued()
-              + 4  // one root key + one account key + two chain keys (internal/external)
+                        + chain.numLeafKeysIssued()
+                        + 4  // one root key + one account key + two chain keys (internal/external)
                 ) * 2;  // because the filter contains keys and key hashes.
         assertEquals(numEntries, chain.numBloomFilterEntries());
         BloomFilter filter = chain.getFilter(numEntries, 0.001, 1);

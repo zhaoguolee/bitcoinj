@@ -5,21 +5,21 @@
 
 package org.bitcoinj.core.bip47;
 
-import java.math.BigInteger;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.HDKeyDerivation;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 public class BIP47PaymentCode {
     private static final int PUBLIC_KEY_Y_OFFSET = 2;
@@ -46,7 +46,7 @@ public class BIP47PaymentCode {
     }
 
     public BIP47PaymentCode(byte[] payload) {
-        if(payload.length == 80) {
+        if (payload.length == 80) {
             this.pubkey = new byte[33];
             this.chain = new byte[32];
             System.arraycopy(payload, 2, this.pubkey, 0, 33);
@@ -130,7 +130,7 @@ public class BIP47PaymentCode {
     private Pair<byte[], byte[]> parse() throws AddressFormatException {
         byte[] pcBytes = Base58.decodeChecked(this.strPaymentCode);
         ByteBuffer bb = ByteBuffer.wrap(pcBytes);
-        if(bb.get() != 71) {
+        if (bb.get() != 71) {
             throw new AddressFormatException("invalid payment code version");
         } else {
             byte[] chain = new byte[32];
@@ -138,7 +138,7 @@ public class BIP47PaymentCode {
             bb.get();
             bb.get();
             bb.get(pub);
-            if(pub[0] != 2 && pub[0] != 3) {
+            if (pub[0] != 2 && pub[0] != 3) {
                 throw new AddressFormatException("invalid public key");
             } else {
                 bb.get(chain);
@@ -160,11 +160,11 @@ public class BIP47PaymentCode {
         byte[] payload = new byte[80];
         byte[] payment_code = new byte[81];
 
-        for(int checksum = 0; checksum < payload.length; ++checksum) {
+        for (int checksum = 0; checksum < payload.length; ++checksum) {
             payload[checksum] = 0;
         }
 
-        payload[0] = (byte)type;
+        payload[0] = (byte) type;
         payload[1] = 0;
         System.arraycopy(this.pubkey, 0, payload, 2, this.pubkey.length);
         System.arraycopy(this.chain, 0, payload, 35, this.chain.length);
@@ -183,13 +183,13 @@ public class BIP47PaymentCode {
     }
 
     private static byte[] xor(byte[] a, byte[] b) {
-        if(a.length != b.length) {
+        if (a.length != b.length) {
             return null;
         } else {
             byte[] ret = new byte[a.length];
 
-            for(int i = 0; i < a.length; ++i) {
-                ret[i] = (byte)(b[i] ^ a[i]);
+            for (int i = 0; i < a.length; ++i) {
+                ret[i] = (byte) (b[i] ^ a[i]);
             }
 
             return ret;
@@ -200,7 +200,7 @@ public class BIP47PaymentCode {
         try {
             byte[] afe = Base58.decodeChecked(this.strPaymentCode);
             ByteBuffer byteBuffer = ByteBuffer.wrap(afe);
-            if(byteBuffer.get() != 71) {
+            if (byteBuffer.get() != 71) {
                 throw new AddressFormatException("invalid version: " + this.strPaymentCode);
             } else {
                 byte[] chain = new byte[32];
@@ -223,7 +223,7 @@ public class BIP47PaymentCode {
     public static DeterministicKey createMasterPubKeyFromPaymentCode(String payment_code_str) throws AddressFormatException {
         byte[] paymentCodeBytes = Base58.decodeChecked(payment_code_str);
         ByteBuffer bb = ByteBuffer.wrap(paymentCodeBytes);
-        if(bb.get() != 71) {
+        if (bb.get() != 71) {
             throw new AddressFormatException("invalid payment code version");
         } else {
             byte[] chain = new byte[32];
@@ -236,13 +236,15 @@ public class BIP47PaymentCode {
         }
     }
 
-    /** Returns the pubkey on the ith derivation path */
+    /**
+     * Returns the pubkey on the ith derivation path
+     */
     public byte[] derivePubKeyAt(NetworkParameters networkParameters, int i) throws AddressFormatException {
         DeterministicKey key = createMasterPubKeyFromPaymentCode(this.strPaymentCode);
         DeterministicKey dk = HDKeyDerivation.deriveChildKey(key, new ChildNumber(i, false));
 
         ECKey ecKey;
-        if(dk.hasPrivKey()) {
+        if (dk.hasPrivKey()) {
             byte[] now = ArrayUtils.addAll(new byte[1], dk.getPrivKeyBytes());
             ecKey = ECKey.fromPrivate(new BigInteger(now), true);
         } else {

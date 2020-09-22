@@ -80,51 +80,51 @@ import java.util.*;
 public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockStore {
     private static final Logger log = LoggerFactory.getLogger(DatabaseFullPrunedBlockStore.class);
 
-    private static final String CHAIN_HEAD_SETTING                              = "chainhead";
-    private static final String VERIFIED_CHAIN_HEAD_SETTING                     = "verifiedchainhead";
-    private static final String VERSION_SETTING                                 = "version";
+    private static final String CHAIN_HEAD_SETTING = "chainhead";
+    private static final String VERIFIED_CHAIN_HEAD_SETTING = "verifiedchainhead";
+    private static final String VERSION_SETTING = "version";
 
     // Drop table SQL.
-    private static final String DROP_SETTINGS_TABLE                             = "DROP TABLE settings";
-    private static final String DROP_HEADERS_TABLE                              = "DROP TABLE headers";
-    private static final String DROP_UNDOABLE_TABLE                             = "DROP TABLE undoableblocks";
-    private static final String DROP_OPEN_OUTPUT_TABLE                          = "DROP TABLE openoutputs";
+    private static final String DROP_SETTINGS_TABLE = "DROP TABLE settings";
+    private static final String DROP_HEADERS_TABLE = "DROP TABLE headers";
+    private static final String DROP_UNDOABLE_TABLE = "DROP TABLE undoableblocks";
+    private static final String DROP_OPEN_OUTPUT_TABLE = "DROP TABLE openoutputs";
 
     // Queries SQL.
-    private static final String SELECT_SETTINGS_SQL                             = "SELECT value FROM settings WHERE name = ?";
-    private static final String INSERT_SETTINGS_SQL                             = "INSERT INTO settings(name, value) VALUES(?, ?)";
-    private static final String UPDATE_SETTINGS_SQL                             = "UPDATE settings SET value = ? WHERE name = ?";
+    private static final String SELECT_SETTINGS_SQL = "SELECT value FROM settings WHERE name = ?";
+    private static final String INSERT_SETTINGS_SQL = "INSERT INTO settings(name, value) VALUES(?, ?)";
+    private static final String UPDATE_SETTINGS_SQL = "UPDATE settings SET value = ? WHERE name = ?";
 
-    private static final String SELECT_HEADERS_SQL                              = "SELECT chainwork, height, header, wasundoable FROM headers WHERE hash = ?";
-    private static final String INSERT_HEADERS_SQL                              = "INSERT INTO headers(hash, chainwork, height, header, wasundoable) VALUES(?, ?, ?, ?, ?)";
-    private static final String UPDATE_HEADERS_SQL                              = "UPDATE headers SET wasundoable=? WHERE hash=?";
+    private static final String SELECT_HEADERS_SQL = "SELECT chainwork, height, header, wasundoable FROM headers WHERE hash = ?";
+    private static final String INSERT_HEADERS_SQL = "INSERT INTO headers(hash, chainwork, height, header, wasundoable) VALUES(?, ?, ?, ?, ?)";
+    private static final String UPDATE_HEADERS_SQL = "UPDATE headers SET wasundoable=? WHERE hash=?";
 
-    private static final String SELECT_UNDOABLEBLOCKS_SQL                       = "SELECT txoutchanges, transactions FROM undoableblocks WHERE hash = ?";
-    private static final String INSERT_UNDOABLEBLOCKS_SQL                       = "INSERT INTO undoableblocks(hash, height, txoutchanges, transactions) VALUES(?, ?, ?, ?)";
-    private static final String UPDATE_UNDOABLEBLOCKS_SQL                       = "UPDATE undoableblocks SET txoutchanges=?, transactions=? WHERE hash = ?";
-    private static final String DELETE_UNDOABLEBLOCKS_SQL                       = "DELETE FROM undoableblocks WHERE height <= ?";
+    private static final String SELECT_UNDOABLEBLOCKS_SQL = "SELECT txoutchanges, transactions FROM undoableblocks WHERE hash = ?";
+    private static final String INSERT_UNDOABLEBLOCKS_SQL = "INSERT INTO undoableblocks(hash, height, txoutchanges, transactions) VALUES(?, ?, ?, ?)";
+    private static final String UPDATE_UNDOABLEBLOCKS_SQL = "UPDATE undoableblocks SET txoutchanges=?, transactions=? WHERE hash = ?";
+    private static final String DELETE_UNDOABLEBLOCKS_SQL = "DELETE FROM undoableblocks WHERE height <= ?";
 
-    private static final String SELECT_OPENOUTPUTS_SQL                          = "SELECT height, value, scriptbytes, coinbase, toaddress, addresstargetable FROM openoutputs WHERE hash = ? AND index = ?";
-    private static final String SELECT_OPENOUTPUTS_COUNT_SQL                    = "SELECT COUNT(*) FROM openoutputs WHERE hash = ?";
-    private static final String INSERT_OPENOUTPUTS_SQL                          = "INSERT INTO openoutputs (hash, index, height, value, scriptbytes, toaddress, addresstargetable, coinbase) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    private static final String DELETE_OPENOUTPUTS_SQL                          = "DELETE FROM openoutputs WHERE hash = ? AND index = ?";
+    private static final String SELECT_OPENOUTPUTS_SQL = "SELECT height, value, scriptbytes, coinbase, toaddress, addresstargetable FROM openoutputs WHERE hash = ? AND index = ?";
+    private static final String SELECT_OPENOUTPUTS_COUNT_SQL = "SELECT COUNT(*) FROM openoutputs WHERE hash = ?";
+    private static final String INSERT_OPENOUTPUTS_SQL = "INSERT INTO openoutputs (hash, index, height, value, scriptbytes, toaddress, addresstargetable, coinbase) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String DELETE_OPENOUTPUTS_SQL = "DELETE FROM openoutputs WHERE hash = ? AND index = ?";
 
     // Dump table SQL (this is just for data sizing statistics).
-    private static final String SELECT_DUMP_SETTINGS_SQL                        = "SELECT name, value FROM settings";
-    private static final String SELECT_DUMP_HEADERS_SQL                         = "SELECT chainwork, header FROM headers";
-    private static final String SELECT_DUMP_UNDOABLEBLOCKS_SQL                  = "SELECT txoutchanges, transactions FROM undoableblocks";
-    private static final String SELECT_DUMP_OPENOUTPUTS_SQL                     = "SELECT value, scriptbytes FROM openoutputs";
+    private static final String SELECT_DUMP_SETTINGS_SQL = "SELECT name, value FROM settings";
+    private static final String SELECT_DUMP_HEADERS_SQL = "SELECT chainwork, header FROM headers";
+    private static final String SELECT_DUMP_UNDOABLEBLOCKS_SQL = "SELECT txoutchanges, transactions FROM undoableblocks";
+    private static final String SELECT_DUMP_OPENOUTPUTS_SQL = "SELECT value, scriptbytes FROM openoutputs";
 
-    private static final String SELECT_TRANSACTION_OUTPUTS_SQL                  = "SELECT hash, value, scriptbytes, height, index, coinbase, toaddress, addresstargetable FROM openoutputs where toaddress = ?";
+    private static final String SELECT_TRANSACTION_OUTPUTS_SQL = "SELECT hash, value, scriptbytes, height, index, coinbase, toaddress, addresstargetable FROM openoutputs where toaddress = ?";
 
     // Select the balance of an address SQL.
-    private static final String SELECT_BALANCE_SQL                              = "select sum(value) from openoutputs where toaddress = ?";
+    private static final String SELECT_BALANCE_SQL = "select sum(value) from openoutputs where toaddress = ?";
 
     // Tables exist SQL.
-    private static final String SELECT_CHECK_TABLES_EXIST_SQL                   = "SELECT * FROM settings WHERE 1 = 2";
+    private static final String SELECT_CHECK_TABLES_EXIST_SQL = "SELECT * FROM settings WHERE 1 = 2";
 
     // Compatibility SQL.
-    private static final String SELECT_COMPATIBILITY_COINBASE_SQL               = "SELECT coinbase FROM openoutputs WHERE 1 = 2";
+    private static final String SELECT_COMPATIBILITY_COINBASE_SQL = "SELECT coinbase FROM openoutputs WHERE 1 = 2";
 
     protected Sha256Hash chainHeadHash;
     protected StoredBlock chainHeadBlock;
@@ -143,12 +143,12 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
      * <p>Create a new DatabaseFullPrunedBlockStore, using the full connection URL instead of a hostname and password,
      * and optionally allowing a schema to be specified.</p>
      *
-     * @param params A copy of the NetworkParameters used.
-     * @param connectionURL The jdbc url to connect to the database.
+     * @param params         A copy of the NetworkParameters used.
+     * @param connectionURL  The jdbc url to connect to the database.
      * @param fullStoreDepth The number of blocks of history stored in full (something like 1000 is pretty safe).
-     * @param username The database username.
-     * @param password The password to the database.
-     * @param schemaName The name of the schema to put the tables in.  May be null if no schema is being used.
+     * @param username       The database username.
+     * @param password       The password to the database.
+     * @param schemaName     The name of the schema to put the tables in.  May be null if no schema is being used.
      * @throws BlockStoreException If there is a failure to connect and/or initialise the database.
      */
     public DatabaseFullPrunedBlockStore(NetworkParameters params, String connectionURL, int fullStoreDepth,
@@ -187,24 +187,28 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
     /**
      * Get the database driver class,
      * <p>i.e org.postgresql.Driver.</p>
+     *
      * @return The fully qualified database driver class.
      */
     protected abstract String getDatabaseDriverClass();
 
     /**
      * Get the SQL statements that create the schema (DDL).
+     *
      * @return The list of SQL statements.
      */
     protected abstract List<String> getCreateSchemeSQL();
 
     /**
      * Get the SQL statements that create the tables (DDL).
+     *
      * @return The list of SQL statements.
      */
     protected abstract List<String> getCreateTablesSQL();
 
     /**
      * Get the SQL statements that create the indexes (DDL).
+     *
      * @return The list of SQL statements.
      */
     protected abstract List<String> getCreateIndexesSQL();
@@ -212,12 +216,14 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
     /**
      * Get the database specific error code that indicated a duplicate key error when inserting a record.
      * <p>This is the code returned by {@link SQLException#getSQLState()}</p>
+     *
      * @return The database duplicate error code.
      */
     protected abstract String getDuplicateKeyErrorCode();
 
     /**
      * Get the SQL to select the total balance for a given address.
+     *
      * @return The SQL prepared statement.
      */
     protected String getBalanceSelectSQL() {
@@ -226,6 +232,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL statement that checks if tables exist.
+     *
      * @return The SQL prepared statement.
      */
     protected String getTablesExistSQL() {
@@ -234,6 +241,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL statements to check if the database is compatible.
+     *
      * @return The SQL prepared statements.
      */
     protected List<String> getCompatibilitySQL() {
@@ -244,6 +252,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select the transaction outputs for a given address.
+     *
      * @return The SQL prepared statement.
      */
     protected String getTransactionOutputSelectSQL() {
@@ -252,6 +261,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to drop all the tables (DDL).
+     *
      * @return The SQL drop statements.
      */
     protected List<String> getDropTablesSQL() {
@@ -265,6 +275,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select a setting value.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectSettingsSQL() {
@@ -273,6 +284,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to insert a settings record.
+     *
      * @return The SQL insert statement.
      */
     protected String getInsertSettingsSQL() {
@@ -281,6 +293,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to update a setting value.
+     *
      * @return The SQL update statement.
      */
     protected String getUpdateSettingsSLQ() {
@@ -289,6 +302,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select a headers record.
+     *
      * @return The SQL select  statement.
      */
     protected String getSelectHeadersSQL() {
@@ -297,6 +311,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to insert a headers record.
+     *
      * @return The SQL insert statement.
      */
     protected String getInsertHeadersSQL() {
@@ -305,6 +320,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to update a headers record.
+     *
      * @return The SQL update statement.
      */
     protected String getUpdateHeadersSQL() {
@@ -313,6 +329,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select an undoableblocks record.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectUndoableBlocksSQL() {
@@ -321,6 +338,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to insert a undoableblocks record.
+     *
      * @return The SQL insert statement.
      */
     protected String getInsertUndoableBlocksSQL() {
@@ -329,6 +347,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to update a undoableblocks record.
+     *
      * @return The SQL update statement.
      */
     protected String getUpdateUndoableBlocksSQL() {
@@ -337,6 +356,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to delete a undoableblocks record.
+     *
      * @return The SQL delete statement.
      */
     protected String getDeleteUndoableBlocksSQL() {
@@ -345,6 +365,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select a openoutputs record.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectOpenoutputsSQL() {
@@ -353,6 +374,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select count of openoutputs.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectOpenoutputsCountSQL() {
@@ -361,6 +383,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to insert a openoutputs record.
+     *
      * @return The SQL insert statement.
      */
     protected String getInsertOpenoutputsSQL() {
@@ -369,6 +392,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to delete a openoutputs record.
+     *
      * @return The SQL delete statement.
      */
     protected String getDeleteOpenoutputsSQL() {
@@ -377,6 +401,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select the setting dump fields for sizing/statistics.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectSettingsDumpSQL() {
@@ -385,6 +410,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select the headers dump fields for sizing/statistics.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectHeadersDumpSQL() {
@@ -393,6 +419,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select the undoableblocks dump fields for sizing/statistics.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectUndoableblocksDumpSQL() {
@@ -401,6 +428,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Get the SQL to select the openoutouts dump fields for sizing/statistics.
+     *
      * @return The SQL select statement.
      */
     protected String getSelectopenoutputsDumpSQL() {
@@ -410,6 +438,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
     /**
      * <p>If there isn't a connection on the {@link ThreadLocal} then create and store it.</p>
      * <p>This will also automatically set up the schema if it does not exist within the DB.</p>
+     *
      * @throws BlockStoreException if successful connection to the DB couldn't be made.
      */
     protected synchronized final void maybeConnect() throws BlockStoreException {
@@ -478,7 +507,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
         } catch (SQLException ex) {
             return false;
         } finally {
-            if(ps != null && !ps.isClosed()) {
+            if (ps != null && !ps.isClosed()) {
                 ps.close();
             }
         }
@@ -486,10 +515,11 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Check that the database is compatible with this version of the {@link DatabaseFullPrunedBlockStore}.
+     *
      * @throws BlockStoreException If the database is not compatible.
      */
     private void checkCompatibility() throws SQLException, BlockStoreException {
-        for(String sql : getCompatibilitySQL()) {
+        for (String sql : getCompatibilitySQL()) {
             PreparedStatement ps = null;
             try {
                 ps = conn.get().prepareStatement(sql);
@@ -508,8 +538,9 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Create the tables/block store in the database and
+     *
      * @throws java.sql.SQLException If there is a database error.
-     * @throws BlockStoreException If the block store could not be created.
+     * @throws BlockStoreException   If the block store could not be created.
      */
     private void createTables() throws SQLException, BlockStoreException {
         Statement s = conn.get().createStatement();
@@ -546,6 +577,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Create a new store for the given {@link NetworkParameters}.
+     *
      * @param params The network.
      * @throws BlockStoreException If the store couldn't be created.
      */
@@ -568,8 +600,9 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Initialise the store state from the database.
+     *
      * @throws java.sql.SQLException If there is a database error.
-     * @throws BlockStoreException If there is a block store error.
+     * @throws BlockStoreException   If there is a block store error.
      */
     private void initFromDatabase() throws SQLException, BlockStoreException {
         PreparedStatement ps = conn.get().prepareStatement(getSelectSettingsSQL());
@@ -618,7 +651,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
         } catch (SQLException e) {
             // It is possible we try to add a duplicate StoredBlock if we upgraded
             // In that case, we just update the entry to mark it wasUndoable
-            if  (!(e.getSQLState().equals(getDuplicateKeyErrorCode())) || !wasUndoable)
+            if (!(e.getSQLState().equals(getDuplicateKeyErrorCode())) || !wasUndoable)
                 throw e;
 
             PreparedStatement s = conn.get().prepareStatement(getUpdateHeadersSQL());
@@ -980,7 +1013,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
                     .prepareStatement(getDeleteOpenoutputsSQL());
             s.setBytes(1, out.getHash().getBytes());
             // index is actually an unsigned int
-            s.setInt(2, (int)out.getIndex());
+            s.setInt(2, (int) out.getIndex());
             s.executeUpdate();
             s.close();
         } catch (SQLException e) {
@@ -1072,6 +1105,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Resets the store by deleting the contents of the tables and reinitialising them.
+     *
      * @throws BlockStoreException If the tables couldn't be cleared and initialised.
      */
     public void resetStore() throws BlockStoreException {
@@ -1087,13 +1121,14 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
 
     /**
      * Deletes the store by deleting the tables within the database.
+     *
      * @throws BlockStoreException If tables couldn't be deleted.
      */
     public void deleteStore() throws BlockStoreException {
         maybeConnect();
         try {
             Statement s = conn.get().createStatement();
-            for(String sql : getDropTablesSQL()) {
+            for (String sql : getDropTablesSQL()) {
                 s.execute(sql);
             }
             s.close();
@@ -1113,7 +1148,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
      *
      * @param address The address to calculate the balance of
      * @return The balance of the address supplied.  If the address has not been seen, or there are no outputs open for this
-     *         address, the return value is 0.
+     * address, the return value is 0.
      * @throws BlockStoreException If there is an error getting the balance.
      */
     public BigInteger calculateBalanceForAddress(Address address) throws BlockStoreException {
@@ -1202,9 +1237,11 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
             count++;
         }
         rs.close();
-        System.out.printf(Locale.US, "Settings size: %d, count: %d, average size: %f%n", size, count, (double)size/count);
+        System.out.printf(Locale.US, "Settings size: %d, count: %d, average size: %f%n", size, count, (double) size / count);
 
-        totalSize += size; size = 0; count = 0;
+        totalSize += size;
+        size = 0;
+        count = 0;
         rs = s.executeQuery(getSelectHeadersDumpSQL());
         while (rs.next()) {
             size += 28; // hash
@@ -1214,9 +1251,11 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
             count++;
         }
         rs.close();
-        System.out.printf(Locale.US, "Headers size: %d, count: %d, average size: %f%n", size, count, (double)size/count);
+        System.out.printf(Locale.US, "Headers size: %d, count: %d, average size: %f%n", size, count, (double) size / count);
 
-        totalSize += size; size = 0; count = 0;
+        totalSize += size;
+        size = 0;
+        count = 0;
         rs = s.executeQuery(getSelectUndoableblocksDumpSQL());
         while (rs.next()) {
             size += 28; // hash
@@ -1231,9 +1270,11 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
             count++;
         }
         rs.close();
-        System.out.printf(Locale.US, "Undoable Blocks size: %d, count: %d, average size: %f%n", size, count, (double)size/count);
+        System.out.printf(Locale.US, "Undoable Blocks size: %d, count: %d, average size: %f%n", size, count, (double) size / count);
 
-        totalSize += size; size = 0; count = 0;
+        totalSize += size;
+        size = 0;
+        count = 0;
         long scriptSize = 0;
         rs = s.executeQuery(getSelectopenoutputsDumpSQL());
         while (rs.next()) {
@@ -1247,7 +1288,7 @@ public abstract class DatabaseFullPrunedBlockStore implements FullPrunedBlockSto
         }
         rs.close();
         System.out.printf(Locale.US, "Open Outputs size: %d, count: %d, average size: %f, average script size: %f (%d in id indexes)%n",
-                size, count, (double)size/count, (double)scriptSize/count, count * 8);
+                size, count, (double) size / count, (double) scriptSize / count, count * 8);
 
         totalSize += size;
         System.out.println("Total Size: " + totalSize);

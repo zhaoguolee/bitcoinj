@@ -24,19 +24,23 @@ import org.bitcoinj.net.SlpDbTokenDetails;
 import org.bitcoinj.net.SlpDbValidTransaction;
 import org.bitcoinj.protocols.payments.slp.SlpPaymentSession;
 import org.bitcoinj.script.Script;
-import org.bitcoinj.store.*;
-import org.bitcoinj.wallet.*;
+import org.bitcoinj.store.SPVBlockStore;
+import org.bitcoinj.wallet.KeyChainGroupStructure;
+import org.bitcoinj.wallet.SendRequest;
+import org.bitcoinj.wallet.Wallet;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * <p>Utility class that wraps the boilerplate needed to set up a new SPV bitcoinj app. Instantiate it with a directory
@@ -102,12 +106,12 @@ public class SlpAppKit extends WalletKitCore {
     protected void startUp() throws Exception {
         super.startUp();
         File txsDataFile = new File(this.directory(), this.filePrefix + ".txs");
-        if(txsDataFile.exists()) {
+        if (txsDataFile.exists()) {
             this.loadRecordedTxs();
         }
         File tokenDataFile = new File(this.directory(), this.filePrefix + ".tokens");
         this.tokensFile = tokenDataFile;
-        if(tokenDataFile.exists()) {
+        if (tokenDataFile.exists()) {
             this.loadTokens();
         }
 
@@ -117,7 +121,7 @@ public class SlpAppKit extends WalletKitCore {
     private void saveTokens(ArrayList<SlpToken> slpTokens) {
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.directory(), tokensFile.getName())), StandardCharsets.UTF_8))) {
             JSONArray json = new JSONArray();
-            for(SlpToken slpToken : slpTokens) {
+            for (SlpToken slpToken : slpTokens) {
                 JSONObject tokenObj = new JSONObject();
                 tokenObj.put("tokenId", slpToken.getTokenId());
                 tokenObj.put("ticker", slpToken.getTicker());
@@ -154,7 +158,7 @@ public class SlpAppKit extends WalletKitCore {
                     String ticker = tokenObj.getString("ticker");
                     int decimals = tokenObj.getInt("decimals");
                     SlpToken slpToken = new SlpToken(tokenId, ticker, decimals);
-                    if(!this.tokenIsMapped(tokenId)) {
+                    if (!this.tokenIsMapped(tokenId)) {
                         this.slpTokens.add(slpToken);
                     }
                 }
@@ -176,7 +180,7 @@ public class SlpAppKit extends WalletKitCore {
     private void saveVerifiedTxs(ArrayList<String> recordedSlpTxs) {
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.directory(), this.filePrefix + ".txs")), StandardCharsets.UTF_8))) {
             StringBuilder text = new StringBuilder();
-            for(String txHash : recordedSlpTxs) {
+            for (String txHash : recordedSlpTxs) {
                 text.append(txHash).append("\n");
             }
             writer.write(text.toString());
@@ -211,9 +215,11 @@ public class SlpAppKit extends WalletKitCore {
     public ArrayList<SlpTokenBalance> getSlpBalances() {
         return this.slpBalances;
     }
+
     public ArrayList<SlpToken> getSlpTokens() {
         return this.slpTokens;
     }
+
     public ArrayList<SlpUTXO> getSlpUtxos() {
         return this.slpUtxos;
     }
@@ -262,7 +268,7 @@ public class SlpAppKit extends WalletKitCore {
     }
 
     public void recalculateSlpUtxos() {
-        if(!recalculatingTokens)  {
+        if (!recalculatingTokens) {
             recalculatingTokens = true;
             this.slpUtxos.clear();
             this.slpBalances.clear();
@@ -326,7 +332,7 @@ public class SlpAppKit extends WalletKitCore {
     }
 
     private void tryCacheToken(String tokenId) {
-        if(!this.tokenIsMapped(tokenId)) {
+        if (!this.tokenIsMapped(tokenId)) {
             SlpDbTokenDetails tokenQuery = new SlpDbTokenDetails(tokenId);
             JSONObject tokenData = this.slpDbProcessor.getTokenData(tokenQuery.getEncoded());
 

@@ -80,8 +80,8 @@ public class BitcoinSerializer extends MessageSerializer {
     /**
      * Constructs a BitcoinSerializer with the given behavior.
      *
-     * @param params           networkParams used to create Messages instances and determining packetMagic
-     * @param parseRetain      retain the backing byte array of a message for fast reserialization.
+     * @param params      networkParams used to create Messages instances and determining packetMagic
+     * @param parseRetain retain the backing byte array of a message for fast reserialization.
      */
     public BitcoinSerializer(NetworkParameters params, boolean parseRetain) {
         this(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), parseRetain);
@@ -90,9 +90,9 @@ public class BitcoinSerializer extends MessageSerializer {
     /**
      * Constructs a BitcoinSerializer with the given behavior.
      *
-     * @param params           networkParams used to create Messages instances and determining packetMagic
-     * @param protocolVersion  the protocol version to use
-     * @param parseRetain      retain the backing byte array of a message for fast reserialization.
+     * @param params          networkParams used to create Messages instances and determining packetMagic
+     * @param protocolVersion the protocol version to use
+     * @param parseRetain     retain the backing byte array of a message for fast reserialization.
      */
     public BitcoinSerializer(NetworkParameters params, int protocolVersion, boolean parseRetain) {
         this.params = params;
@@ -345,7 +345,7 @@ public class BitcoinSerializer extends MessageSerializer {
             byte b = in.get();
             // We're looking for a run of bytes that is the same as the packet magic but we want to ignore partial
             // magics that aren't complete. So we keep track of where we're up to with magicCursor.
-            byte expectedByte = (byte)(0xFF & params.getPacketMagic() >>> (magicCursor * 8));
+            byte expectedByte = (byte) (0xFF & params.getPacketMagic() >>> (magicCursor * 8));
             if (b == expectedByte) {
                 magicCursor--;
                 if (magicCursor < 0) {
@@ -370,7 +370,9 @@ public class BitcoinSerializer extends MessageSerializer {
 
 
     public static class BitcoinPacketHeader {
-        /** The largest number of bytes that a header can represent */
+        /**
+         * The largest number of bytes that a header can represent
+         */
         public static final int HEADER_LENGTH = COMMAND_LEN + 4 + 4;
 
         public final byte[] header;

@@ -82,13 +82,13 @@ public class NewDifficultyAdjustmentAlgorithmRulesChecker extends AbstractPowRul
          * influence, we select the median of the 3 top most blocks as a starting
          * point.
          */
-        StoredBlock blocks[] = new StoredBlock[3];
+        StoredBlock[] blocks = new StoredBlock[3];
         blocks[2] = pindex;
         blocks[1] = pindex.getPrev(blockStore);
-        if(blocks[1] == null)
+        if (blocks[1] == null)
             throw new BlockStoreException("Not enough blocks in blockStore to calculate difficulty");
         blocks[0] = blocks[1].getPrev(blockStore);
-        if(blocks[0] == null)
+        if (blocks[0] == null)
             throw new BlockStoreException("Not enough blocks in blockStore to calculate difficulty");
 
         // Sorting network.

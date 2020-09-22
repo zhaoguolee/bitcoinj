@@ -16,10 +16,13 @@
 
 package org.bitcoinj.crypto;
 
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.security.*;
+import java.security.Provider;
+import java.security.SecureRandomSpi;
+import java.security.Security;
 
 /**
  * A SecureRandom implementation that is able to override the standard JVM provided implementation, and which simply

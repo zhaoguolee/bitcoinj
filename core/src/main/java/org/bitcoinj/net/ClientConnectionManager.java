@@ -35,9 +35,13 @@ public interface ClientConnectionManager extends Service {
      */
     ListenableFuture<SocketAddress> openConnection(SocketAddress serverAddress, StreamConnection connection);
 
-    /** Gets the number of connected peers */
+    /**
+     * Gets the number of connected peers
+     */
     int getConnectedClientCount();
 
-    /** Closes n peer connections */
+    /**
+     * Closes n peer connections
+     */
     void closeConnections(int n);
 }

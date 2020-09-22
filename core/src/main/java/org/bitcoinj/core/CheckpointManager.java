@@ -16,25 +16,19 @@
 
 package org.bitcoinj.core;
 
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.store.FullPrunedBlockStore;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-
+import org.bitcoinj.store.BlockStore;
+import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.store.FullPrunedBlockStore;
 import org.bitcoinj.store.SPVBlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import javax.annotation.Nullable;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -84,12 +78,16 @@ public class CheckpointManager {
 
     public static final BaseEncoding BASE64 = BaseEncoding.base64().omitPadding();
 
-    /** Loads the default checkpoints bundled with bitcoinj */
+    /**
+     * Loads the default checkpoints bundled with bitcoinj
+     */
     public CheckpointManager(Context context) throws IOException {
         this(context.getParams(), null);
     }
 
-    /** Loads the checkpoints from the given stream */
+    /**
+     * Loads the checkpoints from the given stream
+     */
     public CheckpointManager(NetworkParameters params, @Nullable InputStream inputStream) throws IOException {
         this.params = checkNotNull(params);
         if (inputStream == null)
@@ -107,7 +105,9 @@ public class CheckpointManager {
             throw new IOException("Unsupported format.");
     }
 
-    /** Returns a checkpoints stream pointing to inside the bitcoinj JAR */
+    /**
+     * Returns a checkpoints stream pointing to inside the bitcoinj JAR
+     */
     public static InputStream openStream(NetworkParameters params) {
         return CheckpointManager.class.getResourceAsStream("/" + params.getId() + ".checkpoints.txt");
     }
@@ -205,12 +205,16 @@ public class CheckpointManager {
         }
     }
 
-    /** Returns the number of checkpoints that were loaded. */
+    /**
+     * Returns the number of checkpoints that were loaded.
+     */
     public int numCheckpoints() {
         return checkpoints.size();
     }
 
-    /** Returns a hash of the concatenated checkpoint data. */
+    /**
+     * Returns a hash of the concatenated checkpoint data.
+     */
     public Sha256Hash getDataHash() {
         return dataHash;
     }

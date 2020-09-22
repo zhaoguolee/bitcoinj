@@ -17,17 +17,17 @@
 
 package org.bitcoinj.core;
 
+import com.google.common.base.MoreObjects;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.google.common.base.MoreObjects;
-
 /**
  * <p>Abstract superclass of classes with list based payload, ie InventoryMessage and GetDataMessage.</p>
- * 
+ *
  * <p>Instances of this class are not safe for use by multiple threads.</p>
  */
 public abstract class ListMessage extends Message {
@@ -109,7 +109,7 @@ public abstract class ListMessage extends Message {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        return items.equals(((ListMessage)o).items);
+        return items.equals(((ListMessage) o).items);
     }
 
     @Override

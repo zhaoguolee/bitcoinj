@@ -17,19 +17,19 @@
 
 package org.bitcoinj.core;
 
-import static org.bitcoinj.core.Utils.HEX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.bitcoinj.params.MainNetParams;
+import org.junit.Test;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
 
-import org.bitcoinj.params.MainNetParams;
-import org.junit.Test;
+import static org.bitcoinj.core.Utils.HEX;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PeerAddressTest {
     private static final NetworkParameters MAINNET = MainNetParams.get();
-    
+
     @Test
     public void parse_ancientProtocolVersion() throws Exception {
         // copied from https://en.bitcoin.it/wiki/Protocol_documentation#Network_address
@@ -44,7 +44,7 @@ public class PeerAddressTest {
     @Test
     public void bitcoinSerialize_ancientProtocolVersion() throws Exception {
         PeerAddress pa = new PeerAddress(MAINNET, InetAddress.getByName(null), 8333, 0, BigInteger.ZERO);
-        assertEquals(26, pa.length);        
+        assertEquals(26, pa.length);
         assertEquals("000000000000000000000000000000000000ffff7f000001208d", Utils.HEX.encode(pa.bitcoinSerialize()));
     }
 

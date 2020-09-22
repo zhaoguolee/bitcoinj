@@ -83,17 +83,23 @@ public class CashAddress extends Address {
         this.addressType = getType(params, version);
     }
 
-    /** Returns an Address that represents the given P2SH script hash. */
+    /**
+     * Returns an Address that represents the given P2SH script hash.
+     */
     public static CashAddress fromP2PKHHash(NetworkParameters params, byte[] hash160) {
         return new CashAddress(params, CashAddress.CashAddressType.PubKey, hash160);
     }
 
-    /** Returns an Address that represents the given P2SH script hash. */
+    /**
+     * Returns an Address that represents the given P2SH script hash.
+     */
     public static CashAddress fromP2SHHash(NetworkParameters params, byte[] hash160) {
         return new CashAddress(params, CashAddress.CashAddressType.Script, hash160);
     }
 
-    /** Returns an Address that represents the script hash extracted from the given scriptPubKey */
+    /**
+     * Returns an Address that represents the script hash extracted from the given scriptPubKey
+     */
     public static CashAddress fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
         checkArgument(scriptPubKey.isPayToScriptHash(), "Not a P2SH script");
         return fromP2SHHash(params, scriptPubKey.getPubKeyHash());
@@ -120,10 +126,12 @@ public class CashAddress extends Address {
     public Address clone() throws CloneNotSupportedException {
         return super.clone();
     }
+
     /**
      * Given an address, examines the version byte and attempts to find a matching NetworkParameters. If you aren't sure
      * which network the address is intended for (eg, it was provided by a user), you can use this to decide if it is
      * compatible with the current wallet.
+     *
      * @return a NetworkParameters of the address
      * @throws AddressFormatException if the string wasn't of a known version
      */

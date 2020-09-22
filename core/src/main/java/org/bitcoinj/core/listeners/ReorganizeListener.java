@@ -16,11 +16,11 @@
 
 package org.bitcoinj.core.listeners;
 
-import java.util.List;
-
 import org.bitcoinj.core.BlockChain;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.core.VerificationException;
+
+import java.util.List;
 
 /**
  * Listener interface for when the best chain has changed.
@@ -33,7 +33,7 @@ public interface ReorganizeListener {
      * we need to go through our transactions and find out if any have become invalid. It's possible for our balance
      * to go down in this case: money we thought we had can suddenly vanish if the rest of the network agrees it
      * should be so.<p>
-     *
+     * <p>
      * The oldBlocks/newBlocks lists are ordered height-wise from top first to bottom last (i.e. newest blocks first).
      */
     void reorganize(StoredBlock splitPoint, List<StoredBlock> oldBlocks,
