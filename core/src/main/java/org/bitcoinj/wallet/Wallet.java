@@ -4096,6 +4096,10 @@ public class Wallet extends BaseTaggableObject
             req.tx.addOutput(output);
         }
 
+        for(int x = 0; x < req.tx.getInputs().size(); x++) {
+            req.tx.getInput(x).setScriptSig(tx.getInput(x).getScriptSig());
+        }
+
         if (allowUnconfirmed)
             req.allowUnconfirmed();
         completeTx(req);
