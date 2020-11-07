@@ -140,6 +140,10 @@ public class MarriedKeyChain extends DeterministicKeyChain {
         this.followingKeyChains = followingKeyChains;
     }
 
+    public List<DeterministicKeyChain> getFollowingKeyChains() {
+        return followingKeyChains;
+    }
+
     @Override
     public boolean isMarried() {
         return true;
