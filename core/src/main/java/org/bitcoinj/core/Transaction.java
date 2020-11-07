@@ -1460,10 +1460,10 @@ public class Transaction extends ChildMessage {
     }
 
     /**
-     * Returns an unmodifiable view of all inputs.
+     * Returns a list of all inputs.
      */
     public List<TransactionInput> getInputs() {
-        return Collections.unmodifiableList(inputs);
+        return inputs;
     }
 
     /**
