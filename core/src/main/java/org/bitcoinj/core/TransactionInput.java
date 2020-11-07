@@ -19,9 +19,7 @@ package org.bitcoinj.core;
 
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptException;
-import org.bitcoinj.wallet.DefaultRiskAnalysis;
-import org.bitcoinj.wallet.KeyBag;
-import org.bitcoinj.wallet.RedeemData;
+import org.bitcoinj.wallet.*;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -303,6 +301,17 @@ public class TransactionInput extends ChildMessage {
         if (tx == null)
             return null;
         return tx.getOutputs().get((int) outpoint.getIndex());
+    }
+
+    @Nullable
+    public TransactionOutput findConnectedOutput(Wallet wallet) {
+        TransactionOutput connected = getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.UNSPENT));
+        if (connected == null)
+            connected = getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.SPENT));
+        if (connected == null)
+            connected = getConnectedOutput(wallet.getTransactionPool(WalletTransaction.Pool.PENDING));
+
+        return connected;
     }
 
     /**

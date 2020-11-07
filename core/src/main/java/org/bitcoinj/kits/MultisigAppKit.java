@@ -29,10 +29,8 @@ import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
-import org.bitcoinj.wallet.KeyChainGroupStructure;
-import org.bitcoinj.wallet.MarriedKeyChain;
-import org.bitcoinj.wallet.RedeemData;
-import org.bitcoinj.wallet.Wallet;
+import org.bitcoinj.wallet.*;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -222,6 +220,32 @@ public class MultisigAppKit extends WalletKitCore {
             }
         }
         return spendTx;
+    }
+
+    public Transaction importMultisigPayload(String hex) throws InsufficientMoneyException {
+        Transaction currentRawTx = new Transaction(params(), Hex.decode(hex));
+        SendRequest req = SendRequest.forTx(new Transaction(params()));
+        req.feePerKb = Coin.valueOf(1000L);
+        req.signInputs = false;
+        req.shuffleOutputs = false;
+        req.allowUnconfirmed();
+        for(TransactionInput input : currentRawTx.getInputs()) {
+            TransactionOutput utxo = input.findConnectedOutput(wallet());
+            req.tx.addInput(utxo);
+        }
+
+        for(TransactionOutput output : currentRawTx.getOutputs()) {
+            req.tx.addOutput(output);
+        }
+
+        for(int x = 0; x < req.tx.getInputs().size(); x++) {
+            Script scriptSigToInsert = currentRawTx.getInput(x).getScriptSig();
+            req.tx.getInput(x).setScriptSig(scriptSigToInsert);
+        }
+
+        wallet().completeTx(req);
+
+        return req.tx;
     }
 
     public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {

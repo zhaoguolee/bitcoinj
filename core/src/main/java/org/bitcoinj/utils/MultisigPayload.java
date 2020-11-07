@@ -8,4 +8,5 @@ public class MultisigPayload {
     public String address;
     public String amount;
     public ArrayList<MultisigInput> inputs;
+    public String rawHex;
 }
