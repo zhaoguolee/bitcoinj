@@ -179,11 +179,6 @@ public class SendRequest {
     private SendRequest() {
     }
 
-    public static SendRequest blank(NetworkParameters params) {
-        SendRequest req = new SendRequest();
-        req.tx = new Transaction(params);
-        return req;
-    }
     /**
      * <p>Creates a new SendRequest to the given address for the given value.</p>
      *

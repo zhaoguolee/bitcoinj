@@ -4082,38 +4082,14 @@ public class Wallet extends BaseTaggableObject
 
     public Transaction buildOffMultisigTransaction(Transaction tx, boolean allowUnconfirmed)
             throws InsufficientMoneyException, BadWalletEncryptionKeyException {
-        SendRequest req = SendRequest.blank(params);
+        SendRequest req = SendRequest.forTx(tx);
         req.feePerKb = Coin.valueOf(1000L);
         req.signInputs = false;
         req.shuffleOutputs = false;
-
-        for(TransactionInput input : tx.getInputs()) {
-            TransactionOutput connectedOutput = findConnectedOutput(input);
-            req.tx.addInput(connectedOutput);
-        }
-
-        for(TransactionOutput output : tx.getOutputs()) {
-            req.tx.addOutput(output);
-        }
-
         if (allowUnconfirmed)
             req.allowUnconfirmed();
         completeTx(req);
         return req.tx;
-    }
-
-    public TransactionOutput findConnectedOutput(TransactionInput input) {
-        for(TransactionOutput utxo : this.getUnspents()) {
-            String txid = utxo.getParentTransactionHash().toString();
-            long index = utxo.getIndex();
-            String inputTxid = input.getOutpoint().getHash().toString();
-            long inputOutpointIndex = input.getOutpoint().getIndex();
-            if(index == inputOutpointIndex && txid == inputTxid) {
-                return utxo;
-            }
-        }
-
-        return null;
     }
 
     /**
