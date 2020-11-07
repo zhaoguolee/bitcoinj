@@ -4089,7 +4089,9 @@ public class Wallet extends BaseTaggableObject
 
         for(TransactionInput input : tx.getInputs()) {
             TransactionOutput connectedOutput = findConnectedOutput(input);
-            req.tx.addInput(connectedOutput);
+
+            if(connectedOutput != null)
+                req.tx.addInput(connectedOutput);
         }
 
         for(TransactionOutput output : tx.getOutputs()) {
@@ -4107,12 +4109,12 @@ public class Wallet extends BaseTaggableObject
     }
 
     public TransactionOutput findConnectedOutput(TransactionInput input) {
-        for(TransactionOutput utxo : this.getUnspents()) {
+        for(TransactionOutput utxo : this.getUtxos()) {
             String txid = utxo.getParentTransactionHash().toString();
             long index = utxo.getIndex();
             String inputTxid = input.getOutpoint().getHash().toString();
             long inputOutpointIndex = input.getOutpoint().getIndex();
-            if(index == inputOutpointIndex && txid == inputTxid) {
+            if(index == inputOutpointIndex && txid.equals(inputTxid)) {
                 return utxo;
             }
         }
