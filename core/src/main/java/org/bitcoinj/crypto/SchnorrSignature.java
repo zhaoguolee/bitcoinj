@@ -1,10 +1,8 @@
 package org.bitcoinj.crypto;
 
 import com.google.common.base.Preconditions;
-import org.bitcoinj.core.SignatureDecodeException;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Utils;
-import org.bitcoinj.core.VerificationException;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -40,11 +38,6 @@ public class SchnorrSignature {
     public SchnorrSignature(byte[] signature, Transaction.SigHash mode, boolean anyoneCanPay, boolean useForkId) {
         this.signature = signature;
         sighashFlags = calcSigHashValue(mode, anyoneCanPay, useForkId);
-    }
-
-    public static SchnorrSignature decodeFromBitcoin(byte[] bytes, Transaction.SigHash mode, boolean anyoneCanPay,
-                                                     boolean useForkId) {
-        return new SchnorrSignature(bytes, mode, anyoneCanPay, useForkId);
     }
 
     public static BigInteger[] point_add(BigInteger[] p1, BigInteger[] p2) {

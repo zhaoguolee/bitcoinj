@@ -24,7 +24,6 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.MultisigSignature;
-import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.script.Script;
@@ -229,7 +228,7 @@ public class MultisigAppKit extends WalletKitCore {
         for (TransactionInput input : tx.getInputs()) {
             MultisigInput multisigInput = multisigInputs.get(input.getIndex());
             for (MultisigSignature multisigSignature : multisigInput.signatures) {
-                SchnorrSignature previousCosignerSig = SchnorrSignature.decodeFromBitcoin(multisigSignature.getSig(), Transaction.SigHash.ALL, false, true);
+                TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
                 TransactionOutput utxo = input.getConnectedOutput();
                 Script script = Objects.requireNonNull(utxo).getScriptPubKey();
                 Script inputScript = input.getScriptSig();
