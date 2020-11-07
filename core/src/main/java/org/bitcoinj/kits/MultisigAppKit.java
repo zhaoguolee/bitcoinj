@@ -207,6 +207,11 @@ public class MultisigAppKit extends WalletKitCore {
 
     public Transaction makeIndividualMultisigTransaction(Address address, Coin amount) throws InsufficientMoneyException {
         Transaction spendTx = wallet().createSendDontSign(address, amount, true);
+        spendTx.getInputs().sort(new Comparator<TransactionInput>() {
+            public int compare(TransactionInput o1, TransactionInput o2) {
+                return o1.getIndex() - o2.getIndex();
+            }
+        });
         for (TransactionInput input : spendTx.getInputs()) {
             RedeemData redeemData = input.getConnectedRedeemData(wallet());
             if (redeemData != null) {
@@ -220,17 +225,14 @@ public class MultisigAppKit extends WalletKitCore {
 
     public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {
         for (TransactionInput input : tx.getInputs()) {
-            for(MultisigInput multisigInput : multisigInputs) {
-                if(multisigInput.txid.equals(input.getParentTransaction().getTxId().toString())) {
-                    for (MultisigSignature multisigSignature : multisigInput.signatures) {
-                        TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
-                        TransactionOutput utxo = input.getConnectedOutput();
-                        Script script = Objects.requireNonNull(utxo).getScriptPubKey();
-                        Script inputScript = input.getScriptSig();
-                        inputScript = script.getScriptSigWithSignature(inputScript, previousCosignerSig.encodeToBitcoin(), multisigSignature.getIndex());
-                        input.setScriptSig(inputScript);
-                    }
-                }
+            MultisigInput multisigInput = multisigInputs.get(input.getIndex());
+            for (MultisigSignature multisigSignature : multisigInput.signatures) {
+                TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
+                TransactionOutput utxo = input.getConnectedOutput();
+                Script script = Objects.requireNonNull(utxo).getScriptPubKey();
+                Script inputScript = input.getScriptSig();
+                inputScript = script.getScriptSigWithSignature(inputScript, previousCosignerSig.encodeToBitcoin(), multisigSignature.getIndex());
+                input.setScriptSig(inputScript);
             }
         }
 

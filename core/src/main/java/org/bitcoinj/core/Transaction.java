@@ -1463,7 +1463,7 @@ public class Transaction extends ChildMessage {
      * Returns a list of all inputs.
      */
     public List<TransactionInput> getInputs() {
-        return Collections.unmodifiableList(inputs);
+        return inputs;
     }
 
     /**
