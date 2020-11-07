@@ -37,6 +37,8 @@ import org.bitcoinj.wallet.Wallet;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -205,6 +207,11 @@ public class MultisigAppKit extends WalletKitCore {
 
     public Transaction makeIndividualMultisigTransaction(Address address, Coin amount) throws InsufficientMoneyException {
         Transaction spendTx = wallet().createSendDontSign(address, amount, true);
+        spendTx.getInputs().sort(new Comparator<TransactionInput>() {
+            public int compare(TransactionInput o1, TransactionInput o2) {
+                return o1.getIndex() - o2.getIndex();
+            }
+        });
         for (TransactionInput input : spendTx.getInputs()) {
             RedeemData redeemData = input.getConnectedRedeemData(wallet());
             if (redeemData != null) {
@@ -213,7 +220,6 @@ public class MultisigAppKit extends WalletKitCore {
                 input.setScriptSig(script.createEmptyInputScript(null, redeemData.redeemScript));
             }
         }
-
         return spendTx;
     }
 
