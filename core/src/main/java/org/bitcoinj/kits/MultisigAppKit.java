@@ -221,7 +221,7 @@ public class MultisigAppKit extends WalletKitCore {
     public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {
         for (TransactionInput input : tx.getInputs()) {
             for(MultisigInput multisigInput : multisigInputs) {
-                if(multisigInput.txid.equals(input.getParentTransaction().getTxId().toString())) {
+                if(multisigInput.outpoint.equals(input.getOutpoint().toString())) {
                     for (MultisigSignature multisigSignature : multisigInput.signatures) {
                         TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
                         TransactionOutput utxo = input.getConnectedOutput();
