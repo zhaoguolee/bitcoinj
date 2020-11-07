@@ -4080,6 +4080,18 @@ public class Wallet extends BaseTaggableObject
         return req.tx;
     }
 
+    public Transaction buildOffMultisigTransaction(Transaction tx, boolean allowUnconfirmed)
+            throws InsufficientMoneyException, BadWalletEncryptionKeyException {
+        SendRequest req = SendRequest.forTx(tx);
+        req.feePerKb = Coin.valueOf(1000L);
+        req.signInputs = false;
+        req.shuffleOutputs = false;
+        if (allowUnconfirmed)
+            req.allowUnconfirmed();
+        completeTx(req);
+        return req.tx;
+    }
+
     /**
      * Sends coins to the given address but does not broadcast the resulting pending transaction. It is still stored
      * in the wallet, so when the wallet is added to a {@link PeerGroup} or {@link Peer} the transaction will be

@@ -33,6 +33,7 @@ import org.bitcoinj.wallet.KeyChainGroupStructure;
 import org.bitcoinj.wallet.MarriedKeyChain;
 import org.bitcoinj.wallet.RedeemData;
 import org.bitcoinj.wallet.Wallet;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -216,6 +217,10 @@ public class MultisigAppKit extends WalletKitCore {
             }
         }
         return spendTx;
+    }
+
+    public Transaction importPartialMultisigTransaction(String hex) throws InsufficientMoneyException {
+        return wallet().buildOffMultisigTransaction(new Transaction(params, Hex.decode(hex)), true);
     }
 
     public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {
