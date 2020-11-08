@@ -243,8 +243,6 @@ public class MultisigAppKit extends WalletKitCore {
             req.tx.getInput(x).setScriptSig(scriptSigToInsert);
         }
 
-        wallet().completeTx(req);
-
         return req.tx;
     }
 
