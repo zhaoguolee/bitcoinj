@@ -23,8 +23,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.DeterministicKey;
-import org.bitcoinj.crypto.MultisigSignature;
-import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStoreException;
@@ -244,22 +242,6 @@ public class MultisigAppKit extends WalletKitCore {
         }
 
         return req.tx;
-    }
-
-    public Transaction addSignaturesToMultisigTransaction(Transaction tx, List<MultisigInput> multisigInputs) throws SignatureDecodeException {
-        for (TransactionInput input : tx.getInputs()) {
-            MultisigInput multisigInput = multisigInputs.get(input.getIndex());
-            for (MultisigSignature multisigSignature : multisigInput.signatures) {
-                TransactionSignature previousCosignerSig = TransactionSignature.decodeFromBitcoin(multisigSignature.getSig(), true, true);
-                TransactionOutput utxo = input.getConnectedOutput();
-                Script script = Objects.requireNonNull(utxo).getScriptPubKey();
-                Script inputScript = input.getScriptSig();
-                inputScript = script.getScriptSigWithSignature(inputScript, previousCosignerSig.encodeToBitcoin(), multisigSignature.getIndex());
-                input.setScriptSig(inputScript);
-            }
-        }
-
-        return tx;
     }
 
     public int getSigsRequiredToSpend() {
