@@ -22,6 +22,7 @@ import nl.jqno.equalsverifier.Warning;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.Networks;
 import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.params.TestNet4Params;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.Script.ScriptType;
 import org.bitcoinj.script.ScriptBuilder;
@@ -36,7 +37,7 @@ import static org.bitcoinj.core.Utils.HEX;
 import static org.junit.Assert.*;
 
 public class LegacyAddressTest {
-    private static final NetworkParameters TESTNET = TestNet3Params.get();
+    private static final NetworkParameters TESTNET = TestNet4Params.get();
     private static final NetworkParameters MAINNET = MainNetParams.get();
 
     @Test
@@ -246,8 +247,8 @@ public class LegacyAddressTest {
     @Test
     public void comparisonNotEquals() {
         // These addresses only differ by version byte
-        LegacyAddress a = LegacyAddress.fromBase58(MAINNET, "14wivxvNTv9THhewPotsooizZawaWbEKE2");
-        LegacyAddress b = LegacyAddress.fromBase58(MAINNET, "35djrWQp1pTqNsMNWuZUES5vi7EJ74m9Eh");
+        Address a = Address.fromBase58(MAINNET, "14wivxvNTv9THhewPotsooizZawaWbEKE2");
+        Address b = Address.fromBase58(MAINNET, "35djrWQp1pTqNsMNWuZUES5vi7EJ74m9Eh");
 
         int result = a.compareTo(b);
         assertTrue(result != 0);

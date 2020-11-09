@@ -141,16 +141,6 @@ public class KeyChainGroup implements KeyBag {
                         .accountPath(structure.accountPathFor(Script.ScriptType.P2PKH)).build();
                 this.chains.clear();
                 this.chains.add(chain);
-            } else if (outputScriptType == Script.ScriptType.P2WPKH) {
-                DeterministicKeyChain fallbackChain = DeterministicKeyChain.builder().spend(accountKey)
-                        .outputScriptType(Script.ScriptType.P2PKH)
-                        .accountPath(structure.accountPathFor(Script.ScriptType.P2PKH)).build();
-                DeterministicKeyChain defaultChain = DeterministicKeyChain.builder().spend(accountKey)
-                        .outputScriptType(Script.ScriptType.P2WPKH)
-                        .accountPath(structure.accountPathFor(Script.ScriptType.P2WPKH)).build();
-                this.chains.clear();
-                this.chains.add(fallbackChain);
-                this.chains.add(defaultChain);
             } else {
                 throw new IllegalArgumentException(outputScriptType.toString());
             }

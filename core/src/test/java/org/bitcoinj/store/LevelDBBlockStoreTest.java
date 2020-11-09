@@ -22,6 +22,7 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.core.Utils;
 import org.bitcoinj.params.UnitTestParams;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;

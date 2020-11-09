@@ -4186,17 +4186,12 @@ public class Wallet extends BaseTaggableObject
         checkState(!lock.isHeldByCurrentThread());
 
         // Commit the TX to the wallet immediately so the spent coins won't be reused.
-        // TODO: We should probably allow the request to specify tx commit only after the network has accepted it.
-        SendResult result = new SendResult();
-        result.tx = request.tx;
         // The tx has been committed to the pending pool by this point (via sendCoinsOffline -> commitTx), so it has
         // a txConfidenceListener registered. Once the tx is broadcast the peers will update the memory pool with the
         // count of seen peers, the memory pool will update the transaction confidence object, that will invoke the
         // txConfidenceListener which will in turn invoke the wallets event listener onTransactionConfidenceChanged
         // method.
-        result.broadcast = broadcaster.broadcastTransaction(result.tx);
-        result.broadcastComplete = result.broadcast.future();
-        return result;
+        return new SendResult(request.tx, broadcaster.broadcastTransaction(request.tx));
     }
 
     /**

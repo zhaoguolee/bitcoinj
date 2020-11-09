@@ -21,6 +21,7 @@ import com.google.common.base.Stopwatch;
 import org.bitcoinj.core.*;
 import org.bitcoinj.params.UnitTestParams;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;

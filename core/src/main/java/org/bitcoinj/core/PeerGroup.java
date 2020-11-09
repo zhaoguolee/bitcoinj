@@ -91,7 +91,7 @@ public class PeerGroup implements TransactionBroadcaster {
      * were only sending transactions to two peers and sometimes this wasn't reliable enough: transactions wouldn't
      * get through.
      */
-    public static final int DEFAULT_CONNECTIONS = 12;
+    public static final int DEFAULT_CONNECTIONS = 3;
     private volatile int vMaxPeersToDiscoverCount = 100;
     private static final long DEFAULT_PEER_DISCOVERY_TIMEOUT_MILLIS = 5000;
     private volatile long vPeerDiscoveryTimeoutMillis = DEFAULT_PEER_DISCOVERY_TIMEOUT_MILLIS;
