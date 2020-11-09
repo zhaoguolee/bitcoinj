@@ -18,6 +18,7 @@
 package org.bitcoinj.params;
 
 import org.bitcoinj.core.Block;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
 
 import java.math.BigInteger;
@@ -29,35 +30,38 @@ import static com.google.common.base.Preconditions.checkState;
  * Parameters for the testnet, a separate public instance of Bitcoin that has relaxed rules suitable for development
  * and testing of applications and new Bitcoin versions.
  */
-public class TestNetAsertParams extends AbstractBitcoinNetParams {
+public class ScaleNetParams extends AbstractBitcoinNetParams {
     public static final int TESTNET_MAJORITY_WINDOW = 100;
     public static final int TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED = 75;
     public static final int TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE = 51;
 
-    public TestNetAsertParams() {
+    public ScaleNetParams() {
         super();
-        id = ID_TESTNET;
-        packetMagic = 0xf4e5f3f4L;
+        id = ID_SCALENET;
+        packetMagic = 0xc3afe1a2L;
         targetTimespan = TARGET_TIMESPAN;
+        interval = targetTimespan / TARGET_SPACING;
         maxTarget = Utils.decodeCompactBits(0x1d00ffffL);
-        port = 10333;
+        port = 38333;
         addressHeader = 111;
         p2shHeader = 196;
         acceptableAddressCodes = new int[]{addressHeader, p2shHeader};
         dumpedPrivateKeyHeader = 239;
-        genesisBlock.setTime(1296688602L);
+        genesisBlock.setTime(1598282438L);
         genesisBlock.setDifficultyTarget(0x1d00ffffL);
-        genesisBlock.setNonce(414098458);
+        genesisBlock.setNonce(-1567304284);
         spendableCoinbaseDepth = 100;
         String genesisHash = genesisBlock.getHashAsString();
-        checkState(genesisHash.equals("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+        checkState(genesisHash.equals("00000000e6453dc2dfe1ffa19023f86002eb11dbb8e87d0291a4599f0430be52"));
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
 
+        checkpoints.put(0, Sha256Hash.wrap(genesisHash));
+        checkpoints.put(45, Sha256Hash.wrap("00000000d75a7c9098d02b321e9900b16ecbd552167e65683fe86e5ecf88b320"));
+
         dnsSeeds = new String[]{
-                "testnet-seed.bitcoinabc.org",
-                "testnet-seed-abc.bitcoinforks.org",
-                "testnet-seed.bitprim.org",
-                "testnet-seed.deadalnix.me"
+                "scalenet-seed-bch.bitcoinforks.org",
+                "scalenet-seed-bch.toom.im",
+                "seed.sbch.loping.net"
         };
         httpSeeds = null;
         addrSeeds = null;
@@ -67,35 +71,37 @@ public class TestNetAsertParams extends AbstractBitcoinNetParams {
         majorityEnforceBlockUpgrade = TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE;
         majorityRejectBlockOutdated = TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = TESTNET_MAJORITY_WINDOW;
-        asertReferenceBlockBits = 0x1d00923b;
-        asertReferenceBlockHeight = BigInteger.valueOf(1400614L);
-        asertReferenceBlockAncestorTime = BigInteger.valueOf(1597096679L);
-        asertUpdateTime = 1597096200L;
+        asertReferenceBlockBits = 0x00000000;
+        asertReferenceBlockHeight = BigInteger.ZERO;
+        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertUpdateTime = 1605441600L;
         // Aug, 1 hard fork
-        uahfHeight = 1155876;
+        uahfHeight = 7;
         // Nov, 13 hard fork
-        daaUpdateHeight = 1188697;
+        daaUpdateHeight = 3000;
         cashAddrPrefix = "bchtest";
         simpleledgerPrefix = "slptest";
 
-        asertHalfLife = 60L * 60L;
+        asertHalfLife = 2 * 24 * 60 * 60;
         allowMinDifficultyBlocks = true;
-        maxBlockSize = 32 * 1000 * 1000;
+        //1.2 MB
+        maxBlockSize = 256 * 1000 * 1000;
         maxBlockSigops = maxBlockSize / 50;
+
     }
 
-    private static TestNetAsertParams instance;
+    private static ScaleNetParams instance;
 
-    public static synchronized TestNetAsertParams get() {
+    public static synchronized ScaleNetParams get() {
         if (instance == null) {
-            instance = new TestNetAsertParams();
+            instance = new ScaleNetParams();
         }
         return instance;
     }
 
     @Override
     public String getPaymentProtocolId() {
-        return PAYMENT_PROTOCOL_ID_TESTNET;
+        return PAYMENT_PROTOCOL_ID_SCALENET;
     }
 
     // February 16th 2012

@@ -18,6 +18,7 @@
 package org.bitcoinj.params;
 
 import org.bitcoinj.core.Block;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
 
 import java.math.BigInteger;
@@ -54,8 +55,13 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         checkState(genesisHash.equals("000000001dd410c49a788668ce26751718cc797474d3152a5fc073dd44fd9f7b"));
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
 
+        checkpoints.put(0, Sha256Hash.wrap(genesisHash));
+        checkpoints.put(5000, Sha256Hash.wrap("000000009f092d074574a216faec682040a853c4f079c33dfd2c3ef1fd8108c4"));
+
         dnsSeeds = new String[]{
-                "testnet4-seed-bch.bitcoinforks.org"
+                "testnet4-seed-bch.bitcoinforks.org",
+                "testnet4-seed-bch.toom.im",
+                "seed.tbch4.loping.net"
         };
         httpSeeds = null;
         addrSeeds = null;
@@ -79,7 +85,7 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         asertHalfLife = 60L * 60L;
         allowMinDifficultyBlocks = true;
         //1.2 MB
-        maxBlockSize = 1200 * 1000;
+        maxBlockSize = 2000 * 1000;
         maxBlockSigops = maxBlockSize / 50;
 
     }

@@ -31,6 +31,7 @@ import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.core.Utils;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.RegTestParams;
+import org.bitcoinj.params.ScaleNetParams;
 import org.bitcoinj.params.TestNet4Params;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.utils.AppDataDirectory;
@@ -51,7 +52,7 @@ import java.net.UnknownHostException;
 import static wallettemplate.utils.GuiUtils.*;
 
 public class Main extends Application {
-    public static NetworkParameters params = TestNet4Params.get();
+    public static NetworkParameters params = ScaleNetParams.get();
     public static final Script.ScriptType PREFERRED_OUTPUT_SCRIPT_TYPE = Script.ScriptType.P2PKH;
     public static final String APP_NAME = "WalletTemplate";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
@@ -156,13 +157,6 @@ public class Main extends Application {
                 .setUserAgent(APP_NAME, "1.0");
         if (seed != null)
             bitcoin.restoreWalletFromSeed(seed);
-
-        bitcoin.setPeerNodes(null);
-        try {
-            bitcoin.setPeerNodes(new PeerAddress(params, InetAddress.getByName("rome.toom.im")));
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
     }
 
     private Node stopClickPane = new Pane();

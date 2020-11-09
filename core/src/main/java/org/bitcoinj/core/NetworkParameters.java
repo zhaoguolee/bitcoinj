@@ -62,6 +62,10 @@ public abstract class NetworkParameters {
      */
     public static final String ID_TESTNET4 = "org.bitcoin.test4";
     /**
+     * The string returned by getId() for the scalenet.
+     */
+    public static final String ID_SCALENET = "org.bitcoin.scalenet";
+    /**
      * The string returned by getId() for regtest mode.
      */
     public static final String ID_REGTEST = "org.bitcoin.regtest";
@@ -82,6 +86,10 @@ public abstract class NetworkParameters {
      * The string used by the payment protocol to represent the test net.
      */
     public static final String PAYMENT_PROTOCOL_ID_TESTNET4 = "test4";
+    /**
+     * The string used by the payment protocol to represent the scale net.
+     */
+    public static final String PAYMENT_PROTOCOL_ID_SCALENET = "scale";
     /**
      * The string used by the payment protocol to represent unit testing (note that this is non-standard).
      */
@@ -228,18 +236,21 @@ public abstract class NetworkParameters {
      */
     @Nullable
     public static NetworkParameters fromID(String id) {
-        if (id.equals(ID_MAINNET)) {
-            return MainNetParams.get();
-        } else if (id.equals(ID_TESTNET)) {
-            return TestNet3Params.get();
-        } else if (id.equals(ID_TESTNET4)) {
-            return TestNet4Params.get();
-        } else if (id.equals(ID_UNITTESTNET)) {
-            return UnitTestParams.get();
-        } else if (id.equals(ID_REGTEST)) {
-            return RegTestParams.get();
-        } else {
-            return null;
+        switch (id) {
+            case ID_MAINNET:
+                return MainNetParams.get();
+            case ID_TESTNET:
+                return TestNet3Params.get();
+            case ID_TESTNET4:
+                return TestNet4Params.get();
+            case ID_SCALENET:
+                return ScaleNetParams.get();
+            case ID_UNITTESTNET:
+                return UnitTestParams.get();
+            case ID_REGTEST:
+                return RegTestParams.get();
+            default:
+                return null;
         }
     }
 
