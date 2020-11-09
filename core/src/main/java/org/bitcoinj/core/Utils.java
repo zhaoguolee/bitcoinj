@@ -31,9 +31,6 @@ import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -65,8 +62,6 @@ public class Utils {
      * forces bitcoinj to try to allocate a huge piece of the memory resulting in OutOfMemoryError.
      */
     public static final int MAX_INITIAL_ARRAY_LENGTH = 20;
-
-    private static BlockingQueue<Boolean> mockSleepQueue;
 
     private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
@@ -460,7 +455,6 @@ public class Utils {
      */
     public static void resetMocking() {
         mockTime = null;
-        mockSleepQueue = null;
     }
 
     /**

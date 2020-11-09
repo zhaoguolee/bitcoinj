@@ -55,7 +55,7 @@ public class BtcFormatTest {
     public BtcFormatTest(Locale defaultLocale) {
         Locale.setDefault(defaultLocale);
     }
-
+ 
     @Test
     public void prefixTest() { // prefix b/c symbol is prefixed
         BtcFormat usFormat = BtcFormat.getSymbolInstance(Locale.US);
@@ -89,24 +89,24 @@ public class BtcFormatTest {
     @Test
     public void defaultLocaleTest() {
         assertEquals(
-                "Default Locale is " + Locale.getDefault().toString(),
-                BtcFormat.getInstance().pattern(), BtcFormat.getInstance(Locale.getDefault()).pattern()
+             "Default Locale is " + Locale.getDefault().toString(),
+             BtcFormat.getInstance().pattern(), BtcFormat.getInstance(Locale.getDefault()).pattern()
         );
         assertEquals(
-                "Default Locale is " + Locale.getDefault().toString(),
-                BtcFormat.getCodeInstance().pattern(),
-                BtcFormat.getCodeInstance(Locale.getDefault()).pattern()
-        );
+            "Default Locale is " + Locale.getDefault().toString(),
+            BtcFormat.getCodeInstance().pattern(),
+            BtcFormat.getCodeInstance(Locale.getDefault()).pattern()
+       );
     }
 
     @Test
     public void symbolCollisionTest() {
         Locale[] locales = BtcFormat.getAvailableLocales();
-        for (int i = 0; i < locales.length; ++i) {
-            String cs = ((DecimalFormat) NumberFormat.getCurrencyInstance(locales[i])).
+        for (Locale locale : locales) {
+            String cs = ((DecimalFormat) NumberFormat.getCurrencyInstance(locale)).
                     getDecimalFormatSymbols().getCurrencySymbol();
             if (cs.contains("฿")) {
-                BtcFormat bf = BtcFormat.getSymbolInstance(locales[i]);
+                BtcFormat bf = BtcFormat.getSymbolInstance(locale);
                 String coin = bf.format(COIN);
                 assertTrue(coin.contains("Ƀ"));
                 assertFalse(coin.contains("฿"));
@@ -116,19 +116,19 @@ public class BtcFormatTest {
                 String micro = bf.format(valueOf(100));
                 assertTrue(micro.contains("µɃ"));
                 assertFalse(micro.contains("฿"));
-                BtcFormat ff = BtcFormat.builder().scale(0).locale(locales[i]).pattern("¤#.#").build();
+                BtcFormat ff = BtcFormat.builder().scale(0).locale(locale).pattern("¤#.#").build();
                 assertEquals("Ƀ", ((BtcFixedFormat) ff).symbol());
                 assertEquals("Ƀ", ff.coinSymbol());
                 coin = ff.format(COIN);
                 assertTrue(coin.contains("Ƀ"));
                 assertFalse(coin.contains("฿"));
-                BtcFormat mlff = BtcFormat.builder().scale(3).locale(locales[i]).pattern("¤#.#").build();
+                BtcFormat mlff = BtcFormat.builder().scale(3).locale(locale).pattern("¤#.#").build();
                 assertEquals("₥Ƀ", ((BtcFixedFormat) mlff).symbol());
                 assertEquals("Ƀ", mlff.coinSymbol());
                 milli = mlff.format(valueOf(10000));
                 assertTrue(milli.contains("₥Ƀ"));
                 assertFalse(milli.contains("฿"));
-                BtcFormat mcff = BtcFormat.builder().scale(6).locale(locales[i]).pattern("¤#.#").build();
+                BtcFormat mcff = BtcFormat.builder().scale(6).locale(locale).pattern("¤#.#").build();
                 assertEquals("µɃ", ((BtcFixedFormat) mcff).symbol());
                 assertEquals("Ƀ", mcff.coinSymbol());
                 micro = mcff.format(valueOf(100));
@@ -136,7 +136,7 @@ public class BtcFormatTest {
                 assertFalse(micro.contains("฿"));
             }
             if (cs.contains("Ƀ")) {  // NB: We don't know of any such existing locale, but check anyway.
-                BtcFormat bf = BtcFormat.getInstance(locales[i]);
+                BtcFormat bf = BtcFormat.getInstance(locale);
                 String coin = bf.format(COIN);
                 assertTrue(coin.contains("฿"));
                 assertFalse(coin.contains("Ƀ"));
@@ -158,25 +158,25 @@ public class BtcFormatTest {
         // Coin
         assertEquals("µ฿1,000,000.01", usFormat.format(COIN.add(valueOf(1))));
         // Integer
-        assertEquals("µ฿21,474,836.47", usFormat.format(Integer.MAX_VALUE));
-        assertEquals("(µ฿21,474,836.48)", usFormat.format(Integer.MIN_VALUE));
+        assertEquals("µ฿21,474,836.47" ,usFormat.format(Integer.MAX_VALUE));
+        assertEquals("(µ฿21,474,836.48)" ,usFormat.format(Integer.MIN_VALUE));
         // Long
-        assertEquals("µ฿92,233,720,368,547,758.07", usFormat.format(Long.MAX_VALUE));
-        assertEquals("(µ฿92,233,720,368,547,758.08)", usFormat.format(Long.MIN_VALUE));
+        assertEquals("µ฿92,233,720,368,547,758.07" ,usFormat.format(Long.MAX_VALUE));
+        assertEquals("(µ฿92,233,720,368,547,758.08)" ,usFormat.format(Long.MIN_VALUE));
         // BigInteger
-        assertEquals("µ฿0.10", usFormat.format(java.math.BigInteger.TEN));
-        assertEquals("฿0.00", usFormat.format(java.math.BigInteger.ZERO));
+        assertEquals("µ฿0.10" ,usFormat.format(java.math.BigInteger.TEN));
+        assertEquals("฿0.00" ,usFormat.format(java.math.BigInteger.ZERO));
         // BigDecimal
-        assertEquals("฿1.00", usFormat.format(java.math.BigDecimal.ONE));
-        assertEquals("฿0.00", usFormat.format(java.math.BigDecimal.ZERO));
+        assertEquals("฿1.00" ,usFormat.format(java.math.BigDecimal.ONE));
+        assertEquals("฿0.00" ,usFormat.format(java.math.BigDecimal.ZERO));
         // use of Double not encouraged but no way to stop user from converting one to BigDecimal
         assertEquals(
-                "฿179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00",
-                usFormat.format(java.math.BigDecimal.valueOf(Double.MAX_VALUE)));
+            "฿179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00",
+            usFormat.format(java.math.BigDecimal.valueOf(Double.MAX_VALUE)));
         assertEquals("฿0.00", usFormat.format(java.math.BigDecimal.valueOf(Double.MIN_VALUE)));
         assertEquals(
-                "฿340,282,346,638,528,860,000,000,000,000,000,000,000.00",
-                usFormat.format(java.math.BigDecimal.valueOf(Float.MAX_VALUE)));
+            "฿340,282,346,638,528,860,000,000,000,000,000,000,000.00",
+            usFormat.format(java.math.BigDecimal.valueOf(Float.MAX_VALUE)));
         // Bad type
         try {
             usFormat.format("1");
@@ -187,13 +187,13 @@ public class BtcFormatTest {
 
     @Test
     public void columnAlignmentTest() {
-        BtcFormat germany = BtcFormat.getCoinInstance(2, BtcFixedFormat.REPEATING_PLACES);
+        BtcFormat germany = BtcFormat.getCoinInstance(2,BtcFixedFormat.REPEATING_PLACES);
         char separator = germany.symbols().getDecimalSeparator();
         Coin[] rows = {MAX_MONEY, MAX_MONEY.subtract(SATOSHI), Coin.parseCoin("1234"),
-                COIN, COIN.add(SATOSHI), COIN.subtract(SATOSHI),
-                COIN.divide(1000).add(SATOSHI), COIN.divide(1000), COIN.divide(1000).subtract(SATOSHI),
-                valueOf(100), valueOf(1000), valueOf(10000),
-                SATOSHI};
+                       COIN, COIN.add(SATOSHI), COIN.subtract(SATOSHI),
+                        COIN.divide(1000).add(SATOSHI), COIN.divide(1000), COIN.divide(1000).subtract(SATOSHI),
+                       valueOf(100), valueOf(1000), valueOf(10000),
+                       SATOSHI};
         FieldPosition fp = new FieldPosition(DECIMAL_SEPARATOR);
         String[] output = new String[rows.length];
         int[] indexes = new int[rows.length];
@@ -228,7 +228,7 @@ public class BtcFormatTest {
         assertEquals("20.99999999999999", mega.format(value, 2, BtcFixedFormat.REPEATING_TRIPLETS));
         assertEquals("20.99999999999999", mega.format(value, 3, BtcFixedFormat.REPEATING_TRIPLETS));
         assertEquals("1.00000005", BtcFormat.getCoinInstance(US).
-                format(COIN.add(Coin.valueOf(5)), 0, BtcFixedFormat.REPEATING_PLACES));
+                                   format(COIN.add(Coin.valueOf(5)), 0, BtcFixedFormat.REPEATING_PLACES));
     }
 
     @Test
@@ -249,28 +249,28 @@ public class BtcFormatTest {
         assertEquals(0, i.getBeginIndex());
         assertEquals(15, i.getEndIndex());
         int n = 0;
-        for (c = i.first(); i.getAttribute(NumberFormat.Field.CURRENCY) != null; c = i.next()) {
+        for(c = i.first(); i.getAttribute(NumberFormat.Field.CURRENCY) != null; c = i.next()) {
             n++;
         }
         assertEquals(4, n);
         n = 0;
-        for (i.next(); i.getAttribute(NumberFormat.Field.INTEGER) != null && i.getAttribute(NumberFormat.Field.GROUPING_SEPARATOR) != NumberFormat.Field.GROUPING_SEPARATOR; c = i.next()) {
+        for(i.next(); i.getAttribute(NumberFormat.Field.INTEGER) != null && i.getAttribute(NumberFormat.Field.GROUPING_SEPARATOR) != NumberFormat.Field.GROUPING_SEPARATOR; c = i.next()) {
             n++;
         }
         assertEquals(3, n);
         assertEquals(NumberFormat.Field.INTEGER, i.getAttribute(NumberFormat.Field.INTEGER));
         n = 0;
-        for (c = i.next(); i.getAttribute(NumberFormat.Field.INTEGER) != null; c = i.next()) {
+        for(c = i.next(); i.getAttribute(NumberFormat.Field.INTEGER) != null; c = i.next()) {
             n++;
         }
         assertEquals(3, n);
         assertEquals(NumberFormat.Field.DECIMAL_SEPARATOR, i.getAttribute(NumberFormat.Field.DECIMAL_SEPARATOR));
         n = 0;
-        for (c = i.next(); c != CharacterIterator.DONE; c = i.next()) {
+        for(c = i.next(); c != CharacterIterator.DONE; c = i.next()) {
             n++;
             assertNotNull(i.getAttribute(NumberFormat.Field.FRACTION));
         }
-        assertEquals(2, n);
+        assertEquals(2,n);
 
         // immutability check
         BtcFormat fa = BtcFormat.getSymbolInstance(US);
@@ -374,7 +374,7 @@ public class BtcFormatTest {
         // Same thing with addition of custom code, symbol
         us = BtcFormat.builder().locale(US).style(SYMBOL).symbol("£").code("XYZ").build();
         usCoded = BtcFormat.builder().locale(US).scale(0).symbol("£").code("XYZ").
-                pattern("¤ #,##0.00").build();
+                            pattern("¤ #,##0.00").build();
         // Coins
         assertEquals(valueOf(200000000), us.parseObject("XYZ2"));
         assertEquals(valueOf(200000000), us.parseObject("BTC2"));
@@ -493,8 +493,7 @@ public class BtcFormatTest {
         try {
             BtcFormat.getInstance().parse("abc");
             fail("bad parse must raise exception");
-        } catch (ParseException e) {
-        }
+        } catch (ParseException e) {}
     }
 
     @Test
@@ -622,15 +621,15 @@ public class BtcFormatTest {
         // Test the field constants
         FieldPosition intField = new FieldPosition(NumberFormat.Field.INTEGER);
         assertEquals(
-                "987,654,321",
-                usCoded.format(valueOf(98765432123L), new StringBuffer(), intField).
-                        substring(intField.getBeginIndex(), intField.getEndIndex())
+          "987,654,321",
+          usCoded.format(valueOf(98765432123L), new StringBuffer(), intField).
+          substring(intField.getBeginIndex(), intField.getEndIndex())
         );
         FieldPosition fracField = new FieldPosition(NumberFormat.Field.FRACTION);
         assertEquals(
-                "23",
-                usCoded.format(valueOf(98765432123L), new StringBuffer(), fracField).
-                        substring(fracField.getBeginIndex(), fracField.getEndIndex())
+          "23",
+          usCoded.format(valueOf(98765432123L), new StringBuffer(), fracField).
+          substring(fracField.getBeginIndex(), fracField.getEndIndex())
         );
 
         // for currency we use a locale that puts the units at the end
@@ -638,34 +637,34 @@ public class BtcFormatTest {
         BtcFormat deCoded = BtcFormat.getCodeInstance(Locale.GERMANY);
         FieldPosition currField = new FieldPosition(NumberFormat.Field.CURRENCY);
         assertEquals(
-                "µ฿",
-                de.format(valueOf(98765432123L), new StringBuffer(), currField).
-                        substring(currField.getBeginIndex(), currField.getEndIndex())
+          "µ฿",
+          de.format(valueOf(98765432123L), new StringBuffer(), currField).
+          substring(currField.getBeginIndex(), currField.getEndIndex())
         );
         assertEquals(
-                "µBTC",
-                deCoded.format(valueOf(98765432123L), new StringBuffer(), currField).
-                        substring(currField.getBeginIndex(), currField.getEndIndex())
+          "µBTC",
+          deCoded.format(valueOf(98765432123L), new StringBuffer(), currField).
+          substring(currField.getBeginIndex(), currField.getEndIndex())
         );
         assertEquals(
-                "₥฿",
-                de.format(valueOf(98765432000L), new StringBuffer(), currField).
-                        substring(currField.getBeginIndex(), currField.getEndIndex())
+          "₥฿",
+          de.format(valueOf(98765432000L), new StringBuffer(), currField).
+          substring(currField.getBeginIndex(), currField.getEndIndex())
         );
         assertEquals(
-                "mBTC",
-                deCoded.format(valueOf(98765432000L), new StringBuffer(), currField).
-                        substring(currField.getBeginIndex(), currField.getEndIndex())
+          "mBTC",
+          deCoded.format(valueOf(98765432000L), new StringBuffer(), currField).
+          substring(currField.getBeginIndex(), currField.getEndIndex())
         );
         assertEquals(
-                "฿",
-                de.format(valueOf(98765000000L), new StringBuffer(), currField).
-                        substring(currField.getBeginIndex(), currField.getEndIndex())
+          "฿",
+          de.format(valueOf(98765000000L), new StringBuffer(), currField).
+          substring(currField.getBeginIndex(), currField.getEndIndex())
         );
         assertEquals(
-                "BTC",
-                deCoded.format(valueOf(98765000000L), new StringBuffer(), currField).
-                        substring(currField.getBeginIndex(), currField.getEndIndex())
+          "BTC",
+          deCoded.format(valueOf(98765000000L), new StringBuffer(), currField).
+          substring(currField.getBeginIndex(), currField.getEndIndex())
         );
     }
 
@@ -758,10 +757,10 @@ public class BtcFormatTest {
     public void factoryTest() {
         BtcFormat coded = BtcFormat.getInstance(0, 1, 2, 3);
         BtcFormat.getInstance(BtcAutoFormat.Style.CODE);
-        BtcAutoFormat symbolic = (BtcAutoFormat) BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL);
+        BtcAutoFormat symbolic = (BtcAutoFormat)BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL);
         assertEquals(2, symbolic.fractionPlaces());
         BtcFormat.getInstance(BtcAutoFormat.Style.CODE, 3);
-        assertEquals(3, ((BtcAutoFormat) BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL, 3)).fractionPlaces());
+        assertEquals(3, ((BtcAutoFormat)BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL, 3)).fractionPlaces());
         BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL, Locale.US, 3);
         BtcFormat.getInstance(BtcAutoFormat.Style.CODE, Locale.US);
         BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL, Locale.US);
@@ -776,8 +775,7 @@ public class BtcFormatTest {
         try {
             BtcFormat.getInstance(SMALLEST_UNIT_EXPONENT + 1);
             fail("should not have constructed an instance with denomination less than satoshi");
-        } catch (IllegalArgumentException e) {
-        }
+        } catch (IllegalArgumentException e) {}
     }
 
     @Test
@@ -789,27 +787,27 @@ public class BtcFormatTest {
         assertEquals(BtcFormat.getInstance(locale), BtcFormat.getCodeInstance(locale));
         assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.CODE), BtcFormat.getCodeInstance());
         assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL), BtcFormat.getSymbolInstance());
-        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.CODE, 3), BtcFormat.getCodeInstance(3));
-        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL, 3), BtcFormat.getSymbolInstance(3));
-        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.CODE, locale), BtcFormat.getCodeInstance(locale));
-        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL, locale), BtcFormat.getSymbolInstance(locale));
-        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.CODE, locale, 3), BtcFormat.getCodeInstance(locale, 3));
-        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL, locale, 3), BtcFormat.getSymbolInstance(locale, 3));
+        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.CODE,3), BtcFormat.getCodeInstance(3));
+        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL,3), BtcFormat.getSymbolInstance(3));
+        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.CODE,locale), BtcFormat.getCodeInstance(locale));
+        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL,locale), BtcFormat.getSymbolInstance(locale));
+        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.CODE,locale,3), BtcFormat.getCodeInstance(locale,3));
+        assertEquals(BtcFormat.getInstance(BtcAutoFormat.Style.SYMBOL,locale,3), BtcFormat.getSymbolInstance(locale,3));
         assertEquals(BtcFormat.getCoinInstance(), BtcFormat.getInstance(0));
         assertEquals(BtcFormat.getMilliInstance(), BtcFormat.getInstance(3));
         assertEquals(BtcFormat.getMicroInstance(), BtcFormat.getInstance(6));
-        assertEquals(BtcFormat.getCoinInstance(3), BtcFormat.getInstance(0, 3));
-        assertEquals(BtcFormat.getMilliInstance(3), BtcFormat.getInstance(3, 3));
-        assertEquals(BtcFormat.getMicroInstance(3), BtcFormat.getInstance(6, 3));
-        assertEquals(BtcFormat.getCoinInstance(3, 4, 5), BtcFormat.getInstance(0, 3, 4, 5));
-        assertEquals(BtcFormat.getMilliInstance(3, 4, 5), BtcFormat.getInstance(3, 3, 4, 5));
-        assertEquals(BtcFormat.getMicroInstance(3, 4, 5), BtcFormat.getInstance(6, 3, 4, 5));
-        assertEquals(BtcFormat.getCoinInstance(locale), BtcFormat.getInstance(0, locale));
-        assertEquals(BtcFormat.getMilliInstance(locale), BtcFormat.getInstance(3, locale));
-        assertEquals(BtcFormat.getMicroInstance(locale), BtcFormat.getInstance(6, locale));
-        assertEquals(BtcFormat.getCoinInstance(locale, 4, 5), BtcFormat.getInstance(0, locale, 4, 5));
-        assertEquals(BtcFormat.getMilliInstance(locale, 4, 5), BtcFormat.getInstance(3, locale, 4, 5));
-        assertEquals(BtcFormat.getMicroInstance(locale, 4, 5), BtcFormat.getInstance(6, locale, 4, 5));
+        assertEquals(BtcFormat.getCoinInstance(3), BtcFormat.getInstance(0,3));
+        assertEquals(BtcFormat.getMilliInstance(3), BtcFormat.getInstance(3,3));
+        assertEquals(BtcFormat.getMicroInstance(3), BtcFormat.getInstance(6,3));
+        assertEquals(BtcFormat.getCoinInstance(3,4,5), BtcFormat.getInstance(0,3,4,5));
+        assertEquals(BtcFormat.getMilliInstance(3,4,5), BtcFormat.getInstance(3,3,4,5));
+        assertEquals(BtcFormat.getMicroInstance(3,4,5), BtcFormat.getInstance(6,3,4,5));
+        assertEquals(BtcFormat.getCoinInstance(locale), BtcFormat.getInstance(0,locale));
+        assertEquals(BtcFormat.getMilliInstance(locale), BtcFormat.getInstance(3,locale));
+        assertEquals(BtcFormat.getMicroInstance(locale), BtcFormat.getInstance(6,locale));
+        assertEquals(BtcFormat.getCoinInstance(locale,4,5), BtcFormat.getInstance(0,locale,4,5));
+        assertEquals(BtcFormat.getMilliInstance(locale,4,5), BtcFormat.getInstance(3,locale,4,5));
+        assertEquals(BtcFormat.getMicroInstance(locale,4,5), BtcFormat.getInstance(6,locale,4,5));
     }
 
     @Test
@@ -892,28 +890,28 @@ public class BtcFormatTest {
 
     @Test
     public void symbolsCodesTest() {
-        BtcFixedFormat coin = (BtcFixedFormat) BtcFormat.getCoinInstance(US);
+        BtcFixedFormat coin = (BtcFixedFormat)BtcFormat.getCoinInstance(US);
         assertEquals("BTC", coin.code());
         assertEquals("฿", coin.symbol());
-        BtcFixedFormat cent = (BtcFixedFormat) BtcFormat.getInstance(2, US);
+        BtcFixedFormat cent = (BtcFixedFormat)BtcFormat.getInstance(2, US);
         assertEquals("cBTC", cent.code());
         assertEquals("¢฿", cent.symbol());
-        BtcFixedFormat milli = (BtcFixedFormat) BtcFormat.getInstance(3, US);
+        BtcFixedFormat milli = (BtcFixedFormat)BtcFormat.getInstance(3, US);
         assertEquals("mBTC", milli.code());
         assertEquals("₥฿", milli.symbol());
-        BtcFixedFormat micro = (BtcFixedFormat) BtcFormat.getInstance(6, US);
+        BtcFixedFormat micro = (BtcFixedFormat)BtcFormat.getInstance(6, US);
         assertEquals("µBTC", micro.code());
         assertEquals("µ฿", micro.symbol());
-        BtcFixedFormat deka = (BtcFixedFormat) BtcFormat.getInstance(-1, US);
+        BtcFixedFormat deka = (BtcFixedFormat)BtcFormat.getInstance(-1, US);
         assertEquals("daBTC", deka.code());
         assertEquals("da฿", deka.symbol());
-        BtcFixedFormat hecto = (BtcFixedFormat) BtcFormat.getInstance(-2, US);
+        BtcFixedFormat hecto = (BtcFixedFormat)BtcFormat.getInstance(-2, US);
         assertEquals("hBTC", hecto.code());
         assertEquals("h฿", hecto.symbol());
-        BtcFixedFormat kilo = (BtcFixedFormat) BtcFormat.getInstance(-3, US);
+        BtcFixedFormat kilo = (BtcFixedFormat)BtcFormat.getInstance(-3, US);
         assertEquals("kBTC", kilo.code());
         assertEquals("k฿", kilo.symbol());
-        BtcFixedFormat mega = (BtcFixedFormat) BtcFormat.getInstance(-6, US);
+        BtcFixedFormat mega = (BtcFixedFormat)BtcFormat.getInstance(-6, US);
         assertEquals("MBTC", mega.code());
         assertEquals("M฿", mega.symbol());
         BtcFixedFormat noSymbol = (BtcFixedFormat) BtcFormat.getInstance(4, US);

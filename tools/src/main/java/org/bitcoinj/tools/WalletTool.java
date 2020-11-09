@@ -307,14 +307,11 @@ public class WalletTool {
         if (action == ActionEnum.RAW_DUMP) {
             // Just parse the protobuf and print, then bail out. Don't try and do a real deserialization. This is
             // useful mostly for investigating corrupted wallets.
-            FileInputStream stream = new FileInputStream(walletFile);
-            try {
+            try (FileInputStream stream = new FileInputStream(walletFile)) {
                 Protos.Wallet proto = WalletProtobufSerializer.parseToProto(stream);
                 proto = attemptHexConversion(proto);
                 System.out.println(proto.toString());
                 return;
-            } finally {
-                stream.close();
             }
         }
 
@@ -642,13 +639,7 @@ public class WalletTool {
             List<Peer> peerList = peerGroup.getConnectedPeers();
             if (peerList.size() == 1)
                 peerList.get(0).ping().get();
-        } catch (BlockStoreException e) {
-            throw new RuntimeException(e);
-        } catch (KeyCrypterException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
+        } catch (BlockStoreException | ExecutionException | InterruptedException | KeyCrypterException e) {
             throw new RuntimeException(e);
         } catch (InsufficientMoneyException e) {
             System.err.println("Insufficient funds: have " + wallet.getBalance().toFriendlyString());
@@ -692,7 +683,7 @@ public class WalletTool {
      * and returns the lock time in wire format.
      */
     private static long parseLockTimeStr(String lockTimeStr) throws ParseException {
-        if (lockTimeStr.indexOf("/") != -1) {
+        if (lockTimeStr.contains("/")) {
             SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd", Locale.US);
             Date date = format.parse(lockTimeStr);
             return date.getTime() / 1000;
@@ -788,13 +779,7 @@ public class WalletTool {
                 wallet.commitTx(req.tx);
                 System.out.println("Memo from server: " + ack.getMemo());
             }
-        } catch (PaymentProtocolException e) {
-            System.err.println("Failed to send payment " + e.getMessage());
-            System.exit(1);
-        } catch (VerificationException e) {
-            System.err.println("Failed to send payment " + e.getMessage());
-            System.exit(1);
-        } catch (ExecutionException e) {
+        } catch (PaymentProtocolException | ExecutionException | VerificationException e) {
             System.err.println("Failed to send payment " + e.getMessage());
             System.exit(1);
         } catch (IOException e) {
@@ -817,34 +802,25 @@ public class WalletTool {
                 break;
 
             case WALLET_TX:
-                wallet.addCoinsReceivedEventListener(new WalletCoinsReceivedEventListener() {
-                    @Override
-                    public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                        // Runs in a peer thread.
-                        System.out.println(tx.getTxId());
-                        latch.countDown();  // Wake up main thread.
-                    }
+                wallet.addCoinsReceivedEventListener((wallet, tx, prevBalance, newBalance) -> {
+                    // Runs in a peer thread.
+                    System.out.println(tx.getTxId());
+                    latch.countDown();  // Wake up main thread.
                 });
-                wallet.addCoinsSentEventListener(new WalletCoinsSentEventListener() {
-                    @Override
-                    public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
-                        // Runs in a peer thread.
-                        System.out.println(tx.getTxId());
-                        latch.countDown();  // Wake up main thread.
-                    }
+                wallet.addCoinsSentEventListener((wallet, tx, prevBalance, newBalance) -> {
+                    // Runs in a peer thread.
+                    System.out.println(tx.getTxId());
+                    latch.countDown();  // Wake up main thread.
                 });
                 break;
 
             case BLOCK:
-                peerGroup.addBlocksDownloadedEventListener(new BlocksDownloadedEventListener() {
-                    @Override
-                    public void onBlocksDownloaded(Peer peer, Block block, @Nullable FilteredBlock filteredBlock, int blocksLeft) {
-                        // Check if we already ran. This can happen if a block being received triggers download of more
-                        // blocks, or if we receive another block whilst the peer group is shutting down.
-                        if (latch.getCount() == 0) return;
-                        System.out.println(block.getHashAsString());
-                        latch.countDown();
-                    }
+                peerGroup.addBlocksDownloadedEventListener((peer, block, filteredBlock, blocksLeft) -> {
+                    // Check if we already ran. This can happen if a block being received triggers download of more
+                    // blocks, or if we receive another block whilst the peer group is shutting down.
+                    if (latch.getCount() == 0) return;
+                    System.out.println(block.getHashAsString());
+                    latch.countDown();
                 });
                 break;
 

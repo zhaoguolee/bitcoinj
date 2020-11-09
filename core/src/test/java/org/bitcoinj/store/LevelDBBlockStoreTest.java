@@ -20,6 +20,7 @@ import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.core.Utils;
 import org.bitcoinj.params.UnitTestParams;
 import org.junit.Test;
 
@@ -28,7 +29,13 @@ import java.io.File;
 import static org.junit.Assert.assertEquals;
 
 public class LevelDBBlockStoreTest {
-    private static final NetworkParameters UNITTEST = UnitTestParams.get();
+    private static NetworkParameters UNITTEST;
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        Utils.resetMocking();
+        UNITTEST = UnitTestParams.get();
+    }
 
     @Test
     public void basics() throws Exception {

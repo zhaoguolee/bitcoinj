@@ -29,6 +29,11 @@ dependencies {
     implementation "org.openjfx:javafx-web:14:${platform}"
 }
 
+javafx {
+    version = '15'
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
 sourceCompatibility = 1.11
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'

@@ -1341,9 +1341,7 @@ public class Wallet extends BaseTaggableObject
             final KeyCrypter crypter = keyChainGroup.getKeyCrypter();
             checkState(crypter != null, "Not encrypted");
             keyChainGroup.decrypt(crypter.deriveKey(password));
-        } catch (KeyCrypterException.InvalidCipherText e) {
-            throw new BadWalletEncryptionKeyException(e);
-        } catch (KeyCrypterException.PublicPrivateMismatch e) {
+        } catch (KeyCrypterException.InvalidCipherText | KeyCrypterException.PublicPrivateMismatch e) {
             throw new BadWalletEncryptionKeyException(e);
         } finally {
             keyChainGroupLock.unlock();
@@ -1362,9 +1360,7 @@ public class Wallet extends BaseTaggableObject
         keyChainGroupLock.lock();
         try {
             keyChainGroup.decrypt(aesKey);
-        } catch (KeyCrypterException.InvalidCipherText e) {
-            throw new BadWalletEncryptionKeyException(e);
-        } catch (KeyCrypterException.PublicPrivateMismatch e) {
+        } catch (KeyCrypterException.InvalidCipherText | KeyCrypterException.PublicPrivateMismatch e) {
             throw new BadWalletEncryptionKeyException(e);
         } finally {
             keyChainGroupLock.unlock();
@@ -1720,12 +1716,8 @@ public class Wallet extends BaseTaggableObject
      */
     public static Wallet loadFromFile(File file, @Nullable WalletExtension... walletExtensions) throws UnreadableWalletException {
         try {
-            FileInputStream stream = null;
-            try {
-                stream = new FileInputStream(file);
+            try (FileInputStream stream = new FileInputStream(file)) {
                 return loadFromFileStream(stream, walletExtensions);
-            } finally {
-                if (stream != null) stream.close();
             }
         } catch (IOException e) {
             throw new UnreadableWalletException("Could not open file", e);
@@ -3951,15 +3943,21 @@ public class Wallet extends BaseTaggableObject
         /**
          * The Bitcoin transaction message that moves the money.
          */
-        public Transaction tx;
+        public final Transaction tx;
         /**
          * A future that will complete once the tx message has been successfully broadcast to the network. This is just the result of calling broadcast.future()
          */
-        public ListenableFuture<Transaction> broadcastComplete;
+        public final ListenableFuture<Transaction> broadcastComplete;
         /**
          * The broadcast object returned by the linked TransactionBroadcaster
          */
-        public TransactionBroadcast broadcast;
+        public final TransactionBroadcast broadcast;
+
+        public SendResult(Transaction tx, TransactionBroadcast broadcast) {
+            this.tx = tx;
+            this.broadcast = broadcast;
+            this.broadcastComplete = broadcast.future();
+        }
     }
 
     /**
@@ -4171,15 +4169,12 @@ public class Wallet extends BaseTaggableObject
         // Commit the TX to the wallet immediately so the spent coins won't be reused.
         // TODO: We should probably allow the request to specify tx commit only after the network has accepted it.
         Transaction tx = sendCoinsOffline(request);
-        SendResult result = new SendResult();
-        result.tx = tx;
+        SendResult result = new SendResult(tx, broadcaster.broadcastTransaction(tx));
         // The tx has been committed to the pending pool by this point (via sendCoinsOffline -> commitTx), so it has
         // a txConfidenceListener registered. Once the tx is broadcast the peers will update the memory pool with the
         // count of seen peers, the memory pool will update the transaction confidence object, that will invoke the
         // txConfidenceListener which will in turn invoke the wallets event listener onTransactionConfidenceChanged
         // method.
-        result.broadcast = broadcaster.broadcastTransaction(tx);
-        result.broadcastComplete = result.broadcast.future();
         return result;
     }
 
@@ -4486,6 +4481,8 @@ public class Wallet extends BaseTaggableObject
 
             // resolve missing sigs if any
             new MissingSigResolutionSigner(req.missingSigsMode).signInputs(proposal, maybeDecryptingKeyBag);
+        } catch (KeyCrypterException.InvalidCipherText | KeyCrypterException.PublicPrivateMismatch e) {
+            throw new BadWalletEncryptionKeyException(e);
         } finally {
             lock.unlock();
         }

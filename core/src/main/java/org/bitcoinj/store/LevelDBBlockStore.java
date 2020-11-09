@@ -121,19 +121,11 @@ public class LevelDBBlockStore implements BlockStore {
      */
     public synchronized void reset() throws BlockStoreException {
         try {
-            WriteBatch batch = db.createWriteBatch();
-            try {
-                DBIterator it = db.iterator();
-                try {
-                    it.seekToFirst();
-                    while (it.hasNext())
-                        batch.delete(it.next().getKey());
-                    db.write(batch);
-                } finally {
-                    it.close();
-                }
-            } finally {
-                batch.close();
+            try (WriteBatch batch = db.createWriteBatch(); DBIterator it = db.iterator()) {
+                it.seekToFirst();
+                while (it.hasNext())
+                    batch.delete(it.next().getKey());
+                db.write(batch);
             }
             initStoreIfNeeded();
         } catch (IOException e) {

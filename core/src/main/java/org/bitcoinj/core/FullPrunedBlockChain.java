@@ -328,11 +328,7 @@ public class FullPrunedBlockChain extends AbstractBlockChain {
                 if (e != null)
                     throw e;
             }
-        } catch (VerificationException e) {
-            scriptVerificationExecutor.shutdownNow();
-            blockStore.abortDatabaseBatchWrite();
-            throw e;
-        } catch (BlockStoreException e) {
+        } catch (VerificationException | BlockStoreException e) {
             scriptVerificationExecutor.shutdownNow();
             blockStore.abortDatabaseBatchWrite();
             throw e;
@@ -474,11 +470,7 @@ public class FullPrunedBlockChain extends AbstractBlockChain {
                 for (UTXO out : txOutChanges.txOutsSpent)
                     blockStore.removeUnspentTransactionOutput(out);
             }
-        } catch (VerificationException e) {
-            scriptVerificationExecutor.shutdownNow();
-            blockStore.abortDatabaseBatchWrite();
-            throw e;
-        } catch (BlockStoreException e) {
+        } catch (VerificationException | BlockStoreException e) {
             scriptVerificationExecutor.shutdownNow();
             blockStore.abortDatabaseBatchWrite();
             throw e;
@@ -502,10 +494,7 @@ public class FullPrunedBlockChain extends AbstractBlockChain {
                 blockStore.addUnspentTransactionOutput(out);
             for (UTXO out : txOutChanges.txOutsCreated)
                 blockStore.removeUnspentTransactionOutput(out);
-        } catch (PrunedException e) {
-            blockStore.abortDatabaseBatchWrite();
-            throw e;
-        } catch (BlockStoreException e) {
+        } catch (PrunedException | BlockStoreException e) {
             blockStore.abortDatabaseBatchWrite();
             throw e;
         }
