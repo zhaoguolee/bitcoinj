@@ -108,6 +108,7 @@ public abstract class NetworkParameters {
     protected int dumpedPrivateKeyHeader;
     protected int interval;
     protected int targetTimespan;
+    protected int defaultPeerCount;
     protected byte[] alertSigningKey;
     protected int bip32HeaderP2PKHpub;
     protected int bip32HeaderP2PKHpriv;
@@ -352,6 +353,10 @@ public abstract class NetworkParameters {
      */
     public String[] getDnsSeeds() {
         return dnsSeeds;
+    }
+
+    public int getDefaultPeerCount() {
+        return defaultPeerCount;
     }
 
     /**

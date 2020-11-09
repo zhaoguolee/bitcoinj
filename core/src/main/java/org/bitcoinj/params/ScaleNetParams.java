@@ -51,6 +51,7 @@ public class ScaleNetParams extends AbstractBitcoinNetParams {
         genesisBlock.setDifficultyTarget(0x1d00ffffL);
         genesisBlock.setNonce(-1567304284);
         spendableCoinbaseDepth = 100;
+        defaultPeerCount = 4;
         String genesisHash = genesisBlock.getHashAsString();
         checkState(genesisHash.equals("00000000e6453dc2dfe1ffa19023f86002eb11dbb8e87d0291a4599f0430be52"));
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
