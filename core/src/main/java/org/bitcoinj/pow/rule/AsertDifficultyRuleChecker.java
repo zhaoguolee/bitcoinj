@@ -49,10 +49,20 @@ public class AsertDifficultyRuleChecker extends AbstractPowRulesChecker {
         try {
             BigInteger evalBlockTime = BigInteger.valueOf(storedPrev.getHeader().getTimeSeconds());
             BigInteger evalBlockHeight = BigInteger.valueOf(storedPrev.getHeight());
-            StoredBlock asertReferenceBlock = getAsertReferenceBlock(storedPrev, blockStore);
-            BigInteger referenceBlockAncestorTime = BigInteger.valueOf(asertReferenceBlock.getPrev(blockStore).getHeader().getTimeSeconds());
-            BigInteger referenceBlockHeight = BigInteger.valueOf(asertReferenceBlock.getHeight());
-            BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(networkParameters, asertReferenceBlock.getHeader().getDifficultyTargetAsInteger(), referenceBlockAncestorTime, referenceBlockHeight, evalBlockTime, evalBlockHeight, storedPrev, nextBlock);
+            BigInteger referenceBlockAncestorTime = BigInteger.ZERO;
+            BigInteger referenceBlockHeight = BigInteger.ZERO;
+            BigInteger referenceBlockBits = BigInteger.ZERO;
+            if(!networkParameters.getAsertReferenceBlockHeight().equals(BigInteger.ZERO)) {
+                referenceBlockAncestorTime = networkParameters.getAsertReferenceBlockAncestorTime();
+                referenceBlockHeight = networkParameters.getAsertReferenceBlockHeight();
+                referenceBlockBits = Utils.decodeCompactBits(networkParameters.getAsertReferenceBlockBits());
+            } else {
+                StoredBlock asertReferenceBlock = getAsertReferenceBlock(storedPrev, blockStore);
+                referenceBlockAncestorTime = BigInteger.valueOf(asertReferenceBlock.getPrev(blockStore).getHeader().getTimeSeconds());
+                referenceBlockHeight = BigInteger.valueOf(asertReferenceBlock.getHeight());
+                referenceBlockBits = asertReferenceBlock.getHeader().getDifficultyTargetAsInteger();
+            }
+            BigInteger nextTarget = AbstractBitcoinNetParams.computeAsertTarget(networkParameters, referenceBlockBits, referenceBlockAncestorTime, referenceBlockHeight, evalBlockTime, evalBlockHeight, storedPrev, nextBlock);
             networkParameters.verifyAsertDifficulty(nextTarget, nextBlock);
         } catch (BlockStoreException x) {
             // We don't have enough blocks, yet
