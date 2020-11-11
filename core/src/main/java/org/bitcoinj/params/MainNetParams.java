@@ -46,7 +46,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         acceptableAddressCodes = new int[]{addressHeader, p2shHeader};
         port = 8333;
         packetMagic = 0xe3e1f3e8L;
-        defaultPeerCount = 12;
+        defaultPeerCount = 8;
         bip32HeaderP2PKHpub = 0x0488b21e; // The 4 byte header that serializes in base58 to "xpub".
         bip32HeaderP2PKHpriv = 0x0488ade4; // The 4 byte header that serializes in base58 to "xprv"
 
