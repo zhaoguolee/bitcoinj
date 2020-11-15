@@ -72,9 +72,9 @@ public class ScaleNetParams extends AbstractBitcoinNetParams {
         majorityEnforceBlockUpgrade = TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE;
         majorityRejectBlockOutdated = TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = TESTNET_MAJORITY_WINDOW;
-        asertReferenceBlockBits = 0x00000000;
-        asertReferenceBlockHeight = BigInteger.ZERO;
-        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertReferenceBlockBits = 0x1d00ffff;
+        asertReferenceBlockHeight = BigInteger.valueOf(16868L);
+        asertReferenceBlockAncestorTime = BigInteger.valueOf(1605448590L);
         asertUpdateTime = 1605441600L;
         // Aug, 1 hard fork
         uahfHeight = 7;
