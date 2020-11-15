@@ -55,10 +55,9 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         alertSigningKey = Utils.HEX.decode("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
 
         dnsSeeds = new String[]{
-                "testnet-seed.bitcoinabc.org",
-                "testnet-seed-abc.bitcoinforks.org",
-                "testnet-seed.bitprim.org",
-                "testnet-seed.deadalnix.me"           // Matt Corallo
+                "testnet-seed-bch.bitcoinforks.org",
+                "testnet-seed.bchd.cash",
+                "seed.tbch.loping.net"           // Matt Corallo
         };
         httpSeeds = null;
         addrSeeds = null;
@@ -68,9 +67,9 @@ public class TestNet3Params extends AbstractBitcoinNetParams {
         majorityEnforceBlockUpgrade = TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE;
         majorityRejectBlockOutdated = TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = TESTNET_MAJORITY_WINDOW;
-        asertReferenceBlockBits = 0x00000000;
-        asertReferenceBlockHeight = BigInteger.ZERO;
-        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertReferenceBlockBits = 0x1d00ffff;
+        asertReferenceBlockHeight = BigInteger.valueOf(1421481L);
+        asertReferenceBlockAncestorTime = BigInteger.valueOf(1605445400L);
         asertUpdateTime = 1605441600L;
         // Aug, 1 hard fork
         uahfHeight = 1155876;
