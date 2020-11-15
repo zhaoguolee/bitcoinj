@@ -92,10 +92,9 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         cashAddrPrefix = "bitcoincash";
         simpleledgerPrefix = "simpleledger";
 
-        //This is for future use after the hardfork happens. I intend to hardcode the ASERT reference/anchor block data.
-        asertReferenceBlockBits = 0x00000000;
-        asertReferenceBlockHeight = BigInteger.ZERO;
-        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertReferenceBlockBits = 0x1804dafe;
+        asertReferenceBlockHeight = BigInteger.valueOf(661647L);
+        asertReferenceBlockAncestorTime = BigInteger.valueOf(1605447844L);
         asertUpdateTime = 1605441600L;
         asertHalfLife = 2L * 24L * 60L * 60L;
         allowMinDifficultyBlocks = false;
