@@ -589,6 +589,10 @@ public class Wallet extends BaseTaggableObject
         return currentAddress(KeyChain.KeyPurpose.RECEIVE_FUNDS);
     }
 
+    public Address getMemoAccountAddress() {
+        return getIssuedReceiveAddresses().get(MEMO_ACCOUNT_ADDRESS_INDEX);
+    }
+
     /**
      * Returns a key that has not been returned by this method before (fresh). You can think of this as being
      * a newly created key, although the notion of "create" is not really valid for a

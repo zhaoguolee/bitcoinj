@@ -493,8 +493,4 @@ public class WalletKitCore extends AbstractIdleService {
             }
         });
     }
-
-    public Address getMemoAccountAddress() {
-        return wallet().getIssuedReceiveAddresses().get(Wallet.MEMO_ACCOUNT_ADDRESS_INDEX);
-    }
 }
