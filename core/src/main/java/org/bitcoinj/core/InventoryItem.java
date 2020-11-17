@@ -29,9 +29,7 @@ public class InventoryItem {
     public enum Type {
         ERROR(0x0), TRANSACTION(0x1), BLOCK(0x2),
         // BIP37 extension:
-        FILTERED_BLOCK(0x3),
-        // BIP44 extensions:
-        WITNESS_TRANSACTION(0x40000001), WITNESS_BLOCK(0x40000002), WITNESS_FILTERED_BLOCK(0x40000003);
+        FILTERED_BLOCK(0x3);
 
         public final int code;
 

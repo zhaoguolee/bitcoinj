@@ -322,13 +322,6 @@ public class VersionMessage extends Message {
     }
 
     /**
-     * Returns true if a peer can be asked for blocks and transactions including witness data.
-     */
-    public boolean isWitnessSupported() {
-        return false;
-    }
-
-    /**
      * Returns true if the version message indicates the sender has a full copy of the block chain, or false if it's
      * running in client mode (only has the headers).
      */
