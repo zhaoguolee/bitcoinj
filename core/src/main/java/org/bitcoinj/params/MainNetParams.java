@@ -75,6 +75,7 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         checkpoints.put(582680, Sha256Hash.wrap("000000000000000001b4b8e36aec7d4f9671a47872cb9a74dc16ca398c7dcc18")); //May 15, 2019
         checkpoints.put(609136, Sha256Hash.wrap("000000000000000000b48bb207faac5ac655c313e41ac909322eaa694f5bc5b1")); //November 15, 2019
         checkpoints.put(635259, Sha256Hash.wrap("00000000000000000033dfef1fc2d6a5d5520b078c55193a9bf498c5b27530f7")); //May 15, 2020
+        checkpoints.put(661648, Sha256Hash.wrap("0000000000000000029e471c41818d24b8b74c911071c4ef0b4a0509f9b5a8ce")); //November 15, 2020
 
         dnsSeeds = new String[]{
                 "seed-bch.bitcoinforks.org",
@@ -92,10 +93,9 @@ public class MainNetParams extends AbstractBitcoinNetParams {
         cashAddrPrefix = "bitcoincash";
         simpleledgerPrefix = "simpleledger";
 
-        //This is for future use after the hardfork happens. I intend to hardcode the ASERT reference/anchor block data.
-        asertReferenceBlockBits = 0x00000000;
-        asertReferenceBlockHeight = BigInteger.ZERO;
-        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertReferenceBlockBits = 0x1804dafe;
+        asertReferenceBlockHeight = BigInteger.valueOf(661647L);
+        asertReferenceBlockAncestorTime = BigInteger.valueOf(1605447844L);
         asertUpdateTime = 1605441600L;
         asertHalfLife = 2L * 24L * 60L * 60L;
         allowMinDifficultyBlocks = false;

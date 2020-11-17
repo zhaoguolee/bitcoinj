@@ -72,9 +72,9 @@ public class TestNet4Params extends AbstractBitcoinNetParams {
         majorityEnforceBlockUpgrade = TESTNET_MAJORITY_ENFORCE_BLOCK_UPGRADE;
         majorityRejectBlockOutdated = TESTNET_MAJORITY_REJECT_BLOCK_OUTDATED;
         majorityWindow = TESTNET_MAJORITY_WINDOW;
-        asertReferenceBlockBits = 0x00000000;
-        asertReferenceBlockHeight = BigInteger.ZERO;
-        asertReferenceBlockAncestorTime = BigInteger.ZERO;
+        asertReferenceBlockBits = 0x1d00ffff;
+        asertReferenceBlockHeight = BigInteger.valueOf(16844L);
+        asertReferenceBlockAncestorTime = BigInteger.valueOf(1605451779L);
         asertUpdateTime = 1605441600L;
         // Aug, 1 hard fork
         uahfHeight = 7;
