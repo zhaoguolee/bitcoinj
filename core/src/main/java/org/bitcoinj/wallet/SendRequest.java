@@ -331,7 +331,7 @@ public class SendRequest {
         SendRequest req = new SendRequest();
         req.tx = new Transaction(wallet.params);
         req.tx.addOutput(Coin.ZERO, memoAction.getScript());
-        req.preferredChangeAddress = wallet.getIssuedReceiveAddresses().get(Wallet.MEMO_ACCOUNT_ADDRESS_INDEX);
+        req.preferredChangeAddress = wallet.getMemoAccountAddress();
         return req;
     }
 
