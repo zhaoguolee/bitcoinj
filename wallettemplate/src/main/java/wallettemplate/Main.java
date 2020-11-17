@@ -145,6 +145,7 @@ public class Main extends Application {
         bitcoin = new WalletAppKit(params, PREFERRED_OUTPUT_SCRIPT_TYPE, null, appDataDirectory, WALLET_FILE_NAME) {
             @Override
             protected void onSetupCompleted() {
+                wallet().setAcceptRiskyTransactions(true);
                 Platform.runLater(controller::onBitcoinSetup);
             }
         };

@@ -35,6 +35,7 @@ import org.bouncycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -326,11 +327,28 @@ public class SendRequest {
         return req;
     }
 
-    public static SendRequest memoAction(Wallet wallet, MemoOpReturnOutput memoAction) {
+    public static SendRequest memoAction(Wallet wallet, MemoOpReturnOutput memoAction) throws InsufficientMoneyException {
         SendRequest req = new SendRequest();
+        Coin valueNeeded = Coin.ZERO;
+        Coin valueMissing = Coin.ZERO;
         req.tx = new Transaction(wallet.params);
         req.tx.addOutput(Coin.ZERO, memoAction.getScript());
         req.preferredChangeAddress = wallet.getMemoAccountAddress();
+        List<TransactionOutput> candidates = wallet.calculateSpendCandidatesForAddress(wallet.getMemoAccountAddress(), true, true);
+        CoinSelection selection = wallet.getCoinSelector().select(valueNeeded, new LinkedList<TransactionOutput>(candidates));
+        // Can we afford this?
+        if (selection.valueGathered.compareTo(valueNeeded) < 0) {
+            valueMissing = valueNeeded.subtract(selection.valueGathered);
+        }
+
+        for(TransactionOutput output : selection.gathered) {
+            req.tx.addInput(output);
+        }
+
+        if(valueMissing != Coin.ZERO) {
+            throw new InsufficientMoneyException(valueMissing);
+        }
+
         return req;
     }
 
