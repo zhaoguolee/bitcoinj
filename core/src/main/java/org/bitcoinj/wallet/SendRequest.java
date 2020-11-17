@@ -20,6 +20,7 @@ package org.bitcoinj.wallet;
 import com.google.common.base.MoreObjects;
 import org.bitcoin.protocols.payments.Protos.PaymentDetails;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.memo.MemoOpReturnOutput;
 import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
@@ -31,6 +32,7 @@ import org.bitcoinj.wallet.Wallet.MissingSigsMode;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Hex;
 
+import javax.annotation.Nullable;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -66,6 +68,9 @@ public class SendRequest {
      * for the transaction). Any additional outputs are removed.
      */
     public boolean emptyWallet = false;
+
+    @Nullable
+    public Address preferredChangeAddress = null;
 
     /**
      * UTXOs to use when sending. If left null, then the wallet automatically determine the UTXOs to use.
@@ -319,6 +324,15 @@ public class SendRequest {
         tx.setPurpose(Transaction.Purpose.RAISE_FEE);
         final SendRequest req = forTx(tx);
         req.completed = true;
+        return req;
+    }
+
+    //yourMemoAddress should be your wallet's Memo address.
+    public static SendRequest memoAction(NetworkParameters params, MemoOpReturnOutput memoAction, Address yourMemoAddress) {
+        SendRequest req = new SendRequest();
+        req.tx = new Transaction(params);
+        req.tx.addOutput(Coin.ZERO, memoAction.getScript());
+        req.preferredChangeAddress = yourMemoAddress;
         return req;
     }
 

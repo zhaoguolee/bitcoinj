@@ -4387,8 +4387,12 @@ public class Wallet extends BaseTaggableObject
             }
 
             if (bestChangeOutput != null) {
-                req.tx.addOutput(bestChangeOutput);
-                log.info("  with {} change", bestChangeOutput.getValue().toFriendlyString());
+                if(req.preferredChangeAddress != null) {
+                    req.tx.addOutput(bestChangeOutput.getValue(), req.preferredChangeAddress);
+                } else {
+                    req.tx.addOutput(bestChangeOutput);
+                    log.info("  with {} change", bestChangeOutput.getValue().toFriendlyString());
+                }
             }
 
             // Now shuffle the outputs to obfuscate which is the change.
