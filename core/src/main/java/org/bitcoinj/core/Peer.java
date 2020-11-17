@@ -570,6 +570,22 @@ public class Peer extends PeerSocketHandler {
             close();
             return;
         }
+
+        if ((vPeerVersionMessage.localServices
+                & VersionMessage.NODE_AVALANCHE) == VersionMessage.NODE_AVALANCHE) {
+            log.info("{}: Peer supports NODE_AVALANCHE, most likely supports BAB blockchain.", this);
+            // Shut down the channel gracefully.
+            close();
+            return;
+        }
+
+        if (vPeerVersionMessage.subVer.contains("Bitcoin ABC")) {
+            log.info("{}: Peer follows BAB blockchain.", this);
+            // Shut down the channel gracefully.
+            close();
+            return;
+        }
+
         if ((peerVersionMessage.localServices & requiredServices) != requiredServices) {
             log.info("{}: Peer doesn't support these required services: {}", this,
                     VersionMessage.toStringServices(requiredServices & ~peerVersionMessage.localServices));

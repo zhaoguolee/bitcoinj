@@ -46,7 +46,7 @@ public class VersionMessage extends Message {
     /**
      * The version of this library release, as a string.
      */
-    public static final String BITCOINJ_VERSION = "0.22.4";
+    public static final String BITCOINJ_VERSION = "0.24.3";
     /**
      * The value that is prepended to the subVer field of this application.
      */
@@ -69,9 +69,21 @@ public class VersionMessage extends Message {
      */
     public static final int NODE_NETWORK_LIMITED = 1 << 10;
     /**
-     * A service bit used by Bitcoin-ABC to announce Bitcoin Cash nodes.
+     * A service bit that denotes whether the peer supports Xtreme Thinblocks.
+     */
+    public static final int NODE_XTHIN = 1 << 4;
+    /**
+     * A service bit that denotes whether the peer supports Graphene blocks.
+     */
+    public static final int NODE_GRAPHENE = 1 << 6;
+    /**
+     * A service bit used by Bitcoin Cash Node to announce Bitcoin Cash nodes.
      */
     public static final int NODE_BITCOIN_CASH = 1 << 5;
+    /**
+     * A service bit used by Bitcoin ABC to announce support for Avalanche preconsensus mechanism.
+     */
+    public static final int NODE_AVALANCHE = 1 << 24;
 
     /**
      * The version number of the protocol spoken.
@@ -348,6 +360,14 @@ public class VersionMessage extends Message {
         if ((services & NODE_NETWORK_LIMITED) == NODE_NETWORK_LIMITED) {
             strings.add("NETWORK_LIMITED");
             services &= ~NODE_NETWORK_LIMITED;
+        }
+        if ((services & NODE_GRAPHENE) == NODE_GRAPHENE) {
+            strings.add("GRAPHENE");
+            services &= ~NODE_GRAPHENE;
+        }
+        if ((services & NODE_XTHIN) == NODE_XTHIN) {
+            strings.add("XTHIN");
+            services &= ~NODE_XTHIN;
         }
         if (services != 0)
             strings.add("remaining: " + Long.toBinaryString(services));
