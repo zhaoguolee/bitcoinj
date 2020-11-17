@@ -166,6 +166,7 @@ public class Wallet extends BaseTaggableObject
     private Sha256Hash lastBlockSeenHash;
     private int lastBlockSeenHeight;
     private long lastBlockSeenTimeSecs;
+    public static final int MEMO_ACCOUNT_ADDRESS_INDEX = 0;
 
     private final CopyOnWriteArrayList<ListenerRegistration<WalletChangeEventListener>> changeListeners
             = new CopyOnWriteArrayList<>();

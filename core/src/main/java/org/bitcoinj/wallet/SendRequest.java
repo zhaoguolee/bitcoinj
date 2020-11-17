@@ -328,11 +328,11 @@ public class SendRequest {
     }
 
     //yourMemoAddress should be your wallet's Memo address.
-    public static SendRequest memoAction(NetworkParameters params, MemoOpReturnOutput memoAction, Address yourMemoAddress) {
+    public static SendRequest memoAction(Wallet wallet, MemoOpReturnOutput memoAction) {
         SendRequest req = new SendRequest();
-        req.tx = new Transaction(params);
+        req.tx = new Transaction(wallet.params);
         req.tx.addOutput(Coin.ZERO, memoAction.getScript());
-        req.preferredChangeAddress = yourMemoAddress;
+        req.preferredChangeAddress = wallet.getIssuedReceiveAddresses().get(Wallet.MEMO_ACCOUNT_ADDRESS_INDEX);
         return req;
     }
 
