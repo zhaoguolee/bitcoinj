@@ -5344,10 +5344,10 @@ public class Wallet extends BaseTaggableObject
                 Script script = output.getScriptPubKey();
                 ECKey key = null;
                 Script redeemScript = null;
-                if (script.isSentToAddress()) {
+                if (ScriptPattern.isP2PKH(script)) {
                     key = findKeyFromPubHash(script.getPubKeyHash());
                     checkNotNull(key, "Coin selection includes unspendable outputs");
-                } else if (script.isPayToScriptHash()) {
+                } else if (ScriptPattern.isP2SH(script)) {
                     redeemScript = findRedeemDataFromScriptHash(script.getPubKeyHash()).redeemScript;
                     checkNotNull(redeemScript, "Coin selection includes unspendable outputs");
                 }
