@@ -13,7 +13,7 @@ public class MemoOpReturnOutput {
     }
     public ScriptBuilder getBuilder() { return this.builder; }
 
-    public MemoOpReturnOutput(String actionId) {
+    private MemoOpReturnOutput(String actionId) {
         this.builder = new ScriptBuilder()
                 .op(ScriptOpCodes.OP_RETURN)
                 .data(Hex.decode(actionId));
