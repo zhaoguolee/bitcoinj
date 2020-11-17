@@ -7,88 +7,81 @@ import org.bitcoinj.script.ScriptOpCodes;
 import org.bouncycastle.util.encoders.Hex;
 
 public class MemoOpReturnOutput {
-    public Script script;
+    private final ScriptBuilder builder;
     public Script getScript() {
-        return this.script;
+        return this.getBuilder().build();
+    }
+    public ScriptBuilder getBuilder() { return this.builder; }
+
+    public MemoOpReturnOutput(String actionId) {
+        this.builder = new ScriptBuilder()
+                .op(ScriptOpCodes.OP_RETURN)
+                .data(Hex.decode(actionId));
     }
 
     public static class Follow extends MemoOpReturnOutput {
         public Follow(String addressHash160) {
+            super("6d06");
             Preconditions.checkArgument(Hex.decode(addressHash160).length <= 20);
-            ScriptBuilder scriptBuilder = new ScriptBuilder()
-                    .op(ScriptOpCodes.OP_RETURN)
-                    .data(Hex.decode("6d06"))
+            this.getBuilder()
                     .data(Hex.decode(addressHash160));
-            this.script = scriptBuilder.build();
         }
     }
 
     public static class Unfollow extends MemoOpReturnOutput {
         public Unfollow(String addressHash160) {
+            super("6d07");
             Preconditions.checkArgument(Hex.decode(addressHash160).length <= 20);
-            ScriptBuilder scriptBuilder = new ScriptBuilder()
-                    .op(ScriptOpCodes.OP_RETURN)
-                    .data(Hex.decode("6d07"))
+            this.getBuilder()
                     .data(Hex.decode(addressHash160));
-            this.script = scriptBuilder.build();
         }
     }
 
 
     public static class Like extends MemoOpReturnOutput {
         public Like(String postTxId) {
+            super("6d04");
             Preconditions.checkArgument(Hex.decode(postTxId).length <= 32);
-            ScriptBuilder scriptBuilder = new ScriptBuilder()
-                    .op(ScriptOpCodes.OP_RETURN)
-                    .data(Hex.decode("6d04"))
+            this.getBuilder()
                     .data(Hex.decode(postTxId));
-            this.script = scriptBuilder.build();
         }
     }
 
     public static class PostMemo extends MemoOpReturnOutput {
         public PostMemo(String message) {
+            super("6d02");
             Preconditions.checkArgument(message.getBytes().length <= 217);
-            ScriptBuilder scriptBuilder = new ScriptBuilder()
-                    .op(ScriptOpCodes.OP_RETURN)
-                    .data(Hex.decode("6d02"))
+            this.getBuilder()
                     .data(message.getBytes());
-            this.script = scriptBuilder.build();
         }
     }
 
     public static class Reply extends MemoOpReturnOutput {
         public Reply(String postTxId, String message) {
+            super("6d03");
             Preconditions.checkArgument(Hex.decode(postTxId).length <= 32);
             Preconditions.checkArgument(message.getBytes().length <= 184);
-            ScriptBuilder scriptBuilder = new ScriptBuilder()
-                    .op(ScriptOpCodes.OP_RETURN)
-                    .data(Hex.decode("6d03"))
+            this.getBuilder()
                     .data(Hex.decode(postTxId))
                     .data(message.getBytes());
-            this.script = scriptBuilder.build();
         }
     }
 
     public static class SetName extends MemoOpReturnOutput {
         public SetName(String name) {
+            super("6d01");
             Preconditions.checkArgument(name.getBytes().length <= 217);
-            ScriptBuilder scriptBuilder = new ScriptBuilder()
-                    .op(ScriptOpCodes.OP_RETURN)
-                    .data(Hex.decode("6d01"))
+            this.getBuilder()
                     .data(name.getBytes());
-            this.script = scriptBuilder.build();
         }
     }
 
     public static class SetProfilePicture extends MemoOpReturnOutput {
         public SetProfilePicture(String imgUrl) {
+            super("6d0a");
             Preconditions.checkArgument(imgUrl.getBytes().length <= 217);
-            ScriptBuilder scriptBuilder = new ScriptBuilder()
-                    .op(ScriptOpCodes.OP_RETURN)
-                    .data(Hex.decode("6d0a"))
+            this.getBuilder()
                     .data(imgUrl.getBytes());
-            this.script = scriptBuilder.build();
         }
     }
 }
