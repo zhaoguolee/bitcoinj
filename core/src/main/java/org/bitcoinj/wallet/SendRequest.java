@@ -291,7 +291,6 @@ public class SendRequest {
         checkNotNull(destination, "No address set!");
         String hash160 = new String(Hex.encode(destination.getHash160()), StandardCharsets.UTF_8);
         req.tx = new Transaction(params);
-        req.tx.addOutput(Coin.parseCoin("0.00001"), destination);
         ScriptBuilder scriptBuilder = new ScriptBuilder().op(ScriptOpCodes.OP_RETURN)
                 .data(Hex.decode("01010101"))
                 .data(cashAccountName.getBytes())
