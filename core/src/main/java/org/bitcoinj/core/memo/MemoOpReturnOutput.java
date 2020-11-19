@@ -84,4 +84,24 @@ public class MemoOpReturnOutput {
                     .data(imgUrl.getBytes());
         }
     }
+
+    public static class SetProfileText extends MemoOpReturnOutput {
+        public SetProfileText(String text) {
+            super("6d05");
+            Preconditions.checkArgument(text.getBytes().length <= 217);
+            this.getBuilder()
+                    .data(text.getBytes());
+        }
+    }
+
+    public static class Repost extends MemoOpReturnOutput {
+        public Repost(String postTxId, String message) {
+            super("6d0b");
+            Preconditions.checkArgument(Hex.decode(postTxId).length <= 32);
+            Preconditions.checkArgument(message.getBytes().length <= 184);
+            this.getBuilder()
+                    .data(Hex.decode(postTxId))
+                    .data(message.getBytes());
+        }
+    }
 }
