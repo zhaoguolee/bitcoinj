@@ -18,9 +18,15 @@
 package org.bitcoinj.wallet;
 
 import com.google.common.base.MoreObjects;
+import com.google.gson.Gson;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoin.protocols.payments.Protos.PaymentDetails;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.flipstarter.FlipstarterInvoicePayload;
+import org.bitcoinj.core.flipstarter.FlipstarterPledgePayload;
 import org.bitcoinj.core.memo.MemoOpReturnOutput;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.NetHelper;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
@@ -30,11 +36,13 @@ import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.wallet.KeyChain.KeyPurpose;
 import org.bitcoinj.wallet.Wallet.MissingSigsMode;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -350,6 +358,40 @@ public class SendRequest {
         }
 
         return req;
+    }
+
+    public static Pair<SendRequest, String> createFlipstarterPledge(Wallet wallet, FlipstarterInvoicePayload invoicePayload) throws InsufficientMoneyException {
+        SendRequest pledgeInputReq = new SendRequest();
+        pledgeInputReq.feePerKb = Coin.valueOf(1000L);
+        pledgeInputReq.shuffleOutputs = false;
+        pledgeInputReq.tx.addOutput(Coin.valueOf(invoicePayload.donation.amount), wallet.freshReceiveAddress());
+        wallet.completeTx(pledgeInputReq);
+        Transaction flipstarterTx = new Transaction(wallet.getParams());
+        for(FlipstarterInvoicePayload.Output output : invoicePayload.outputs) {
+            flipstarterTx.addOutput(Coin.valueOf(output.value), AddressFactory.create().getAddress(wallet.getParams(), output.address));
+        }
+        TransactionOutput output = pledgeInputReq.tx.getOutput(0);
+        TransactionInput txIn = flipstarterTx.addInput(output);
+        Script scriptPubKey = output.getScriptPubKey();
+        RedeemData redeemData = txIn.getConnectedRedeemData(wallet);
+        checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
+        txIn.setScriptSig(scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript));
+        ECKey key = redeemData.getFullKey();
+        byte[] script = redeemData.redeemScript.getProgram();
+        TransactionSignature signature = flipstarterTx.calculateWitnessSignature(txIn.getIndex(), key, script, output.getValue(), Transaction.SigHash.ALL, true);
+        int sigIndex = 0;
+        Script inputScript = txIn.getScriptSig();
+        inputScript = scriptPubKey.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(), sigIndex);
+        txIn.setScriptSig(inputScript);
+        TransactionOutPoint txInOutpoint = txIn.getOutpoint();
+        String unlockingScript = Hex.toHexString(txIn.getScriptSig().getProgram());
+        FlipstarterPledgePayload.Input input = new FlipstarterPledgePayload.Input(txInOutpoint.getHash().toString(), txInOutpoint.getIndex(), txIn.getSequenceNumber(), unlockingScript);
+        ArrayList<FlipstarterPledgePayload.Input> payloadInputs = new ArrayList<>();
+        payloadInputs.add(input);
+        FlipstarterPledgePayload pledgePayload = new FlipstarterPledgePayload(payloadInputs, new FlipstarterPledgePayload.Data("", ""), null);
+        String json = new Gson().toJson(pledgePayload);
+        String base64Payload = Base64.toBase64String(json.getBytes());
+        return new MutablePair<>(pledgeInputReq, base64Payload);
     }
 
     /**
