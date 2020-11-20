@@ -377,7 +377,7 @@ public class SendRequest {
 
         TransactionOutput output = pledgeInputReq.tx.getOutput(0);
         TransactionInput txIn = flipstarterTx.addInput(output);
-
+        wallet.removeUnspent(output);
         Script scriptPubKey = output.getScriptPubKey();
         RedeemData redeemData = txIn.getConnectedRedeemData(wallet);
         checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());

@@ -3403,6 +3403,10 @@ public class Wallet extends BaseTaggableObject
         }
     }
 
+    public void removeUnspent(TransactionOutput utxo) {
+        myUnspents.remove(utxo);
+    }
+
     @Override
     public String toString() {
         return toString(false, false, null, true, true, null);
