@@ -364,33 +364,45 @@ public class SendRequest {
         SendRequest pledgeInputReq = new SendRequest();
         pledgeInputReq.feePerKb = Coin.valueOf(1000L);
         pledgeInputReq.shuffleOutputs = false;
+        pledgeInputReq.allowUnconfirmed();
+        pledgeInputReq.tx = new Transaction(wallet.getParams());
         pledgeInputReq.tx.addOutput(Coin.valueOf(invoicePayload.donation.amount), wallet.freshReceiveAddress());
         wallet.completeTx(pledgeInputReq);
+
         Transaction flipstarterTx = new Transaction(wallet.getParams());
+        flipstarterTx.setVersion(Transaction.CURRENT_VERSION);
         for(FlipstarterInvoicePayload.Output output : invoicePayload.outputs) {
             flipstarterTx.addOutput(Coin.valueOf(output.value), AddressFactory.create().getAddress(wallet.getParams(), output.address));
         }
+
         TransactionOutput output = pledgeInputReq.tx.getOutput(0);
         TransactionInput txIn = flipstarterTx.addInput(output);
+
         Script scriptPubKey = output.getScriptPubKey();
         RedeemData redeemData = txIn.getConnectedRedeemData(wallet);
         checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
         txIn.setScriptSig(scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript));
         ECKey key = redeemData.getFullKey();
         byte[] script = redeemData.redeemScript.getProgram();
+
         TransactionSignature signature = flipstarterTx.calculateWitnessSignature(txIn.getIndex(), key, script, output.getValue(), Transaction.SigHash.ALL, true);
         int sigIndex = 0;
         Script inputScript = txIn.getScriptSig();
         inputScript = scriptPubKey.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(), sigIndex);
         txIn.setScriptSig(inputScript);
+
         TransactionOutPoint txInOutpoint = txIn.getOutpoint();
         String unlockingScript = Hex.toHexString(txIn.getScriptSig().getProgram());
+
         FlipstarterPledgePayload.Input input = new FlipstarterPledgePayload.Input(txInOutpoint.getHash().toString(), txInOutpoint.getIndex(), txIn.getSequenceNumber(), unlockingScript);
         ArrayList<FlipstarterPledgePayload.Input> payloadInputs = new ArrayList<>();
         payloadInputs.add(input);
+
         FlipstarterPledgePayload pledgePayload = new FlipstarterPledgePayload(payloadInputs, new FlipstarterPledgePayload.Data("", ""), null);
         String json = new Gson().toJson(pledgePayload);
         String base64Payload = Base64.toBase64String(json.getBytes());
+
+        txIn.verify(output);
         return new MutablePair<>(pledgeInputReq, base64Payload);
     }
 
