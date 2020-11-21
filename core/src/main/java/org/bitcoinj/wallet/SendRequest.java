@@ -360,7 +360,10 @@ public class SendRequest {
         return req;
     }
 
-    public static Pair<SendRequest, String> createFlipstarterPledge(Wallet wallet, FlipstarterInvoicePayload invoicePayload) throws InsufficientMoneyException {
+    public static Pair<SendRequest, String> createFlipstarterPledge(Wallet wallet, String invoicePayloadBase64) throws InsufficientMoneyException {
+        byte[] payloadBytes = Base64.decode(invoicePayloadBase64);
+        String invoiceJson = new String(payloadBytes, StandardCharsets.UTF_16LE);
+        FlipstarterInvoicePayload invoicePayload = new Gson().fromJson(invoiceJson, FlipstarterInvoicePayload.class);
         SendRequest pledgeInputReq = new SendRequest();
         pledgeInputReq.feePerKb = Coin.valueOf(1000L);
         pledgeInputReq.shuffleOutputs = false;
@@ -368,6 +371,7 @@ public class SendRequest {
         pledgeInputReq.tx = new Transaction(wallet.getParams());
         pledgeInputReq.tx.addOutput(Coin.valueOf(invoicePayload.donation.amount), wallet.freshReceiveAddress());
         wallet.completeTx(pledgeInputReq);
+        wallet.commitTx(pledgeInputReq.tx);
 
         Transaction flipstarterTx = new Transaction(wallet.getParams());
         flipstarterTx.setVersion(Transaction.CURRENT_VERSION);
@@ -377,7 +381,11 @@ public class SendRequest {
 
         TransactionOutput output = pledgeInputReq.tx.getOutput(0);
         TransactionInput txIn = flipstarterTx.addInput(output);
-        wallet.removeUnspent(output);
+        for(TransactionOutput utxo : wallet.getUnspents()) {
+            if(utxo.getOutPointFor().toString().equals(output.getOutPointFor().toString())) {
+                utxo.markAsSpent(txIn);
+            }
+        }
         Script scriptPubKey = output.getScriptPubKey();
         RedeemData redeemData = txIn.getConnectedRedeemData(wallet);
         checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
@@ -403,6 +411,7 @@ public class SendRequest {
         String base64Payload = Base64.toBase64String(json.getBytes());
 
         txIn.verify(output);
+        wallet.commitTx(flipstarterTx);
         return new MutablePair<>(pledgeInputReq, base64Payload);
     }
 

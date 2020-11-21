@@ -24,10 +24,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.*;
 import org.bitcoinj.wallet.SendRequest;
 import org.bitcoinj.wallet.Wallet;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.encoders.Hex;
 import wallettemplate.controls.BitcoinAddressValidator;
 import wallettemplate.utils.TextFieldValidator;
 import wallettemplate.utils.WTUtils;
@@ -54,7 +56,7 @@ public class SendMoneyController {
     public void initialize() {
         Coin balance = Main.bitcoin.wallet().getBalance(Wallet.BalanceType.ESTIMATED);
         checkState(!balance.isZero());
-        new BitcoinAddressValidator(Main.params, address, sendBtn);
+        //new BitcoinAddressValidator(Main.params, address, sendBtn);
         new TextFieldValidator(amountEdit, text ->
                 !WTUtils.didThrow(() -> checkState(Coin.parseCoin(text).compareTo(balance) <= 0)));
         amountEdit.setText(balance.toPlainString());
@@ -68,40 +70,11 @@ public class SendMoneyController {
     public void send(ActionEvent event) {
         // Address exception cannot happen as we validated it beforehand.
         try {
-            Coin amount = Coin.parseCoin(amountEdit.getText());
-            Address destination = AddressFactory.create().getAddress(Main.params, address.getText());
-            SendRequest req;
-            if (amount.equals(Main.bitcoin.wallet().getBalance()))
-                req = SendRequest.emptyWallet(Main.params, destination);
-            else
-                req = SendRequest.to(Main.params, destination, amount);
-            req.aesKey = aesKey;
-            // Don't make the user wait for confirmations for now, as the intention is they're sending it
-            // their own money!
-            req.allowUnconfirmed();
-            sendResult = Main.bitcoin.wallet().sendCoins(req);
-            Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<>() {
-                @Override
-                public void onSuccess(@Nullable Transaction result) {
-                    checkGuiThread();
-                    overlayUI.done();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    // We died trying to empty the wallet.
-                    crashAlert(t);
-                }
-            }, MoreExecutors.directExecutor());
-            sendResult.tx.getConfidence().addEventListener((tx, reason) -> {
-                if (reason == TransactionConfidence.Listener.ChangeReason.SEEN_PEERS)
-                    updateTitleForBroadcast();
-            });
-            sendBtn.setDisable(true);
-            address.setDisable(true);
-            ((HBox) amountEdit.getParent()).getChildren().remove(amountEdit);
-            ((HBox) btcLabel.getParent()).getChildren().remove(btcLabel);
-            updateTitleForBroadcast();
+            String payload = address.getText();
+            Pair<SendRequest, String> pairReq = SendRequest.createFlipstarterPledge(Main.bitcoin.wallet(), payload);
+            Main.bitcoin.peerGroup().broadcastTransaction(pairReq.getLeft().tx);
+            System.out.println("INPUT TX:: " + Hex.toHexString(pairReq.getLeft().tx.bitcoinSerialize()));
+            System.out.println("PLEDGE:: " + pairReq.getRight());
         } catch (InsufficientMoneyException e) {
             informationalAlert("Could not empty the wallet",
                     "You may have too little money left in the wallet to make a transaction.");
