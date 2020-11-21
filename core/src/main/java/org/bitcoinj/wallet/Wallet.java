@@ -3124,7 +3124,7 @@ public class Wallet extends BaseTaggableObject
         }
         if (pool == Pool.UNSPENT || pool == Pool.PENDING) {
             for (TransactionOutput output : tx.getOutputs()) {
-                if (output.isAvailableForSpending() && output.isMineOrWatched(this))
+                if (output.isAvailableForSpending() && output.isMineOrWatched(this) && !output.isFrozen())
                     myUnspents.add(output);
             }
         }
@@ -4534,6 +4534,11 @@ public class Wallet extends BaseTaggableObject
                     if (excludeImmatureCoinbases && !transaction.isMature())
                         continue;
 
+                    if(output.isFrozen()) {
+                        System.out.println("Frozen UTXO...");
+                        continue;
+                    }
+
                     if (output.getValue().value != 546L) {
                         candidates.add(output);
                     } else if (includeDust) {
@@ -4559,6 +4564,9 @@ public class Wallet extends BaseTaggableObject
                     if (excludeUnsignable && !canSignFor(output.getScriptPubKey())) continue;
                     Transaction transaction = checkNotNull(output.getParentTransaction());
                     if (excludeImmatureCoinbases && !transaction.isMature())
+                        continue;
+
+                    if(output.isFrozen())
                         continue;
 
                     if (output.getValue().value == 546L) {

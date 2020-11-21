@@ -61,6 +61,8 @@ public class TransactionOutput extends ChildMessage {
     @Nullable
     private TransactionInput spentBy;
 
+    private boolean frozen;
+
     /**
      * Deserializes a transaction output message. This is usually part of a transaction message.
      */
@@ -273,6 +275,15 @@ public class TransactionOutput extends ChildMessage {
      */
     public boolean isAvailableForSpending() {
         return availableForSpending;
+    }
+
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
     }
 
     /**

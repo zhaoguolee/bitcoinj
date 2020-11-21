@@ -381,11 +381,6 @@ public class SendRequest {
 
         TransactionOutput output = pledgeInputReq.tx.getOutput(0);
         TransactionInput txIn = flipstarterTx.addInput(output);
-        for(TransactionOutput utxo : wallet.getUnspents()) {
-            if(utxo.getOutPointFor().toString().equals(output.getOutPointFor().toString())) {
-                utxo.markAsSpent(txIn);
-            }
-        }
         Script scriptPubKey = output.getScriptPubKey();
         RedeemData redeemData = txIn.getConnectedRedeemData(wallet);
         checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
@@ -411,7 +406,8 @@ public class SendRequest {
         String base64Payload = Base64.toBase64String(json.getBytes());
 
         txIn.verify(output);
-        wallet.commitTx(flipstarterTx);
+        output.setFrozen(true);
+        wallet.saveNow();
         return new MutablePair<>(pledgeInputReq, base64Payload);
     }
 

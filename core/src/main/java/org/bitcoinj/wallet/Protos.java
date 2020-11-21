@@ -8364,6 +8364,25 @@ public final class Protos {
      * @return The spentByTransactionIndex.
      */
     int getSpentByTransactionIndex();
+
+    /**
+     * <pre>
+     * Is frozen by wallet, to prevent spending accidentally.
+     * </pre>
+     *
+     * <code>optional bool frozen = 5;</code>
+     * @return Whether the frozen field is set.
+     */
+    boolean hasFrozen();
+    /**
+     * <pre>
+     * Is frozen by wallet, to prevent spending accidentally.
+     * </pre>
+     *
+     * <code>optional bool frozen = 5;</code>
+     * @return The frozen.
+     */
+    boolean getFrozen();
   }
   /**
    * Protobuf type {@code wallet.TransactionOutput}
@@ -8431,6 +8450,11 @@ public final class Protos {
             case 32: {
               bitField0_ |= 0x00000008;
               spentByTransactionIndex_ = input.readInt32();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              frozen_ = input.readBool();
               break;
             }
             default: {
@@ -8566,6 +8590,33 @@ public final class Protos {
       return spentByTransactionIndex_;
     }
 
+    public static final int FROZEN_FIELD_NUMBER = 5;
+    private boolean frozen_;
+    /**
+     * <pre>
+     * Is frozen by wallet, to prevent spending accidentally.
+     * </pre>
+     *
+     * <code>optional bool frozen = 5;</code>
+     * @return Whether the frozen field is set.
+     */
+    @java.lang.Override
+    public boolean hasFrozen() {
+      return ((bitField0_ & 0x00000010) != 0);
+    }
+    /**
+     * <pre>
+     * Is frozen by wallet, to prevent spending accidentally.
+     * </pre>
+     *
+     * <code>optional bool frozen = 5;</code>
+     * @return The frozen.
+     */
+    @java.lang.Override
+    public boolean getFrozen() {
+      return frozen_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -8600,6 +8651,9 @@ public final class Protos {
       if (((bitField0_ & 0x00000008) != 0)) {
         output.writeInt32(4, spentByTransactionIndex_);
       }
+      if (((bitField0_ & 0x00000010) != 0)) {
+        output.writeBool(5, frozen_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -8624,6 +8678,10 @@ public final class Protos {
       if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(4, spentByTransactionIndex_);
+      }
+      if (((bitField0_ & 0x00000010) != 0)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(5, frozen_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -8660,6 +8718,11 @@ public final class Protos {
         if (getSpentByTransactionIndex()
             != other.getSpentByTransactionIndex()) return false;
       }
+      if (hasFrozen() != other.hasFrozen()) return false;
+      if (hasFrozen()) {
+        if (getFrozen()
+            != other.getFrozen()) return false;
+      }
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -8687,6 +8750,11 @@ public final class Protos {
       if (hasSpentByTransactionIndex()) {
         hash = (37 * hash) + SPENT_BY_TRANSACTION_INDEX_FIELD_NUMBER;
         hash = (53 * hash) + getSpentByTransactionIndex();
+      }
+      if (hasFrozen()) {
+        hash = (37 * hash) + FROZEN_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+            getFrozen());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -8829,6 +8897,8 @@ public final class Protos {
         bitField0_ = (bitField0_ & ~0x00000004);
         spentByTransactionIndex_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
+        frozen_ = false;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -8872,6 +8942,10 @@ public final class Protos {
         if (((from_bitField0_ & 0x00000008) != 0)) {
           result.spentByTransactionIndex_ = spentByTransactionIndex_;
           to_bitField0_ |= 0x00000008;
+        }
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.frozen_ = frozen_;
+          to_bitField0_ |= 0x00000010;
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -8933,6 +9007,9 @@ public final class Protos {
         }
         if (other.hasSpentByTransactionIndex()) {
           setSpentByTransactionIndex(other.getSpentByTransactionIndex());
+        }
+        if (other.hasFrozen()) {
+          setFrozen(other.getFrozen());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -9176,6 +9253,61 @@ public final class Protos {
       public Builder clearSpentByTransactionIndex() {
         bitField0_ = (bitField0_ & ~0x00000008);
         spentByTransactionIndex_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private boolean frozen_ ;
+      /**
+       * <pre>
+       * Is frozen by wallet, to prevent spending accidentally.
+       * </pre>
+       *
+       * <code>optional bool frozen = 5;</code>
+       * @return Whether the frozen field is set.
+       */
+      @java.lang.Override
+      public boolean hasFrozen() {
+        return ((bitField0_ & 0x00000010) != 0);
+      }
+      /**
+       * <pre>
+       * Is frozen by wallet, to prevent spending accidentally.
+       * </pre>
+       *
+       * <code>optional bool frozen = 5;</code>
+       * @return The frozen.
+       */
+      @java.lang.Override
+      public boolean getFrozen() {
+        return frozen_;
+      }
+      /**
+       * <pre>
+       * Is frozen by wallet, to prevent spending accidentally.
+       * </pre>
+       *
+       * <code>optional bool frozen = 5;</code>
+       * @param value The frozen to set.
+       * @return This builder for chaining.
+       */
+      public Builder setFrozen(boolean value) {
+        bitField0_ |= 0x00000010;
+        frozen_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Is frozen by wallet, to prevent spending accidentally.
+       * </pre>
+       *
+       * <code>optional bool frozen = 5;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearFrozen() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        frozen_ = false;
         onChanged();
         return this;
       }
@@ -22384,60 +22516,61 @@ public final class Protos {
       "h\030\001 \002(\014\022#\n\033transaction_out_point_index\030\002" +
       " \002(\r\022\024\n\014script_bytes\030\003 \002(\014\022\020\n\010sequence\030\004" +
       " \001(\r\022\r\n\005value\030\005 \001(\003\022&\n\007witness\030\006 \001(\0132\025.w" +
-      "allet.ScriptWitness\"\177\n\021TransactionOutput" +
-      "\022\r\n\005value\030\001 \002(\003\022\024\n\014script_bytes\030\002 \002(\014\022!\n" +
-      "\031spent_by_transaction_hash\030\003 \001(\014\022\"\n\032spen" +
-      "t_by_transaction_index\030\004 \001(\005\"\267\003\n\025Transac" +
-      "tionConfidence\0220\n\004type\030\001 \001(\0162\".wallet.Tr" +
-      "ansactionConfidence.Type\022\032\n\022appeared_at_" +
-      "height\030\002 \001(\005\022\036\n\026overriding_transaction\030\003" +
-      " \001(\014\022\r\n\005depth\030\004 \001(\005\022)\n\014broadcast_by\030\006 \003(" +
-      "\0132\023.wallet.PeerAddress\022\033\n\023last_broadcast" +
-      "ed_at\030\010 \001(\003\0224\n\006source\030\007 \001(\0162$.wallet.Tra" +
-      "nsactionConfidence.Source\"`\n\004Type\022\013\n\007UNK" +
-      "NOWN\020\000\022\014\n\010BUILDING\020\001\022\013\n\007PENDING\020\002\022\025\n\021NOT" +
-      "_IN_BEST_CHAIN\020\003\022\010\n\004DEAD\020\004\022\017\n\013IN_CONFLIC" +
-      "T\020\005\"A\n\006Source\022\022\n\016SOURCE_UNKNOWN\020\000\022\022\n\016SOU" +
-      "RCE_NETWORK\020\001\022\017\n\013SOURCE_SELF\020\002\"\303\005\n\013Trans" +
-      "action\022\017\n\007version\030\001 \002(\005\022\014\n\004hash\030\002 \002(\014\022&\n" +
-      "\004pool\030\003 \001(\0162\030.wallet.Transaction.Pool\022\021\n" +
-      "\tlock_time\030\004 \001(\r\022\022\n\nupdated_at\030\005 \001(\003\0223\n\021" +
-      "transaction_input\030\006 \003(\0132\030.wallet.Transac" +
-      "tionInput\0225\n\022transaction_output\030\007 \003(\0132\031." +
-      "wallet.TransactionOutput\022\022\n\nblock_hash\030\010" +
-      " \003(\014\022 \n\030block_relativity_offsets\030\013 \003(\005\0221" +
-      "\n\nconfidence\030\t \001(\0132\035.wallet.TransactionC" +
-      "onfidence\0225\n\007purpose\030\n \001(\0162\033.wallet.Tran" +
-      "saction.Purpose:\007UNKNOWN\022+\n\rexchange_rat" +
-      "e\030\014 \001(\0132\024.wallet.ExchangeRate\022\014\n\004memo\030\r " +
-      "\001(\t\"Y\n\004Pool\022\013\n\007UNSPENT\020\004\022\t\n\005SPENT\020\005\022\014\n\010I" +
-      "NACTIVE\020\002\022\010\n\004DEAD\020\n\022\013\n\007PENDING\020\020\022\024\n\020PEND" +
-      "ING_INACTIVE\020\022\"\243\001\n\007Purpose\022\013\n\007UNKNOWN\020\000\022" +
-      "\020\n\014USER_PAYMENT\020\001\022\020\n\014KEY_ROTATION\020\002\022\034\n\030A" +
-      "SSURANCE_CONTRACT_CLAIM\020\003\022\035\n\031ASSURANCE_C" +
-      "ONTRACT_PLEDGE\020\004\022\033\n\027ASSURANCE_CONTRACT_S" +
-      "TUB\020\005\022\r\n\tRAISE_FEE\020\006\"N\n\020ScryptParameters" +
-      "\022\014\n\004salt\030\001 \002(\014\022\020\n\001n\030\002 \001(\003:\00516384\022\014\n\001r\030\003 " +
-      "\001(\005:\0018\022\014\n\001p\030\004 \001(\005:\0011\"8\n\tExtension\022\n\n\002id\030" +
-      "\001 \002(\t\022\014\n\004data\030\002 \002(\014\022\021\n\tmandatory\030\003 \002(\010\" " +
-      "\n\003Tag\022\013\n\003tag\030\001 \002(\t\022\014\n\004data\030\002 \002(\014\"\261\004\n\006Wal" +
-      "let\022\032\n\022network_identifier\030\001 \002(\t\022\034\n\024last_" +
-      "seen_block_hash\030\002 \001(\014\022\036\n\026last_seen_block" +
-      "_height\030\014 \001(\r\022!\n\031last_seen_block_time_se" +
-      "cs\030\016 \001(\003\022\030\n\003key\030\003 \003(\0132\013.wallet.Key\022(\n\013tr" +
-      "ansaction\030\004 \003(\0132\023.wallet.Transaction\022&\n\016" +
-      "watched_script\030\017 \003(\0132\016.wallet.Script\022C\n\017" +
-      "encryption_type\030\005 \001(\0162\035.wallet.Wallet.En" +
-      "cryptionType:\013UNENCRYPTED\0227\n\025encryption_" +
-      "parameters\030\006 \001(\0132\030.wallet.ScryptParamete" +
-      "rs\022\022\n\007version\030\007 \001(\005:\0011\022$\n\textension\030\n \003(" +
-      "\0132\021.wallet.Extension\022\023\n\013description\030\013 \001(" +
-      "\t\022\031\n\021key_rotation_time\030\r \001(\004\022\031\n\004tags\030\020 \003" +
-      "(\0132\013.wallet.Tag\";\n\016EncryptionType\022\017\n\013UNE" +
-      "NCRYPTED\020\001\022\030\n\024ENCRYPTED_SCRYPT_AES\020\002\"R\n\014" +
-      "ExchangeRate\022\022\n\ncoin_value\030\001 \002(\003\022\022\n\nfiat" +
-      "_value\030\002 \002(\003\022\032\n\022fiat_currency_code\030\003 \002(\t" +
-      "B\035\n\023org.bitcoinj.walletB\006Protos"
+      "allet.ScriptWitness\"\217\001\n\021TransactionOutpu" +
+      "t\022\r\n\005value\030\001 \002(\003\022\024\n\014script_bytes\030\002 \002(\014\022!" +
+      "\n\031spent_by_transaction_hash\030\003 \001(\014\022\"\n\032spe" +
+      "nt_by_transaction_index\030\004 \001(\005\022\016\n\006frozen\030" +
+      "\005 \001(\010\"\267\003\n\025TransactionConfidence\0220\n\004type\030" +
+      "\001 \001(\0162\".wallet.TransactionConfidence.Typ" +
+      "e\022\032\n\022appeared_at_height\030\002 \001(\005\022\036\n\026overrid" +
+      "ing_transaction\030\003 \001(\014\022\r\n\005depth\030\004 \001(\005\022)\n\014" +
+      "broadcast_by\030\006 \003(\0132\023.wallet.PeerAddress\022" +
+      "\033\n\023last_broadcasted_at\030\010 \001(\003\0224\n\006source\030\007" +
+      " \001(\0162$.wallet.TransactionConfidence.Sour" +
+      "ce\"`\n\004Type\022\013\n\007UNKNOWN\020\000\022\014\n\010BUILDING\020\001\022\013\n" +
+      "\007PENDING\020\002\022\025\n\021NOT_IN_BEST_CHAIN\020\003\022\010\n\004DEA" +
+      "D\020\004\022\017\n\013IN_CONFLICT\020\005\"A\n\006Source\022\022\n\016SOURCE" +
+      "_UNKNOWN\020\000\022\022\n\016SOURCE_NETWORK\020\001\022\017\n\013SOURCE" +
+      "_SELF\020\002\"\303\005\n\013Transaction\022\017\n\007version\030\001 \002(\005" +
+      "\022\014\n\004hash\030\002 \002(\014\022&\n\004pool\030\003 \001(\0162\030.wallet.Tr" +
+      "ansaction.Pool\022\021\n\tlock_time\030\004 \001(\r\022\022\n\nupd" +
+      "ated_at\030\005 \001(\003\0223\n\021transaction_input\030\006 \003(\013" +
+      "2\030.wallet.TransactionInput\0225\n\022transactio" +
+      "n_output\030\007 \003(\0132\031.wallet.TransactionOutpu" +
+      "t\022\022\n\nblock_hash\030\010 \003(\014\022 \n\030block_relativit" +
+      "y_offsets\030\013 \003(\005\0221\n\nconfidence\030\t \001(\0132\035.wa" +
+      "llet.TransactionConfidence\0225\n\007purpose\030\n " +
+      "\001(\0162\033.wallet.Transaction.Purpose:\007UNKNOW" +
+      "N\022+\n\rexchange_rate\030\014 \001(\0132\024.wallet.Exchan" +
+      "geRate\022\014\n\004memo\030\r \001(\t\"Y\n\004Pool\022\013\n\007UNSPENT\020" +
+      "\004\022\t\n\005SPENT\020\005\022\014\n\010INACTIVE\020\002\022\010\n\004DEAD\020\n\022\013\n\007" +
+      "PENDING\020\020\022\024\n\020PENDING_INACTIVE\020\022\"\243\001\n\007Purp" +
+      "ose\022\013\n\007UNKNOWN\020\000\022\020\n\014USER_PAYMENT\020\001\022\020\n\014KE" +
+      "Y_ROTATION\020\002\022\034\n\030ASSURANCE_CONTRACT_CLAIM" +
+      "\020\003\022\035\n\031ASSURANCE_CONTRACT_PLEDGE\020\004\022\033\n\027ASS" +
+      "URANCE_CONTRACT_STUB\020\005\022\r\n\tRAISE_FEE\020\006\"N\n" +
+      "\020ScryptParameters\022\014\n\004salt\030\001 \002(\014\022\020\n\001n\030\002 \001" +
+      "(\003:\00516384\022\014\n\001r\030\003 \001(\005:\0018\022\014\n\001p\030\004 \001(\005:\0011\"8\n" +
+      "\tExtension\022\n\n\002id\030\001 \002(\t\022\014\n\004data\030\002 \002(\014\022\021\n\t" +
+      "mandatory\030\003 \002(\010\" \n\003Tag\022\013\n\003tag\030\001 \002(\t\022\014\n\004d" +
+      "ata\030\002 \002(\014\"\261\004\n\006Wallet\022\032\n\022network_identifi" +
+      "er\030\001 \002(\t\022\034\n\024last_seen_block_hash\030\002 \001(\014\022\036" +
+      "\n\026last_seen_block_height\030\014 \001(\r\022!\n\031last_s" +
+      "een_block_time_secs\030\016 \001(\003\022\030\n\003key\030\003 \003(\0132\013" +
+      ".wallet.Key\022(\n\013transaction\030\004 \003(\0132\023.walle" +
+      "t.Transaction\022&\n\016watched_script\030\017 \003(\0132\016." +
+      "wallet.Script\022C\n\017encryption_type\030\005 \001(\0162\035" +
+      ".wallet.Wallet.EncryptionType:\013UNENCRYPT" +
+      "ED\0227\n\025encryption_parameters\030\006 \001(\0132\030.wall" +
+      "et.ScryptParameters\022\022\n\007version\030\007 \001(\005:\0011\022" +
+      "$\n\textension\030\n \003(\0132\021.wallet.Extension\022\023\n" +
+      "\013description\030\013 \001(\t\022\031\n\021key_rotation_time\030" +
+      "\r \001(\004\022\031\n\004tags\030\020 \003(\0132\013.wallet.Tag\";\n\016Encr" +
+      "yptionType\022\017\n\013UNENCRYPTED\020\001\022\030\n\024ENCRYPTED" +
+      "_SCRYPT_AES\020\002\"R\n\014ExchangeRate\022\022\n\ncoin_va" +
+      "lue\030\001 \002(\003\022\022\n\nfiat_value\030\002 \002(\003\022\032\n\022fiat_cu" +
+      "rrency_code\030\003 \002(\tB\035\n\023org.bitcoinj.wallet" +
+      "B\006Protos"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -22490,7 +22623,7 @@ public final class Protos {
     internal_static_wallet_TransactionOutput_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_wallet_TransactionOutput_descriptor,
-        new java.lang.String[] { "Value", "ScriptBytes", "SpentByTransactionHash", "SpentByTransactionIndex", });
+        new java.lang.String[] { "Value", "ScriptBytes", "SpentByTransactionHash", "SpentByTransactionIndex", "Frozen", });
     internal_static_wallet_TransactionConfidence_descriptor =
       getDescriptor().getMessageTypes().get(8);
     internal_static_wallet_TransactionConfidence_fieldAccessorTable = new
