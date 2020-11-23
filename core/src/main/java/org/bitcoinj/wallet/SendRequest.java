@@ -360,7 +360,7 @@ public class SendRequest {
         return req;
     }
 
-    public static Pair<SendRequest, String> createFlipstarterPledge(Wallet wallet, String invoicePayloadBase64) throws InsufficientMoneyException {
+    public static Pair<Transaction, String> createFlipstarterPledge(Wallet wallet, String invoicePayloadBase64) throws InsufficientMoneyException {
         byte[] payloadBytes = Base64.decode(invoicePayloadBase64);
         String invoiceJson = new String(payloadBytes, StandardCharsets.UTF_16LE);
         FlipstarterInvoicePayload invoicePayload = new Gson().fromJson(invoiceJson, FlipstarterInvoicePayload.class);
@@ -408,7 +408,16 @@ public class SendRequest {
         txIn.verify(output);
         output.setFrozen(true);
         wallet.saveNow();
-        return new MutablePair<>(pledgeInputReq, base64Payload);
+        return new MutablePair<>(pledgeInputReq.tx, base64Payload);
+    }
+
+    public static SendRequest cancelFlipstarterPledge(Wallet wallet, TransactionOutput pledgeUtxo) throws InsufficientMoneyException {
+        SendRequest req = new SendRequest();
+        req.tx = new Transaction(wallet.getParams());
+        req.tx.addInput(pledgeUtxo);
+        Coin newUtxoAmount = Coin.valueOf(pledgeUtxo.getValue().value - 225L); //- 225 sats to ensure over 1 sat/byte, because bitcoincashj can get fucky with exactly 1 sat/byte
+        req.tx.addOutput(newUtxoAmount, wallet.freshReceiveAddress());
+        return req;
     }
 
     /**
