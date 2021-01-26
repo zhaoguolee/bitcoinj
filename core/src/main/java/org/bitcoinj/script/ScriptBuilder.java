@@ -392,6 +392,18 @@ public class ScriptBuilder {
         return builder.build();
     }
 
+    public static Script createSchnorrMultiSigInputScriptBytes(List<byte[]> signatures, @Nullable byte[] multisigProgramBytes) {
+        checkArgument(signatures.size() <= 16);
+        ScriptBuilder builder = new ScriptBuilder();
+        //TODO get multisig n here and create default checkbits chunk
+        builder.smallNum(0);  // Work around a bug in CHECKMULTISIG that is now a required part of the protocol.
+        for (byte[] signature : signatures)
+            builder.data(signature);
+        if (multisigProgramBytes != null)
+            builder.data(multisigProgramBytes);
+        return builder.build();
+    }
+
     /**
      * Returns a copy of the given scriptSig with the signature inserted in the given position.
      * <p>
