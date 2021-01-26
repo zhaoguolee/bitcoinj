@@ -377,6 +377,22 @@ public class ScriptBuilder {
         return createMultiSigInputScriptBytes(sigs, multisigProgram.getProgram());
     }
 
+    public static Script createP2SHSchnorrMultiSigInputScript(@Nullable List<TransactionSignature> signatures,
+                                                       Script multisigProgram) {
+        List<byte[]> sigs = new ArrayList<>();
+        if (signatures == null) {
+            // create correct number of empty signatures
+            int numSigs = multisigProgram.getNumberOfSignaturesRequiredToSpend();
+            for (int i = 0; i < numSigs; i++)
+                sigs.add(new byte[]{});
+        } else {
+            for (TransactionSignature signature : signatures) {
+                sigs.add(signature.encodeToBitcoin());
+            }
+        }
+        return createSchnorrMultiSigInputScriptBytes(multisigProgram.getCosignerCountInMultisig(), sigs, multisigProgram.getProgram());
+    }
+
     /**
      * Create a program that satisfies an OP_CHECKMULTISIG program, using pre-encoded signatures.
      * Optionally, appends the script program bytes if spending a P2SH output.
@@ -392,11 +408,10 @@ public class ScriptBuilder {
         return builder.build();
     }
 
-    public static Script createSchnorrMultiSigInputScriptBytes(List<byte[]> signatures, @Nullable byte[] multisigProgramBytes) {
+    public static Script createSchnorrMultiSigInputScriptBytes(int checkbitsSize, List<byte[]> signatures, @Nullable byte[] multisigProgramBytes) {
         checkArgument(signatures.size() <= 16);
         ScriptBuilder builder = new ScriptBuilder();
-        //TODO get multisig n here and create default checkbits chunk
-        builder.smallNum(0);  // Work around a bug in CHECKMULTISIG that is now a required part of the protocol.
+        builder.data(new byte[checkbitsSize]);
         for (byte[] signature : signatures)
             builder.data(signature);
         if (multisigProgramBytes != null)
@@ -469,7 +484,7 @@ public class ScriptBuilder {
         ScriptBuilder builder = new ScriptBuilder();
         List<ScriptChunk> inputChunks = scriptSig.getChunks();
         int totalChunks = inputChunks.size();
-//TODO grab current checkbits chunk, below is untested
+        //TODO grab current checkbits chunk, below is untested
         byte[] checkbits = inputChunks.get(0).data;
         //TODO modify checkbits array, below is untested
         if (checkbits != null) {

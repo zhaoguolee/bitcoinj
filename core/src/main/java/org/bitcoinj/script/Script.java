@@ -413,6 +413,15 @@ public class Script {
         }
     }
 
+    public Script createEmptySchnorrMultisigInputScript(@Nullable ECKey key, @Nullable Script redeemScript) {
+        if (ScriptPattern.isP2SH(this)) {
+            checkArgument(redeemScript != null, "Redeem script required to create P2SH input script");
+            return ScriptBuilder.createP2SHSchnorrMultiSigInputScript(null, redeemScript);
+        } else {
+            throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Do not understand script type: " + this);
+        }
+    }
+
     /**
      * Returns a copy of the given scriptSig with the signature inserted in the given position.
      */
@@ -608,9 +617,9 @@ public class Script {
      */
     public int getNumberOfSignaturesRequiredToSpend() {
         if (ScriptPattern.isSentToMultisig(this)) {
-            // for N of M CHECKMULTISIG script we will need N signatures to spend
-            ScriptChunk nChunk = chunks.get(0);
-            return Script.decodeFromOpN(nChunk.opcode);
+            // for M of N CHECKMULTISIG script we will need M signatures to spend
+            ScriptChunk mChunk = chunks.get(0);
+            return Script.decodeFromOpN(mChunk.opcode);
         } else if (ScriptPattern.isP2PKH(this) || ScriptPattern.isP2PK(this)) {
             // P2PKH and P2PK require single sig
             return 1;
@@ -619,6 +628,11 @@ public class Script {
         } else {
             throw new IllegalStateException("Unsupported script type");
         }
+    }
+
+    //Gets N from M-of-N multisig script.
+    public int getCosignerCountInMultisig() {
+        return getPubKeys().size();
     }
 
     /**

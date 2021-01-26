@@ -214,7 +214,7 @@ public class MultisigAppKit extends WalletKitCore {
             if (redeemData != null) {
                 TransactionOutput utxo = input.getConnectedOutput();
                 Script script = Objects.requireNonNull(utxo).getScriptPubKey();
-                input.setScriptSig(script.createEmptyInputScript(null, redeemData.redeemScript));
+                input.setScriptSig(script.createEmptySchnorrMultisigInputScript(null, redeemData.redeemScript));
             }
         }
         return spendTx;
