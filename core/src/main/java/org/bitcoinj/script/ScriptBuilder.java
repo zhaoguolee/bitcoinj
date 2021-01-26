@@ -452,6 +452,61 @@ public class ScriptBuilder {
         return builder.build();
     }
 
+    public static Script updateScriptWithSchnorrSignature(Script scriptSig, byte[] signature, int targetIndex,
+                                                   int sigsPrefixCount, int sigsSuffixCount) {
+        ScriptBuilder builder = new ScriptBuilder();
+        List<ScriptChunk> inputChunks = scriptSig.getChunks();
+        int totalChunks = inputChunks.size();
+//TODO grab current checkbits chunk, below is untested
+        byte[] checkbits = inputChunks.get(0).data;
+        //TODO modify checkbits array, below is untested
+        if (checkbits != null) {
+            try {
+                checkbits[targetIndex] = 1;
+            } catch(ArrayIndexOutOfBoundsException e) {
+                e.printStackTrace();
+            }
+        }
+        // copy the prefix
+        for (ScriptChunk chunk : inputChunks.subList(0, sigsPrefixCount))
+            builder.addChunk(chunk);
+
+        // copy the sigs
+        int pos = 0;
+        boolean inserted = false;
+        for (ScriptChunk chunk : inputChunks.subList(sigsPrefixCount, totalChunks - sigsSuffixCount)) {
+            if (pos == targetIndex) {
+                inserted = true;
+                builder.data(signature);
+                pos++;
+            }
+            if (!chunk.equalsOpCode(OP_0)) {
+                builder.addChunk(chunk);
+                pos++;
+            }
+        }
+
+        // add OP_0's if needed, since we skipped them in the previous loop
+        while (pos < totalChunks - sigsPrefixCount - sigsSuffixCount) {
+            if (pos == targetIndex) {
+                inserted = true;
+                builder.data(signature);
+            } else {
+                //TODO set new checkbits here, below is untested
+                assert checkbits != null;
+                builder.addChunk(new ScriptChunk(checkbits.length, checkbits));
+            }
+            pos++;
+        }
+
+        // copy the suffix
+        for (ScriptChunk chunk : inputChunks.subList(totalChunks - sigsSuffixCount, totalChunks))
+            builder.addChunk(chunk);
+
+        checkState(inserted);
+        return builder.build();
+    }
+
     /**
      * Creates a scriptPubKey that encodes payment to the given raw public key.
      */

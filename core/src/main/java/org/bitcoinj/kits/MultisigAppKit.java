@@ -248,4 +248,14 @@ public class MultisigAppKit extends WalletKitCore {
         MarriedKeyChain marriedKeyChain = (MarriedKeyChain) this.vWallet.getActiveKeyChain();
         return marriedKeyChain.getSigsRequiredToSpend();
     }
+
+    public int getTotalSigCount() {
+        MarriedKeyChain marriedKeyChain = (MarriedKeyChain) this.vWallet.getActiveKeyChain();
+        return marriedKeyChain.getFollowingKeyChains().size()+1;
+    }
+
+    public byte[] getDefaultCheckbitsForSchnorrMultisig() {
+        int totalSigs = getTotalSigCount();
+        return new byte[totalSigs];
+    }
 }

@@ -430,6 +430,20 @@ public class Script {
         return ScriptBuilder.updateScriptWithSignature(scriptSig, sigBytes, index, sigsPrefixCount, sigsSuffixCount);
     }
 
+    public Script getScriptSigWithSchnorrSignature(Script scriptSig, byte[] sigBytes, int index) {
+        int sigsPrefixCount = 0;
+        int sigsSuffixCount = 0;
+        if (ScriptPattern.isP2SH(this)) {
+            sigsPrefixCount = 1; // OP_0 <sig>* <redeemScript>
+            sigsSuffixCount = 1;
+        } else if (ScriptPattern.isSentToMultisig(this)) {
+            sigsPrefixCount = 1; // OP_0 <sig>*
+        } else if (ScriptPattern.isP2PKH(this)) {
+            sigsSuffixCount = 1; // <sig> <pubkey>
+        }
+        return ScriptBuilder.updateScriptWithSchnorrSignature(scriptSig, sigBytes, index, sigsPrefixCount, sigsSuffixCount);
+    }
+
 
     /**
      * Returns the index where a signature by the key should be inserted.  Only applicable to
