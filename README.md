@@ -16,11 +16,13 @@ This fork of bitcoincashj has many changes and fixes since the original bitcoinc
 - OP_CHECKDATASIG support
 - OP_REVERSEBYTES support
 - Schnorr signatures
+- Schnorr multisig
 - Checking if node peers support NODE_XTHIN, NODE_GRAPHENE services
 - aserti3-2d Difficulty Adjustment Algorithm
 - Testnet4 support
 - Scalenet support
 - Memo protocol functions
+- Flipstarter pledging support
 - Up-to-date hardfork checkpoints
 
 It allows maintaining a wallet and sending/receiving transactions without needing a full blockchain node. It comes with full documentation and some example apps showing how to use it.
