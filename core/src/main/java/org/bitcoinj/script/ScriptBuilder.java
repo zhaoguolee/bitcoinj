@@ -18,6 +18,7 @@
 
 package org.bitcoinj.script;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.Transaction;
@@ -411,7 +412,7 @@ public class ScriptBuilder {
     public static Script createSchnorrMultiSigInputScriptBytes(int checkbitsSize, List<byte[]> signatures, @Nullable byte[] multisigProgramBytes) {
         checkArgument(signatures.size() <= 16);
         ScriptBuilder builder = new ScriptBuilder();
-        builder.data(new byte[checkbitsSize]);
+        builder.smallNum(0);
         for (byte[] signature : signatures)
             builder.data(signature);
         if (multisigProgramBytes != null)
@@ -479,24 +480,21 @@ public class ScriptBuilder {
         return builder.build();
     }
 
-    public static Script updateScriptWithSchnorrSignature(Script scriptSig, byte[] signature, int targetIndex,
-                                                   int sigsPrefixCount, int sigsSuffixCount) {
+    public static Script updateScriptWithSchnorrSignature(Script redeemScript, Script scriptSig, byte[] signature, int targetIndex,
+                                                   int sigsPrefixCount, int sigsSuffixCount, int checkbitsIndex) {
         ScriptBuilder builder = new ScriptBuilder();
         List<ScriptChunk> inputChunks = scriptSig.getChunks();
         int totalChunks = inputChunks.size();
         //TODO grab current checkbits chunk, below is untested
-        byte[] checkbits = inputChunks.get(0).data;
+        int checkbits = inputChunks.get(0).decodeOpN();
         //TODO modify checkbits array, below is untested
-        if (checkbits != null) {
-            try {
-                checkbits[targetIndex] = 1;
-            } catch(ArrayIndexOutOfBoundsException e) {
-                e.printStackTrace();
-            }
-        }
+        System.out.println(checkbits);
+        String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
+        System.out.println(currentDummy);
+        String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         // copy the prefix
         for (ScriptChunk chunk : inputChunks.subList(0, sigsPrefixCount))
-            builder.addChunk(chunk);
+            builder.smallNum(Integer.parseInt(updatedDummy, 2));
 
         // copy the sigs
         int pos = 0;
@@ -519,9 +517,7 @@ public class ScriptBuilder {
                 inserted = true;
                 builder.data(signature);
             } else {
-                //TODO set new checkbits here, below is untested
-                assert checkbits != null;
-                builder.addChunk(new ScriptChunk(checkbits.length, checkbits));
+                builder.addChunk(new ScriptChunk(OP_0, null));
             }
             pos++;
         }
@@ -532,6 +528,17 @@ public class ScriptBuilder {
 
         checkState(inserted);
         return builder.build();
+    }
+
+    private static String getSchnorrMultisigDummy(int currentDummy, int totalCosigners) {
+        String binary = Integer.toBinaryString(currentDummy);
+        return StringUtils.leftPad(binary, totalCosigners, "0");
+    }
+
+    private static String updateSchnorrMultisigDummy(String currentDummy, int index) {
+        StringBuilder dummy = new StringBuilder(currentDummy);
+        dummy.setCharAt(index, '1');
+        return dummy.toString();
     }
 
     /**

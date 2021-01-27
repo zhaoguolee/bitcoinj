@@ -778,6 +778,10 @@ public class ECKey implements EncryptableItem {
         return ECKey.verify(sigHash.getBytes(), signature, getPubKey());
     }
 
+    public boolean verifySchnorr(Sha256Hash sigHash, SchnorrSignature signature) {
+        return SchnorrSignature.schnorr_verify(sigHash.getBytes(), getPubKey(), signature.getSignature());
+    }
+
     /**
      * Verifies the given ASN.1 encoded ECDSA signature against a hash using the public key, and throws an exception
      * if the signature doesn't match
