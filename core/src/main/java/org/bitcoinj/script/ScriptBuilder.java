@@ -485,17 +485,12 @@ public class ScriptBuilder {
         ScriptBuilder builder = new ScriptBuilder();
         List<ScriptChunk> inputChunks = scriptSig.getChunks();
         int totalChunks = inputChunks.size();
-        //TODO grab current checkbits chunk, below is untested
         int checkbits = inputChunks.get(0).decodeOpN();
-        //TODO modify checkbits array, below is untested
-        System.out.println(checkbits);
         String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
-        System.out.println(currentDummy);
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
-        // copy the prefix
-        for (ScriptChunk chunk : inputChunks.subList(0, sigsPrefixCount))
-            builder.smallNum(Integer.parseInt(updatedDummy, 2));
 
+        //re-add dummy to script
+        builder.smallNum(Integer.parseInt(updatedDummy, 2));
         // copy the sigs
         int pos = 0;
         boolean inserted = false;
