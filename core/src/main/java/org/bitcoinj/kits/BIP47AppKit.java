@@ -717,7 +717,12 @@ public class BIP47AppKit extends WalletKitCore {
 
         Transaction tx = vWallet.createSendDontSign(ntAddress, ntValue, allowUnconfirmedSpends);
 
-        SendRequest sendRequest = SendRequest.forTx(tx);
+        SendRequest sendRequest = SendRequest.to(vWallet.getParams(), ntAddress, ntValue);
+
+        for(TransactionInput input : tx.getInputs()) {
+            TransactionOutput utxo = input.getConnectedOutput();
+            sendRequest.tx.addInput(utxo);
+        }
 
         if (allowUnconfirmedSpends)
             sendRequest.allowUnconfirmed();
