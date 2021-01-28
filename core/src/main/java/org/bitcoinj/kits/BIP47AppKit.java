@@ -713,15 +713,12 @@ public class BIP47AppKit extends WalletKitCore {
         System.out.println("To notification address: " + ntAddress.toString());
         System.out.println("Value: " + ntValue.toFriendlyString());
 
-
-
-        Transaction tx = vWallet.createSendDontSign(ntAddress, ntValue, allowUnconfirmedSpends);
-
         SendRequest sendRequest = SendRequest.to(vWallet.getParams(), ntAddress, ntValue);
 
-        for(TransactionInput input : tx.getInputs()) {
-            TransactionOutput utxo = input.getConnectedOutput();
-            sendRequest.tx.addInput(utxo);
+        org.bitcoinj.utils.BIP47Util.FeeCalculation feeCalculation = BIP47Util.calculateFee(vWallet, sendRequest, ntValue, vWallet.calculateAllSpendCandidates());
+
+        for (TransactionOutput output :feeCalculation.bestCoinSelection.gathered) {
+            sendRequest.tx.addInput(output);
         }
 
         if (allowUnconfirmedSpends)
