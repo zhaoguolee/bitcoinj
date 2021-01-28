@@ -5235,10 +5235,14 @@ public class Wallet extends BaseTaggableObject
     }
 
     //region Fee calculation code
-
     public FeeCalculation calculateFee(SendRequest req, Coin value, List<TransactionInput> originalInputs,
                                        boolean needAtLeastReferenceFee, List<TransactionOutput> candidates) throws InsufficientMoneyException {
-        checkState(lock.isHeldByCurrentThread());
+        return calculateFee(true, req, value, originalInputs, needAtLeastReferenceFee, candidates);
+    }
+
+    public FeeCalculation calculateFee(boolean checkLock, SendRequest req, Coin value, List<TransactionInput> originalInputs,
+                                       boolean needAtLeastReferenceFee, List<TransactionOutput> candidates) throws InsufficientMoneyException {
+        if(checkLock) { checkState(lock.isHeldByCurrentThread()); }
         FeeCalculation result;
         Coin fee = Coin.ZERO;
         while (true) {
