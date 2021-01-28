@@ -26,6 +26,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -189,7 +190,7 @@ public class BIP47Util {
 
         if (selection3 == null && selection2 == null && selection1 == null) {
             checkNotNull(valueMissing);
-            log.warn("Insufficient value in wallet for send: needed " + valueMissing.toFriendlyString() + " more");
+            log.warn("Insufficient value in wallet for send: needed "+valueMissing.toFriendlyString()+" more");
             throw new InsufficientMoneyException(valueMissing);
         }
 

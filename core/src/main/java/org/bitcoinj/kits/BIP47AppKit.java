@@ -153,6 +153,7 @@ public class BIP47AppKit extends WalletKitCore {
 
         String notifAsCashAddr = notificationAddress.toString();
         this.grabNotificationAddressUtxos(notifAsCashAddr);
+        this.addTransactionsListener(null);
     }
 
     private void grabNotificationAddressUtxos(final String cashAddr) {
@@ -712,19 +713,20 @@ public class BIP47AppKit extends WalletKitCore {
         System.out.println("To notification address: " + ntAddress.toString());
         System.out.println("Value: " + ntValue.toFriendlyString());
 
-        SendRequest sendRequest = SendRequest.to(this.params(), ntAddress.toString(), ntValue);
+        SendRequest sendRequest = SendRequest.to(vWallet.getParams(), ntAddress, ntValue);
+
+        org.bitcoinj.utils.BIP47Util.FeeCalculation feeCalculation = BIP47Util.calculateFee(vWallet, sendRequest, ntValue, vWallet.calculateAllSpendCandidates());
+
+        for (TransactionOutput output :feeCalculation.bestCoinSelection.gathered) {
+            sendRequest.tx.addInput(output);
+        }
 
         if (allowUnconfirmedSpends)
             sendRequest.allowUnconfirmed();
 
         sendRequest.feePerKb = Coin.valueOf(1000L);
+        sendRequest.ensureMinRequiredFee = true;
         sendRequest.memo = "notification_transaction";
-
-        org.bitcoinj.utils.BIP47Util.FeeCalculation feeCalculation = BIP47Util.calculateFee(vWallet, sendRequest, ntValue, vWallet.calculateAllSpendCandidates());
-
-        for (TransactionOutput output : feeCalculation.bestCoinSelection.gathered) {
-            sendRequest.tx.addInput(output);
-        }
 
         if (sendRequest.tx.getInputs().size() > 0) {
             TransactionInput txIn = sendRequest.tx.getInput(0);
