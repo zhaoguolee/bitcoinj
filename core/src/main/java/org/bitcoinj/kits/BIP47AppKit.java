@@ -722,7 +722,7 @@ public class BIP47AppKit extends WalletKitCore {
         sendRequest.ensureMinRequiredFee = true;
         sendRequest.memo = "notification_transaction";
 
-        Wallet.FeeCalculation feeCalculation = vWallet.calculateFee(sendRequest, ntValue, null, sendRequest.ensureMinRequiredFee, vWallet.calculateAllSpendCandidates());
+        Wallet.FeeCalculation feeCalculation = vWallet.calculateFee(false, sendRequest, ntValue, null, sendRequest.ensureMinRequiredFee, vWallet.calculateAllSpendCandidates());
 
         for (TransactionOutput output : feeCalculation.bestCoinSelection.gathered) {
             sendRequest.tx.addInput(output);
