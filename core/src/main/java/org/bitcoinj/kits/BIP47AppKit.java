@@ -153,6 +153,7 @@ public class BIP47AppKit extends WalletKitCore {
 
         String notifAsCashAddr = notificationAddress.toString();
         this.grabNotificationAddressUtxos(notifAsCashAddr);
+        this.addTransactionsListener(null);
     }
 
     private void grabNotificationAddressUtxos(final String cashAddr) {
