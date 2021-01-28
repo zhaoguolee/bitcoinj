@@ -42,111 +42,23 @@ public class BIP47Util {
     private static final String TAG = "BIP47Util";
     private static final Logger log = LoggerFactory.getLogger(BIP47Util.class);
 
-    public static Wallet.FeeCalculation calculateFee(org.bitcoinj.wallet.Wallet vWallet, SendRequest req, Coin value, List<TransactionOutput> candidates) throws InsufficientMoneyException {
-        Wallet.FeeCalculation result;
-        Coin fee = Coin.ZERO;
-        while (true) {
-            result = new Wallet.FeeCalculation();
-            Transaction tx = new Transaction(vWallet.getParams());
-            addSuppliedInputs(tx, req.tx.getInputs());
-
-            Coin valueNeeded = value;
-            if (!req.recipientsPayFees) {
-                valueNeeded = valueNeeded.add(fee);
+    public static ArrayList<TransactionOutput> findNtxInputs(Wallet wallet) {
+        ArrayList<TransactionOutput> selected = new ArrayList<>();
+        long sendSatoshi = 546;
+        long opReturnOutput = 146;
+        long ntxOutput = 546;
+        long changeOutput = 146;
+        sendSatoshi = opReturnOutput + ntxOutput + changeOutput;
+        List<TransactionOutput> utxos = wallet.getUtxos();
+        long inputSatoshi = 0;
+        for(TransactionOutput utxo : utxos) {
+            if(inputSatoshi < sendSatoshi) {
+                inputSatoshi += utxo.getValue().value;
+                selected.add(utxo);
             }
-            if (req.recipientsPayFees) {
-                result.updatedOutputValues = new ArrayList<>();
-            }
-            for (int i = 0; i < req.tx.getOutputs().size(); i++) {
-                TransactionOutput output = new TransactionOutput(vWallet.getParams(), tx,
-                        req.tx.getOutputs().get(i).bitcoinSerialize(), 0);
-                if (req.recipientsPayFees) {
-                    // Subtract fee equally from each selected recipient
-                    output.setValue(output.getValue().subtract(fee.divide(req.tx.getOutputs().size())));
-                    // first receiver pays the remainder not divisible by output count
-                    if (i == 0) {
-                        output.setValue(
-                                output.getValue().subtract(fee.divideAndRemainder(req.tx.getOutputs().size())[1])); // Subtract fee equally from each selected recipient
-                    }
-                    result.updatedOutputValues.add(output.getValue());
-                    if (output.getMinNonDustValue().isGreaterThan(output.getValue())) {
-                        throw new Wallet.CouldNotAdjustDownwards();
-                    }
-                }
-                tx.addOutput(output);
-            }
-            CoinSelector selector = req.coinSelector == null ? vWallet.getCoinSelector() : req.coinSelector;
-            // selector is allowed to modify candidates list.
-            CoinSelection selection = selector.select(valueNeeded, new LinkedList<>(candidates));
-            result.bestCoinSelection = selection;
-            // Can we afford this?
-            if (selection.valueGathered.compareTo(valueNeeded) < 0) {
-                Coin valueMissing = valueNeeded.subtract(selection.valueGathered);
-                throw new InsufficientMoneyException(valueMissing);
-            }
-            Coin change = selection.valueGathered.subtract(valueNeeded);
-            if (change.isGreaterThan(Coin.ZERO)) {
-                // The value of the inputs is greater than what we want to send. Just like in real life then,
-                // we need to take back some coins ... this is called "change". Add another output that sends the change
-                // back to us. The address comes either from the request or currentChangeAddress() as a default.
-                Address changeAddress = req.changeAddress;
-                if (changeAddress == null)
-                    changeAddress = vWallet.currentChangeAddress();
-                TransactionOutput changeOutput = new TransactionOutput(vWallet.getParams(), tx, change, changeAddress);
-                if (req.recipientsPayFees && changeOutput.isDust()) {
-                    // We do not move dust-change to fees, because the sender would end up paying more than requested.
-                    // This would be against the purpose of the all-inclusive feature.
-                    // So instead we raise the change and deduct from the first recipient.
-                    Coin missingToNotBeDust = changeOutput.getMinNonDustValue().subtract(changeOutput.getValue());
-                    changeOutput.setValue(changeOutput.getValue().add(missingToNotBeDust));
-                    TransactionOutput firstOutput = tx.getOutputs().get(0);
-                    firstOutput.setValue(firstOutput.getValue().subtract(missingToNotBeDust));
-                    result.updatedOutputValues.set(0, firstOutput.getValue());
-                    if (firstOutput.isDust()) {
-                        throw new Wallet.CouldNotAdjustDownwards();
-                    }
-                }
-                if (changeOutput.isDust()) {
-                    // Never create dust outputs; if we would, just
-                    // add the dust to the fee.
-                    // Oscar comment: This seems like a way to make the condition below "if
-                    // (!fee.isLessThan(feeNeeded))" to become true.
-                    // This is a non-easy to understand way to do that.
-                    // Maybe there are other effects I am missing
-                    fee = fee.add(changeOutput.getValue());
-                } else {
-                    tx.addOutput(changeOutput);
-                    result.bestChangeOutput = changeOutput;
-                }
-            }
-
-            for (TransactionOutput selectedOutput : selection.gathered) {
-                TransactionInput input = tx.addInput(selectedOutput);
-                // If the scriptBytes don't default to none, our size calculations will be thrown off.
-                checkState(input.getScriptBytes().length == 0);
-            }
-
-            Coin feePerKb = req.feePerKb;
-            if (req.ensureMinRequiredFee && feePerKb.compareTo(Transaction.REFERENCE_DEFAULT_MIN_TX_FEE) < 0)
-                feePerKb = Transaction.REFERENCE_DEFAULT_MIN_TX_FEE;
-
-            final int vsize = tx.getMessageSize() + estimateBytesForSigning(vWallet, selection);
-            Coin feeNeeded = feePerKb.multiply(vsize).divide(1000);
-
-            if (!fee.isLessThan(feeNeeded)) {
-                // Done, enough fee included.
-                break;
-            }
-
-            // Include more fee and try again.
-            fee = feeNeeded;
         }
-        return result;
-    }
 
-    private static void addSuppliedInputs(Transaction tx, List<TransactionInput> originalInputs) {
-        for (TransactionInput input : originalInputs)
-            tx.addInput(new TransactionInput(tx.getParams(), tx, input.bitcoinSerialize()));
+        return selected;
     }
 
     /**
