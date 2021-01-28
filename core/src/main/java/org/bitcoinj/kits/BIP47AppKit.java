@@ -713,7 +713,11 @@ public class BIP47AppKit extends WalletKitCore {
         System.out.println("To notification address: " + ntAddress.toString());
         System.out.println("Value: " + ntValue.toFriendlyString());
 
-        SendRequest sendRequest = SendRequest.to(this.params(), ntAddress.toString(), ntValue);
+
+
+        Transaction tx = vWallet.createSendDontSign(ntAddress, ntValue, allowUnconfirmedSpends);
+
+        SendRequest sendRequest = SendRequest.forTx(tx);
 
         if (allowUnconfirmedSpends)
             sendRequest.allowUnconfirmed();
@@ -721,12 +725,6 @@ public class BIP47AppKit extends WalletKitCore {
         sendRequest.feePerKb = Coin.valueOf(1000L);
         sendRequest.ensureMinRequiredFee = true;
         sendRequest.memo = "notification_transaction";
-
-        ArrayList<TransactionOutput> ntxUtxos = BIP47Util.findNtxInputs(vWallet);
-
-        for (TransactionOutput output : ntxUtxos) {
-            sendRequest.tx.addInput(output);
-        }
 
         if (sendRequest.tx.getInputs().size() > 0) {
             TransactionInput txIn = sendRequest.tx.getInput(0);

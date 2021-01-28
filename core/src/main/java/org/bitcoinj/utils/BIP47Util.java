@@ -42,25 +42,6 @@ public class BIP47Util {
     private static final String TAG = "BIP47Util";
     private static final Logger log = LoggerFactory.getLogger(BIP47Util.class);
 
-    public static ArrayList<TransactionOutput> findNtxInputs(Wallet wallet) {
-        ArrayList<TransactionOutput> selected = new ArrayList<>();
-        long sendSatoshi = 546;
-        long opReturnOutput = 146;
-        long ntxOutput = 546;
-        long changeOutput = 146;
-        sendSatoshi = opReturnOutput + ntxOutput + changeOutput;
-        List<TransactionOutput> utxos = wallet.getUtxos();
-        long inputSatoshi = 0;
-        for(TransactionOutput utxo : utxos) {
-            if(inputSatoshi < sendSatoshi) {
-                inputSatoshi += utxo.getValue().value;
-                selected.add(utxo);
-            }
-        }
-
-        return selected;
-    }
-
     /**
      * <p>Given a send request containing transaction, attempts to sign it's inputs. This method expects transaction
      * to have all necessary inputs connected or they will be ignored.</p>
