@@ -719,9 +719,10 @@ public class BIP47AppKit extends WalletKitCore {
             sendRequest.allowUnconfirmed();
 
         sendRequest.feePerKb = Coin.valueOf(1000L);
+        sendRequest.ensureMinRequiredFee = true;
         sendRequest.memo = "notification_transaction";
 
-        org.bitcoinj.utils.BIP47Util.FeeCalculation feeCalculation = BIP47Util.calculateFee(vWallet, sendRequest, ntValue, vWallet.calculateAllSpendCandidates());
+        Wallet.FeeCalculation feeCalculation = vWallet.calculateFee(sendRequest, ntValue, null, sendRequest.ensureMinRequiredFee, vWallet.calculateAllSpendCandidates());
 
         for (TransactionOutput output : feeCalculation.bestCoinSelection.gathered) {
             sendRequest.tx.addInput(output);

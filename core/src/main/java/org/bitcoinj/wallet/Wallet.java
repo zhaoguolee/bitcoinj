@@ -5225,7 +5225,7 @@ public class Wallet extends BaseTaggableObject
 
     /******************************************************************************************************************/
 
-    private static class FeeCalculation {
+    public static class FeeCalculation {
         // Selected UTXOs to spend
         public CoinSelection bestCoinSelection;
         // Change output (may be null if no change)
