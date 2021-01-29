@@ -2833,12 +2833,20 @@ public class Wallet extends BaseTaggableObject
         keyChainGroup.addCurrentKeyChangeEventListener(listener);
     }
 
+    public void addCurrentAddressChangeEventListener(CurrentAddressChangeEventListener listener) {
+        keyChainGroup.addCurrentAddressChangeEventListener(listener);
+    }
+
     /**
      * Adds an event listener object. Methods on this object are called when a current key and/or address
      * changes. The listener is executed by the given executor.
      */
     public void addCurrentKeyChangeEventListener(Executor executor, CurrentKeyChangeEventListener listener) {
         keyChainGroup.addCurrentKeyChangeEventListener(listener, executor);
+    }
+
+    public void addCurrentAddressChangeEventListener(Executor executor, CurrentAddressChangeEventListener listener) {
+        keyChainGroup.addCurrentAddressChangeEventListener(listener, executor);
     }
 
     /**
@@ -2930,6 +2938,10 @@ public class Wallet extends BaseTaggableObject
      */
     public boolean removeCurrentKeyChangeEventListener(CurrentKeyChangeEventListener listener) {
         return keyChainGroup.removeCurrentKeyChangeEventListener(listener);
+    }
+
+    public boolean removeCurrentAddressChangeEventListener(CurrentAddressChangeEventListener listener) {
+        return keyChainGroup.removeCurrentAddressChangeEventListener(listener);
     }
 
     /**

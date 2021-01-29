@@ -48,7 +48,7 @@ public class BitcoinUIModel {
 
     public final void setWallet(Wallet wallet) {
         wallet.addChangeEventListener(Platform::runLater, w -> updateBalance(wallet));
-        wallet.addCurrentKeyChangeEventListener(Platform::runLater, () -> updateAddress(wallet));
+        wallet.addCurrentAddressChangeEventListener(Platform::runLater, () -> updateAddress(wallet));
         updateBalance(wallet);
         updateAddress(wallet);
     }

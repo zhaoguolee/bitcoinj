@@ -118,6 +118,7 @@ public class MultisigAppKit extends WalletKitCore {
                         .followingKeys(followingKeys)
                         .threshold(this.m).build();
                 vWallet.addAndActivateHDChain(marriedKeyChain);
+                vWallet.currentReceiveAddress();
             }
             // Initiate Bitcoin network objects (block store, blockchain and peer group)
             vStore = new SPVBlockStore(params, chainFile);

@@ -27,6 +27,7 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.utils.ListenerRegistration;
 import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.listeners.CurrentAddressChangeEventListener;
 import org.bitcoinj.wallet.listeners.CurrentKeyChangeEventListener;
 import org.bitcoinj.wallet.listeners.KeyChainEventListener;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -216,6 +217,7 @@ public class KeyChainGroup implements KeyBag {
     private int lookaheadThreshold = -1;
 
     private final CopyOnWriteArrayList<ListenerRegistration<CurrentKeyChangeEventListener>> currentKeyChangeListeners = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<ListenerRegistration<CurrentAddressChangeEventListener>> currentAddressChangeListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Creates a keychain group with just a basic chain. No deterministic chains will be created automatically.
@@ -593,6 +595,7 @@ public class KeyChainGroup implements KeyBag {
             if (entry.getValue() != null && entry.getValue().equals(address)) {
                 log.info("Marking P2SH address as used: {}", address);
                 currentAddresses.put(entry.getKey(), freshAddress(entry.getKey()));
+                queueOnCurrentAddressChanged();
                 return;
             }
         }
@@ -854,6 +857,10 @@ public class KeyChainGroup implements KeyBag {
         addCurrentKeyChangeEventListener(listener, Threading.USER_THREAD);
     }
 
+    public void addCurrentAddressChangeEventListener(CurrentAddressChangeEventListener listener) {
+        addCurrentAddressChangeEventListener(listener, Threading.USER_THREAD);
+    }
+
     /**
      * Adds a listener for events that are run when a current key and/or address changes, on the given
      * executor.
@@ -861,6 +868,11 @@ public class KeyChainGroup implements KeyBag {
     public void addCurrentKeyChangeEventListener(CurrentKeyChangeEventListener listener, Executor executor) {
         checkNotNull(listener);
         currentKeyChangeListeners.add(new ListenerRegistration<>(listener, executor));
+    }
+
+    public void addCurrentAddressChangeEventListener(CurrentAddressChangeEventListener listener, Executor executor) {
+        checkNotNull(listener);
+        currentAddressChangeListeners.add(new ListenerRegistration<>(listener, executor));
     }
 
     /**
@@ -871,12 +883,28 @@ public class KeyChainGroup implements KeyBag {
         return ListenerRegistration.removeFromList(listener, currentKeyChangeListeners);
     }
 
+    public boolean removeCurrentAddressChangeEventListener(CurrentAddressChangeEventListener listener) {
+        checkNotNull(listener);
+        return ListenerRegistration.removeFromList(listener, currentAddressChangeListeners);
+    }
+
     private void queueOnCurrentKeyChanged() {
         for (final ListenerRegistration<CurrentKeyChangeEventListener> registration : currentKeyChangeListeners) {
             registration.executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     registration.listener.onCurrentKeyChanged();
+                }
+            });
+        }
+    }
+
+    private void queueOnCurrentAddressChanged() {
+        for (final ListenerRegistration<CurrentAddressChangeEventListener> registration : currentAddressChangeListeners) {
+            registration.executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    registration.listener.onCurrentAddressChanged();
                 }
             });
         }

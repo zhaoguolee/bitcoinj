@@ -23,6 +23,7 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1600,6 +1601,8 @@ public class Script {
     private static int executeMultiSig(Transaction txContainingThis, int index, Script script, LinkedList<byte[]> stack,
                                        int opCount, int lastCodeSepLocation, int opcode, Coin value,
                                        Set<VerifyFlag> verifyFlags) throws ScriptException {
+        boolean usingSchnorr = false;
+
         final boolean requireCanonical = verifyFlags.contains(VerifyFlag.STRICTENC)
                 || verifyFlags.contains(VerifyFlag.DERSIG)
                 || verifyFlags.contains(VerifyFlag.LOW_S);
@@ -1655,23 +1658,44 @@ public class Script {
                 Sha256Hash hash = sig.useForkId() ?
                         txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
                         txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
-                if (ECKey.verify(hash.getBytes(), sig, pubKey))
+
+                if (ECKey.verify(hash.getBytes(), sig, pubKey)) {
+                    usingSchnorr = false;
                     sigs.pollFirst();
+                }
+            } catch (VerificationException.NoncanonicalSignature e) {
+                try {
+                    SchnorrSignature sig = SchnorrSignature.decodeFromBitcoin(sigs.getFirst());
+                    Sha256Hash hash = sig.useForkId() ?
+                            txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
+                            txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+
+                    if (ECKey.verifySchnorr(hash.getBytes(), sig, pubKey)) {
+                        usingSchnorr = true;
+                        sigs.pollFirst();
+                    }
+                } catch (SignatureDecodeException signatureDecodeException) {
+                    signatureDecodeException.printStackTrace();
+                    usingSchnorr = false;
+                }
             } catch (Exception e) {
-                // There is (at least) one exception that could be hit here (EOFException, if the sig is too short)
-                // Because I can't verify there aren't more, we use a very generic Exception catch
+                e.printStackTrace();
             }
 
             if (sigs.size() > pubkeys.size()) {
                 valid = false;
+                usingSchnorr = false;
                 break;
             }
         }
 
         // We uselessly remove a stack object to emulate a Bitcoin Core bug.
-        byte[] nullDummy = stack.pollLast();
-        if (verifyFlags.contains(VerifyFlag.NULLDUMMY) && nullDummy.length > 0)
-            throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_NULLFAIL, "OP_CHECKMULTISIG(VERIFY) with non-null nulldummy: " + Arrays.toString(nullDummy));
+        // This only applies to non-Schnorr multisig inputs
+        if(!usingSchnorr) {
+            byte[] nullDummy = stack.pollLast();
+            if (verifyFlags.contains(VerifyFlag.NULLDUMMY) && nullDummy.length > 0)
+                throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_NULLFAIL, "OP_CHECKMULTISIG(VERIFY) with non-null nulldummy: " + Arrays.toString(nullDummy));
+        }
 
         if (opcode == OP_CHECKMULTISIG) {
             stack.add(valid ? new byte[]{1} : new byte[]{});

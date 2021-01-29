@@ -388,7 +388,7 @@ public class WalletKitCore extends AbstractIdleService {
             wallet = loadWallet(shouldReplayWallet);
         } else {
             wallet = createWallet();
-            wallet.freshReceiveKey();
+            wallet.currentReceiveAddress();
             for (WalletExtension e : provideWalletExtensions()) {
                 wallet.addExtension(e);
             }
