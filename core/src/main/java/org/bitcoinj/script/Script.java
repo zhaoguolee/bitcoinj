@@ -1578,7 +1578,18 @@ public class Script {
                     txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
             sigValid = ECKey.verify(hash.getBytes(), sig, pubKey);
         } catch (VerificationException.NoncanonicalSignature e) {
-            throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_DER, "Script contains non-canonical signature");
+            //try Schnorr sig
+            try {
+                SchnorrSignature sig = SchnorrSignature.decodeFromBitcoin(sigBytes);
+
+                // TODO: Should check hash type is known
+                Sha256Hash hash = sig.useForkId() ?
+                        txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
+                        txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+                sigValid = ECKey.verifySchnorr(hash.getBytes(), sig, pubKey);
+            } catch (SignatureDecodeException signatureDecodeException) {
+                signatureDecodeException.printStackTrace();
+            }
         } catch (SignatureDecodeException e) {
             // This exception occurs when signing as we run partial/invalid scripts to see if they need more
             // signing work to be done inside LocalTransactionSigner.signInputs.
