@@ -18,10 +18,10 @@ import static org.bitcoinj.core.bip47.BIP47PaymentCode.createMasterPubKeyFromPay
  */
 
 /**
- * p>A {@link BIP47Account} is necessary for BIP47 payment channels. It holds the notification key used to derive the
+ * <p>A {@link BIP47Account} is necessary for BIP47 payment channels. It holds the notification key used to derive the
  * notification address and the key to derive payment addresses in a channel.</p>
  *
- * <p>The BIP47 account is at the derivation path <pre>m / 47' / coin_type' / account_id'.</pre>. </p>
+ * The BIP47 account is at the derivation path <pre>m / 47' / coin_type' / account_id'.</pre>.
  *
  * <p>Properties:</p>
  * <ul>
@@ -52,7 +52,7 @@ public class BIP47Account {
     /**
      * Constructor expecting a Base58Check encoded payment code.
      *
-     * @throws AddressFormatException if the payment code is invalid
+     * @throws org.bitcoinj.core.AddressFormatException if the payment code is invalid
      */
     public BIP47Account(NetworkParameters parameters, String strPaymentCode) {
         mNetworkParameters = parameters;
