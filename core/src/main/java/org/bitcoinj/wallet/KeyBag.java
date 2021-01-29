@@ -31,8 +31,8 @@ public interface KeyBag {
      * script type. This is needed when finding out which key we need to use to redeem a transaction output.
      *
      * @param pubKeyHash hash of the keypair to look for
-     * @param scriptType only look for given usage (currently {@link Script.ScriptType#P2PKH} or
-     *                   {@link Script.ScriptType#P2WPKH}) or {@code null} if we don't care
+     * @param scriptType only look for given usage (currently {@link Script.ScriptType#P2PKH}) or
+     *                   {@code null} if we don't care
      * @return found key or null if no such key was found.
      */
     @Nullable
