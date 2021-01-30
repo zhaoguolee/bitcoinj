@@ -23,6 +23,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.SchnorrSignature;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStoreException;
@@ -63,6 +65,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class MultisigAppKit extends WalletKitCore {
     private List<DeterministicKey> followingKeys;
+    private boolean useSchnorr = true;
     private int m;
 
     /**
@@ -215,7 +218,8 @@ public class MultisigAppKit extends WalletKitCore {
             if (redeemData != null) {
                 TransactionOutput utxo = input.getConnectedOutput();
                 Script script = Objects.requireNonNull(utxo).getScriptPubKey();
-                input.setScriptSig(script.createEmptySchnorrMultisigInputScript(null, redeemData.redeemScript));
+                Script scriptSig = this.usingSchnorr() ? script.createEmptySchnorrMultisigInputScript(null, redeemData.redeemScript) : script.createEmptyInputScript(null, redeemData.redeemScript);
+                input.setScriptSig(scriptSig);
             }
         }
         return spendTx;
@@ -245,18 +249,101 @@ public class MultisigAppKit extends WalletKitCore {
         return req.tx;
     }
 
+    /**
+    Signs multisig inputs, and returns whether or not more signatures are needed.
+     @return returns whether more signatures are needed. true = more sigs needed, false = tx is complete for broadcasting
+     */
+    public boolean signMultisigInputs(Transaction tx) {
+        return signMultisigInputs(tx, Transaction.SigHash.ALL, false, true);
+    }
+
+    public boolean signMultisigInputs(Transaction tx, Transaction.SigHash sigHashMode, boolean anyoneCanPay, boolean useForkId) {
+        boolean needsMoreSigs = false;
+        for(TransactionInput input : tx.getInputs()) {
+            RedeemData bitcoinRedeemData = input.getConnectedRedeemData(wallet());
+            if(bitcoinRedeemData != null) {
+                TransactionOutput utxo = input.getConnectedOutput();
+                Script script = utxo.getScriptPubKey();
+                byte[] redeemScriptProgram = bitcoinRedeemData.redeemScript.getProgram();
+                Sha256Hash sigHash = tx.hashForSignatureWitness(
+                        input.getIndex(),
+                        bitcoinRedeemData.redeemScript,
+                        input.getConnectedOutput().getValue(),
+                        sigHashMode,
+                        anyoneCanPay,
+                        useForkId
+                );
+                Script inputScript = input.getScriptSig();
+                if(usingSchnorr()) {
+                    SchnorrSignature schnorrSignature = tx.calculateSchnorrSignature(
+                            input.getIndex(),
+                            bitcoinRedeemData.getFullKey(),
+                            redeemScriptProgram,
+                            input.getConnectedOutput().getValue(),
+                            sigHashMode,
+                            anyoneCanPay,
+                            useForkId
+                    );
+
+                    int schnorrSignatureIndex = input.getScriptSig().getSchnorrSigInsertionIndex(sigHash, bitcoinRedeemData.getFullKey());
+                    int schnorrCheckbitsIndex = bitcoinRedeemData.redeemScript.findKeyInRedeem(bitcoinRedeemData.getFullKey());
+
+                    inputScript = script.getScriptSigWithSchnorrSignature(
+                            bitcoinRedeemData.redeemScript,
+                            inputScript,
+                            schnorrSignature.encodeToBitcoin(),
+                            schnorrSignatureIndex,
+                            schnorrCheckbitsIndex
+                    );
+
+                } else {
+                    TransactionSignature signature = tx.calculateWitnessSignature(
+                            input.getIndex(),
+                            bitcoinRedeemData.getFullKey(),
+                            redeemScriptProgram,
+                            input.getConnectedOutput().getValue(),
+                            sigHashMode,
+                            anyoneCanPay,
+                            useForkId
+                    );
+
+                    int signatureIndex = input.getScriptSig().getSigInsertionIndex(sigHash, bitcoinRedeemData.getFullKey());
+
+                    inputScript = script.getScriptSigWithSignature(
+                            inputScript,
+                            signature.encodeToBitcoin(),
+                            signatureIndex
+                    );
+
+                }
+
+                input.setScriptSig(inputScript);
+                needsMoreSigs = needsMoreSigs(input, utxo);
+            }
+        }
+
+        return needsMoreSigs;
+    }
+
+    public boolean needsMoreSigs(TransactionInput input, TransactionOutput utxo) {
+        try {
+            input.verify(utxo);
+            return false;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
     public int getSigsRequiredToSpend() {
         MarriedKeyChain marriedKeyChain = (MarriedKeyChain) this.vWallet.getActiveKeyChain();
         return marriedKeyChain.getSigsRequiredToSpend();
     }
 
-    public int getTotalSigCount() {
-        MarriedKeyChain marriedKeyChain = (MarriedKeyChain) this.vWallet.getActiveKeyChain();
-        return marriedKeyChain.getFollowingKeyChains().size()+1;
+    public void setUseSchnorr(boolean use) {
+        this.useSchnorr = use;
     }
 
-    public byte[] getDefaultCheckbitsForSchnorrMultisig() {
-        int totalSigs = getTotalSigCount();
-        return new byte[totalSigs];
+    public boolean usingSchnorr() {
+        return this.useSchnorr;
     }
 }

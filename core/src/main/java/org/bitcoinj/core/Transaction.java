@@ -1045,8 +1045,19 @@ public class Transaction extends ChildMessage {
             Coin value,
             SigHash hashType,
             boolean anyoneCanPay) {
+        return this.calculateWitnessSignature(inputIndex, key, redeemScript, value, hashType, anyoneCanPay, true);
+    }
+
+    public TransactionSignature calculateWitnessSignature(
+            int inputIndex,
+            ECKey key,
+            byte[] redeemScript,
+            Coin value,
+            SigHash hashType,
+            boolean anyoneCanPay,
+            boolean useForkId) {
         Sha256Hash hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay);
-        return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true);
+        return new TransactionSignature(key.sign(hash), hashType, anyoneCanPay, useForkId);
     }
 
     public SchnorrSignature calculateSchnorrSignature(
@@ -1326,8 +1337,18 @@ public class Transaction extends ChildMessage {
             Coin prevValue,
             SigHash type,
             boolean anyoneCanPay) {
+        return hashForSignatureWitness(inputIndex, scriptCode, prevValue, type, anyoneCanPay, true);
+    }
+
+    public synchronized Sha256Hash hashForSignatureWitness(
+            int inputIndex,
+            Script scriptCode,
+            Coin prevValue,
+            SigHash type,
+            boolean anyoneCanPay,
+            boolean useForkId) {
         byte[] connectedScript = scriptCode.getProgram();
-        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay);
+        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay, useForkId);
     }
 
     public synchronized Sha256Hash hashForSignatureWitness(
@@ -1336,7 +1357,17 @@ public class Transaction extends ChildMessage {
             Coin prevValue,
             SigHash type,
             boolean anyoneCanPay) {
-        byte sigHashType = (byte) TransactionSignature.calcSigHashValue(type, anyoneCanPay, true);
+        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay, true);
+    }
+
+    public synchronized Sha256Hash hashForSignatureWitness(
+            int inputIndex,
+            byte[] connectedScript,
+            Coin prevValue,
+            SigHash type,
+            boolean anyoneCanPay,
+            boolean useForkId) {
+        byte sigHashType = (byte) TransactionSignature.calcSigHashValue(type, anyoneCanPay, useForkId);
         ByteArrayOutputStream bos = new UnsafeByteArrayOutputStream(length == UNKNOWN_LENGTH ? 256 : length + 4);
         try {
             byte[] hashPrevouts = new byte[32];

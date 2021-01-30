@@ -391,7 +391,7 @@ public class ScriptBuilder {
                 sigs.add(signature.encodeToBitcoin());
             }
         }
-        return createSchnorrMultiSigInputScriptBytes(multisigProgram.getCosignerCountInMultisig(), sigs, multisigProgram.getProgram());
+        return createSchnorrMultiSigInputScriptBytes(sigs, multisigProgram.getProgram());
     }
 
     /**
@@ -409,7 +409,7 @@ public class ScriptBuilder {
         return builder.build();
     }
 
-    public static Script createSchnorrMultiSigInputScriptBytes(int checkbitsSize, List<byte[]> signatures, @Nullable byte[] multisigProgramBytes) {
+    public static Script createSchnorrMultiSigInputScriptBytes(List<byte[]> signatures, @Nullable byte[] multisigProgramBytes) {
         checkArgument(signatures.size() <= 16);
         ScriptBuilder builder = new ScriptBuilder();
         builder.smallNum(0);
