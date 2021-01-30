@@ -489,7 +489,6 @@ public class ScriptBuilder {
         ScriptChunk checkbitsChunk = inputChunks.get(0);
         byte[] checkbitsData = checkbitsChunk.data;
         int checkbits = 0;
-        System.out.println("Checkbits Chunk: " + checkbitsChunk.toString());
 
         if(checkbitsData != null) {
             byte[] checkbitsDataCopy = Arrays.copyOf(checkbitsData, checkbitsData.length);
@@ -502,25 +501,17 @@ public class ScriptBuilder {
         } else {
             checkbits = checkbitsChunk.decodeOpN();
         }
-        System.out.println("Checkbits: " + checkbits);
 
         String currentDummy = Integer.toBinaryString(checkbits);
-        System.out.println("Current dummy: " + currentDummy);
         String paddedDummy = getSchnorrMultisigDummy(currentDummy, redeemScript.getPubKeys().size());
-        System.out.println("Padded dummy: " + paddedDummy);
         String reversedPaddedDummy = new StringBuilder(paddedDummy).reverse().toString();
-        System.out.println("Reversed padded dummy: " + reversedPaddedDummy);
-        System.out.println("Setting index " + checkbitsIndex + " to 1");
         String updatedDummy = updateSchnorrMultisigDummy(reversedPaddedDummy, checkbitsIndex);
-        System.out.println("Updated dummy: " + updatedDummy);
         String reversedDummy = new StringBuilder(updatedDummy).reverse().toString();
-        System.out.println("Inserting dummy: " + reversedDummy);
         checkbits = Integer.parseInt(reversedDummy, 2);
 
         //re-add checkbits to script
         builder.number(checkbits);
 
-        System.out.println(builder.chunks);
         // copy the sigs
         int pos = 0;
         boolean inserted = false;
@@ -577,9 +568,7 @@ public class ScriptBuilder {
 
     private static String updateSchnorrMultisigDummy(String currentDummy, int index) {
         StringBuilder dummy = new StringBuilder(currentDummy);
-        System.out.println("Character before: " + dummy.charAt(index));
         dummy.setCharAt(index, '1');
-        System.out.println("Character after: " + dummy.charAt(index));
         return dummy.toString();
     }
 
