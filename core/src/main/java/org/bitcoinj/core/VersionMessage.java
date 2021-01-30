@@ -46,7 +46,7 @@ public class VersionMessage extends Message {
     /**
      * The version of this library release, as a string.
      */
-    public static final String BITCOINJ_VERSION = "0.25";
+    public static final String BITCOINJ_VERSION = "0.25.2";
     /**
      * The value that is prepended to the subVer field of this application.
      */
