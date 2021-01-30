@@ -486,9 +486,17 @@ public class ScriptBuilder {
         ScriptBuilder builder = new ScriptBuilder();
         List<ScriptChunk> inputChunks = scriptSig.getChunks();
         int totalChunks = inputChunks.size();
-        int checkbits = inputChunks.get(0).decodeOpN();
+        byte[] checkbitsData = inputChunks.get(0).data;
+        int checkbits = 0;
+        if(checkbitsData != null) {
+            checkbits = Integer.parseInt(Hex.toHexString(checkbitsData), 2);
+        } else {
+            checkbits = inputChunks.get(0).decodeOpN();
+        }
+        System.out.println("Checkbits: " + checkbits);
         String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
         currentDummy = new StringBuilder(currentDummy).reverse().toString();
+        System.out.println("Getting dummy: " + currentDummy);
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
         System.out.println("Inserting dummy: " + updatedDummy);
@@ -496,7 +504,7 @@ public class ScriptBuilder {
         //re-add dummy to script
 
         if(dummyOpCode > 16) {
-            builder.data(Hex.decode(updatedDummy));
+            builder.bigNum(Integer.parseInt(updatedDummy, 2));
         } else {
             builder.smallNum(Integer.parseInt(updatedDummy, 2));
         }
