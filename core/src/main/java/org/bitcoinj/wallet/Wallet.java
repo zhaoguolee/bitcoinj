@@ -489,6 +489,10 @@ public class Wallet extends BaseTaggableObject
         return params;
     }
 
+    public TransactionBroadcaster transactionBroadcaster() {
+        return vTransactionBroadcaster;
+    }
+
     /**
      * Gets the active keychains via {@link KeyChainGroup#getActiveKeyChains(long)}.
      */
