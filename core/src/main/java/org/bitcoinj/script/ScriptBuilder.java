@@ -487,6 +487,7 @@ public class ScriptBuilder {
         int totalChunks = inputChunks.size();
         int checkbits = inputChunks.get(0).decodeOpN();
         String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
+        currentDummy = new StringBuilder(currentDummy).reverse().toString();
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
 
         //re-add dummy to script
