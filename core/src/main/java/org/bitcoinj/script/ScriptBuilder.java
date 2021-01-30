@@ -506,13 +506,14 @@ public class ScriptBuilder {
 
         String currentDummy = Integer.toBinaryString(checkbits);
         System.out.println("Current dummy: " + currentDummy);
-        currentDummy = getSchnorrMultisigDummy(currentDummy, redeemScript.getPubKeys().size());
-        System.out.println("Padded dummy: " + currentDummy);
-        String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
+        String paddedDummy = getSchnorrMultisigDummy(currentDummy, redeemScript.getPubKeys().size());
+        System.out.println("Padded dummy: " + paddedDummy);
+        System.out.println("Setting index " + checkbitsIndex + " to 1");
+        String updatedDummy = updateSchnorrMultisigDummy(paddedDummy, checkbitsIndex);
         System.out.println("Updated dummy: " + updatedDummy);
-        updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
-        System.out.println("Inserting dummy: " + updatedDummy);
-        checkbits = Integer.parseInt(updatedDummy, 2);
+        String reversedDummy = new StringBuilder(updatedDummy).reverse().toString();
+        System.out.println("Inserting dummy: " + reversedDummy);
+        checkbits = Integer.parseInt(reversedDummy, 2);
 
         //re-add checkbits to script
         builder.number(checkbits);
@@ -574,7 +575,9 @@ public class ScriptBuilder {
 
     private static String updateSchnorrMultisigDummy(String currentDummy, int index) {
         StringBuilder dummy = new StringBuilder(currentDummy);
+        System.out.println("Character before: " + dummy.charAt(index));
         dummy.setCharAt(index, '1');
+        System.out.println("Character after: " + dummy.charAt(index));
         return dummy.toString();
     }
 
