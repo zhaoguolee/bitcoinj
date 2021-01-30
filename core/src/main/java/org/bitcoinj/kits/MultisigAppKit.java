@@ -286,7 +286,7 @@ public class MultisigAppKit extends WalletKitCore {
                     );
 
                     int schnorrSignatureIndex = input.getScriptSig().getSchnorrSigInsertionIndex(sigHash, bitcoinRedeemData.getFullKey());
-                    int schnorrCheckbitsIndex = bitcoinRedeemData.getFullKeyIndex();
+                    int schnorrCheckbitsIndex = bitcoinRedeemData.getKeyIndex(wallet());
 
                     inputScript = script.getScriptSigWithSchnorrSignature(
                             bitcoinRedeemData.redeemScript,
