@@ -318,6 +318,7 @@ public class MultisigAppKit extends WalletKitCore {
                 }
 
                 input.setScriptSig(inputScript);
+                System.out.println(input.getScriptSig().toString());
                 needsMoreSigs = needsMoreSigs(input, utxo);
             }
         }

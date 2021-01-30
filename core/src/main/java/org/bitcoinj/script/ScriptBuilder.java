@@ -25,6 +25,7 @@ import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Utils;
 import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -485,14 +486,32 @@ public class ScriptBuilder {
         ScriptBuilder builder = new ScriptBuilder();
         List<ScriptChunk> inputChunks = scriptSig.getChunks();
         int totalChunks = inputChunks.size();
-        int checkbits = inputChunks.get(0).decodeOpN();
-        String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
-        currentDummy = new StringBuilder(currentDummy).reverse().toString();
-        String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
-        updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
+        ScriptChunk checkbitsChunk = inputChunks.get(0);
+        byte[] checkbitsData = checkbitsChunk.data;
+        int checkbits = 0;
 
-        //re-add dummy to script
-        builder.smallNum(Integer.parseInt(updatedDummy, 2));
+        if(checkbitsData != null) {
+            byte[] checkbitsDataCopy = Arrays.copyOf(checkbitsData, checkbitsData.length);
+            reverseSchnorrMultisigDummyBytes(checkbitsDataCopy);
+            String checkbitsHex = Hex.toHexString(checkbitsDataCopy);
+            if(!checkbitsHex.isEmpty())
+                checkbits = Integer.parseInt(checkbitsHex, 16);
+            else
+                checkbits = checkbitsChunk.decodeOpN();
+        } else {
+            checkbits = checkbitsChunk.decodeOpN();
+        }
+
+        String currentDummy = Integer.toBinaryString(checkbits);
+        String paddedDummy = getSchnorrMultisigDummy(currentDummy, redeemScript.getPubKeys().size());
+        String reversedPaddedDummy = new StringBuilder(paddedDummy).reverse().toString();
+        String updatedDummy = updateSchnorrMultisigDummy(reversedPaddedDummy, checkbitsIndex);
+        String reversedDummy = new StringBuilder(updatedDummy).reverse().toString();
+        checkbits = Integer.parseInt(reversedDummy, 2);
+
+        //re-add checkbits to script
+        builder.number(checkbits);
+
         // copy the sigs
         int pos = 0;
         boolean inserted = false;
@@ -527,9 +546,24 @@ public class ScriptBuilder {
         return builder.build();
     }
 
-    private static String getSchnorrMultisigDummy(int currentDummy, int totalCosigners) {
-        String binary = Integer.toBinaryString(currentDummy);
-        return StringUtils.leftPad(binary, totalCosigners, "0");
+    private static void reverseSchnorrMultisigDummyBytes(byte[] array) {
+        if (array == null) {
+            return;
+        }
+        int i = 0;
+        int j = array.length - 1;
+        byte tmp;
+        while (j > i) {
+            tmp = array[j];
+            array[j] = array[i];
+            array[i] = tmp;
+            j--;
+            i++;
+        }
+    }
+
+    private static String getSchnorrMultisigDummy(String currentDummy, int totalCosigners) {
+        return StringUtils.leftPad(currentDummy, totalCosigners, "0");
     }
 
     private static String updateSchnorrMultisigDummy(String currentDummy, int index) {
