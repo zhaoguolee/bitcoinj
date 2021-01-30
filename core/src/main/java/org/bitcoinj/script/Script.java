@@ -502,9 +502,12 @@ public class Script {
                 // OP_0, skip
             } else {
                 checkNotNull(chunk.data);
-                if (myIndex < redeemScript.findSchnorrSigInRedeem(chunk.data, hash))
-                    return sigCount;
-
+                try {
+                    if (myIndex < redeemScript.findSchnorrSigInRedeem(chunk.data, hash))
+                        return sigCount;
+                } catch (SignatureDecodeException e) {
+                    // ignore
+                }
                 sigCount++;
             }
         }
@@ -552,10 +555,10 @@ public class Script {
         throw new IllegalStateException("Could not find matching key for signature on " + hash.toString() + " sig " + Utils.HEX.encode(signatureBytes));
     }
 
-    private int findSchnorrSigInRedeem(byte[] signatureBytes, Sha256Hash hash) {
+    private int findSchnorrSigInRedeem(byte[] signatureBytes, Sha256Hash hash) throws SignatureDecodeException {
         checkArgument(chunks.get(0).isOpCode()); // P2SH scriptSig
         int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).opcode);
-        SchnorrSignature signature = new SchnorrSignature(signatureBytes, signatureBytes[signatureBytes.length-1]);
+        SchnorrSignature signature = SchnorrSignature.decodeFromBitcoin(signatureBytes);
         for (int i = 0; i < numKeys; i++) {
             if (ECKey.fromPublicOnly(chunks.get(i + 1).data).verifySchnorr(hash, signature)) {
                 return i;
