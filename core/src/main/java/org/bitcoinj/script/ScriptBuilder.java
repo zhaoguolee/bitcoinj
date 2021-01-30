@@ -502,11 +502,13 @@ public class ScriptBuilder {
         }
         System.out.println("Checkbits: " + checkbits);
 
-        String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
-        System.out.println("Padded dummy: " + currentDummy);
+        String currentDummy = Integer.toBinaryString(checkbits);
         currentDummy = new StringBuilder(currentDummy).reverse().toString();
         System.out.println("Current dummy: " + currentDummy);
+        currentDummy = getSchnorrMultisigDummy(currentDummy, redeemScript.getPubKeys().size());
+        System.out.println("Padded dummy: " + currentDummy);
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
+        System.out.println("Updated dummy: " + currentDummy);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
         System.out.println("Inserting dummy: " + updatedDummy);
         checkbits = Integer.parseInt(updatedDummy, 2);
@@ -549,9 +551,8 @@ public class ScriptBuilder {
         return builder.build();
     }
 
-    private static String getSchnorrMultisigDummy(int currentDummy, int totalCosigners) {
-        String binary = Integer.toBinaryString(currentDummy);
-        return StringUtils.leftPad(binary, totalCosigners, "0");
+    private static String getSchnorrMultisigDummy(String currentDummy, int totalCosigners) {
+        return StringUtils.leftPad(currentDummy, totalCosigners, "0");
     }
 
     private static String updateSchnorrMultisigDummy(String currentDummy, int index) {
