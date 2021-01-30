@@ -25,6 +25,7 @@ import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Utils;
 import org.bitcoinj.crypto.SchnorrSignature;
 import org.bitcoinj.crypto.TransactionSignature;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -495,7 +496,7 @@ public class ScriptBuilder {
         //re-add dummy to script
 
         if(dummyOpCode > 16) {
-            builder.data(updatedDummy.getBytes());
+            builder.data(Hex.decode(updatedDummy));
         } else {
             builder.smallNum(Integer.parseInt(updatedDummy, 2));
         }
