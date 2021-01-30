@@ -470,10 +470,9 @@ public class Script {
 
         int sigCount = 0;
         int myIndex = redeemScript.findKeyInRedeem(signingKey);
-        int chunkPos = 0;
         for (ScriptChunk chunk : existingChunks) {
-            if (chunkPos == 0) {
-                // checkbits and/or OP_0, skip
+            if (chunk.opcode == OP_0) {
+                // OP_0, skip
             } else {
                 checkNotNull(chunk.data);
                 try {
@@ -484,8 +483,6 @@ public class Script {
                 }
                 sigCount++;
             }
-
-            chunkPos++;
         }
         return sigCount;
     }
@@ -500,22 +497,16 @@ public class Script {
 
         int sigCount = 0;
         int myIndex = redeemScript.findKeyInRedeem(signingKey);
-        int chunkPos = 0;
         for (ScriptChunk chunk : existingChunks) {
-            if (chunkPos == 0 || chunk.opcode == OP_0) {
-                // checkbits and/or OP_0, skip
+            if (chunk.opcode == OP_0) {
+                // OP_0, skip
             } else {
                 checkNotNull(chunk.data);
-                try {
-                    if (myIndex < redeemScript.findSchnorrSigInRedeem(chunk.data, hash))
-                        return sigCount;
-                } catch (SignatureDecodeException e) {
-                    // ignore
-                }
+                if (myIndex < redeemScript.findSchnorrSigInRedeem(chunk.data, hash))
+                    return sigCount;
+
                 sigCount++;
             }
-
-            chunkPos++;
         }
         return sigCount;
     }
@@ -561,10 +552,10 @@ public class Script {
         throw new IllegalStateException("Could not find matching key for signature on " + hash.toString() + " sig " + Utils.HEX.encode(signatureBytes));
     }
 
-    private int findSchnorrSigInRedeem(byte[] signatureBytes, Sha256Hash hash) throws SignatureDecodeException {
+    private int findSchnorrSigInRedeem(byte[] signatureBytes, Sha256Hash hash) {
         checkArgument(chunks.get(0).isOpCode()); // P2SH scriptSig
         int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).opcode);
-        SchnorrSignature signature = new SchnorrSignature(signatureBytes, Transaction.SigHash.ALL,false, true);
+        SchnorrSignature signature = new SchnorrSignature(signatureBytes, signatureBytes[signatureBytes.length-1]);
         for (int i = 0; i < numKeys; i++) {
             if (ECKey.fromPublicOnly(chunks.get(i + 1).data).verifySchnorr(hash, signature)) {
                 return i;
