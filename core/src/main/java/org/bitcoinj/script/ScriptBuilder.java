@@ -489,6 +489,7 @@ public class ScriptBuilder {
         ScriptChunk checkbitsChunk = inputChunks.get(0);
         byte[] checkbitsData = checkbitsChunk.data;
         int checkbits = 0;
+
         if(checkbitsData != null) {
             String checkbitsHex = Hex.toHexString(checkbitsData);
             if(!checkbitsHex.isEmpty())
@@ -498,18 +499,16 @@ public class ScriptBuilder {
         } else {
             checkbits = checkbitsChunk.decodeOpN();
         }
-        System.out.println("Checkbits: " + checkbits);
+
         String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
         currentDummy = new StringBuilder(currentDummy).reverse().toString();
-        System.out.println("Getting dummy: " + currentDummy);
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
-        System.out.println("Inserting dummy: " + updatedDummy);
         checkbits = Integer.parseInt(updatedDummy, 2);
 
+        //re-add checkbits to script
         builder.number(checkbits);
 
-        System.out.println("Current chunks: " + builder.chunks);
         // copy the sigs
         int pos = 0;
         boolean inserted = false;
