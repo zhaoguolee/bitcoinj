@@ -506,7 +506,7 @@ public class ScriptBuilder {
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
         System.out.println("Inserting dummy: " + updatedDummy);
-        checkbits = Integer.parseInt(updatedDummy, 16);
+        checkbits = Integer.parseInt(updatedDummy, 2);
 
         //re-add checkbits to script
         builder.number(checkbits);
