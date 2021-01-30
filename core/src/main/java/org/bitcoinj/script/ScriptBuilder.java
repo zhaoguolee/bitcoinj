@@ -492,7 +492,7 @@ public class ScriptBuilder {
         if(checkbitsData != null) {
             String checkbitsHex = Hex.toHexString(checkbitsData);
             if(!checkbitsHex.isEmpty())
-                checkbits = Integer.parseInt(checkbitsHex, 2);
+                checkbits = Integer.parseInt(checkbitsHex, 16);
             else
                 checkbits = checkbitsChunk.decodeOpN();
         } else {
