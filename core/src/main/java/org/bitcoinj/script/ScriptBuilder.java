@@ -492,7 +492,9 @@ public class ScriptBuilder {
         System.out.println("Checkbits Chunk: " + checkbitsChunk.toString());
 
         if(checkbitsData != null) {
-            String checkbitsHex = Hex.toHexString(checkbitsData);
+            byte[] checkbitsDataCopy = Arrays.copyOf(checkbitsData, checkbitsData.length);
+            reverseSchnorrMultisigDummyBytes(checkbitsDataCopy);
+            String checkbitsHex = Hex.toHexString(checkbitsDataCopy);
             if(!checkbitsHex.isEmpty())
                 checkbits = Integer.parseInt(checkbitsHex, 16);
             else
@@ -503,12 +505,11 @@ public class ScriptBuilder {
         System.out.println("Checkbits: " + checkbits);
 
         String currentDummy = Integer.toBinaryString(checkbits);
-        currentDummy = new StringBuilder(currentDummy).reverse().toString();
         System.out.println("Current dummy: " + currentDummy);
         currentDummy = getSchnorrMultisigDummy(currentDummy, redeemScript.getPubKeys().size());
         System.out.println("Padded dummy: " + currentDummy);
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
-        System.out.println("Updated dummy: " + currentDummy);
+        System.out.println("Updated dummy: " + updatedDummy);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
         System.out.println("Inserting dummy: " + updatedDummy);
         checkbits = Integer.parseInt(updatedDummy, 2);
@@ -549,6 +550,22 @@ public class ScriptBuilder {
 
         checkState(inserted);
         return builder.build();
+    }
+
+    private static void reverseSchnorrMultisigDummyBytes(byte[] array) {
+        if (array == null) {
+            return;
+        }
+        int i = 0;
+        int j = array.length - 1;
+        byte tmp;
+        while (j > i) {
+            tmp = array[j];
+            array[j] = array[i];
+            array[i] = tmp;
+            j--;
+            i++;
+        }
     }
 
     private static String getSchnorrMultisigDummy(String currentDummy, int totalCosigners) {
