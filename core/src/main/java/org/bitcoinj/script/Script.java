@@ -1607,9 +1607,6 @@ public class Script {
                                        int opCount, int lastCodeSepLocation, int opcode, Coin value,
                                        Set<VerifyFlag> verifyFlags) throws ScriptException {
         boolean usingSchnorr = false;
-        LinkedList<byte[]> stackCopy = new LinkedList<>(stack);
-        byte[] nullDummyCopy = stackCopy.pollLast();
-        usingSchnorr = verifyFlags.contains(VerifyFlag.NULLDUMMY) && nullDummyCopy.length > 0;
 
         final boolean requireCanonical = verifyFlags.contains(VerifyFlag.STRICTENC)
                 || verifyFlags.contains(VerifyFlag.DERSIG)
@@ -1661,7 +1658,17 @@ public class Script {
             byte[] pubKey = pubkeys.pollFirst();
             // We could reasonably move this out of the loop, but because signature verification is significantly
             // more expensive than hashing, its not a big deal.
-            if(usingSchnorr) {
+            try {
+                TransactionSignature sig = TransactionSignature.decodeFromBitcoin(sigs.getFirst(), requireCanonical, false);
+                Sha256Hash hash = sig.useForkId() ?
+                        txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
+                        txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+
+                if (ECKey.verify(hash.getBytes(), sig, pubKey)) {
+                    usingSchnorr = false;
+                    sigs.pollFirst();
+                }
+            } catch (VerificationException.NoncanonicalSignature e) {
                 try {
                     SchnorrSignature sig = SchnorrSignature.decodeFromBitcoin(sigs.getFirst());
                     Sha256Hash hash = sig.useForkId() ?
@@ -1669,25 +1676,15 @@ public class Script {
                             txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
 
                     if (ECKey.verifySchnorr(hash.getBytes(), sig, pubKey)) {
+                        usingSchnorr = true;
                         sigs.pollFirst();
                     }
-                } catch (SignatureDecodeException e) {
+                } catch (SignatureDecodeException signatureDecodeException) {
                     usingSchnorr = false;
-                    e.printStackTrace();
+                    signatureDecodeException.printStackTrace();
                 }
-            } else {
-                try {
-                    TransactionSignature sig = TransactionSignature.decodeFromBitcoin(sigs.getFirst(), requireCanonical, false);
-                    Sha256Hash hash = sig.useForkId() ?
-                            txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
-                            txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
-
-                    if (ECKey.verify(hash.getBytes(), sig, pubKey)) {
-                        sigs.pollFirst();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            } catch(Exception e) {
+                e.printStackTrace();
             }
 
             if (sigs.size() > pubkeys.size()) {
