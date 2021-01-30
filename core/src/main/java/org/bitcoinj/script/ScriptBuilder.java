@@ -490,9 +490,15 @@ public class ScriptBuilder {
         currentDummy = new StringBuilder(currentDummy).reverse().toString();
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
-
+        System.out.println("Inserting dummy: " + updatedDummy);
+        int dummyLength = updatedDummy.getBytes().length;
         //re-add dummy to script
-        builder.smallNum(Integer.parseInt(updatedDummy, 2));
+
+        if(dummyLength > 16) {
+            builder.data(updatedDummy.getBytes());
+        } else {
+            builder.smallNum(Integer.parseInt(updatedDummy, 2));
+        }
         // copy the sigs
         int pos = 0;
         boolean inserted = false;
