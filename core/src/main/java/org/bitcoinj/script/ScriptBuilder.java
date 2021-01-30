@@ -508,8 +508,10 @@ public class ScriptBuilder {
         System.out.println("Current dummy: " + currentDummy);
         String paddedDummy = getSchnorrMultisigDummy(currentDummy, redeemScript.getPubKeys().size());
         System.out.println("Padded dummy: " + paddedDummy);
+        String reversedPaddedDummy = new StringBuilder(paddedDummy).reverse().toString();
+        System.out.println("Reversed padded dummy: " + reversedPaddedDummy);
         System.out.println("Setting index " + checkbitsIndex + " to 1");
-        String updatedDummy = updateSchnorrMultisigDummy(paddedDummy, checkbitsIndex);
+        String updatedDummy = updateSchnorrMultisigDummy(reversedPaddedDummy, checkbitsIndex);
         System.out.println("Updated dummy: " + updatedDummy);
         String reversedDummy = new StringBuilder(updatedDummy).reverse().toString();
         System.out.println("Inserting dummy: " + reversedDummy);
