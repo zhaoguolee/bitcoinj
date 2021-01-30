@@ -500,14 +500,9 @@ public class ScriptBuilder {
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
         System.out.println("Inserting dummy: " + updatedDummy);
-        int dummyOpCode = Integer.parseInt(updatedDummy, 2);
-        //re-add dummy to script
+        checkbits = Integer.parseInt(updatedDummy, 2);
 
-        if(dummyOpCode > 16) {
-            builder.bigNum(Integer.parseInt(updatedDummy, 2));
-        } else {
-            builder.smallNum(Integer.parseInt(updatedDummy, 2));
-        }
+        builder.number(checkbits);
 
         System.out.println("Current chunks: " + builder.chunks);
         // copy the sigs
