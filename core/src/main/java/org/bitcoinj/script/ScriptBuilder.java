@@ -491,10 +491,10 @@ public class ScriptBuilder {
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
         System.out.println("Inserting dummy: " + updatedDummy);
-        int dummyLength = updatedDummy.getBytes().length;
+        int dummyOpCode = Integer.parseInt(updatedDummy, 2);
         //re-add dummy to script
 
-        if(dummyLength > 16) {
+        if(dummyOpCode > 16) {
             builder.data(updatedDummy.getBytes());
         } else {
             builder.smallNum(Integer.parseInt(updatedDummy, 2));
