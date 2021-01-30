@@ -499,6 +499,8 @@ public class ScriptBuilder {
         } else {
             builder.smallNum(Integer.parseInt(updatedDummy, 2));
         }
+
+        System.out.println("Current chunks: " + builder.chunks);
         // copy the sigs
         int pos = 0;
         boolean inserted = false;
