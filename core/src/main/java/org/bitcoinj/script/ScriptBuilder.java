@@ -502,13 +502,16 @@ public class ScriptBuilder {
 
         String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
         currentDummy = new StringBuilder(currentDummy).reverse().toString();
+        System.out.println("Current dummy: " + currentDummy);
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
         updatedDummy = new StringBuilder(updatedDummy).reverse().toString();
+        System.out.println("Inserting dummy: " + updatedDummy);
         checkbits = Integer.parseInt(updatedDummy, 2);
 
         //re-add checkbits to script
         builder.number(checkbits);
 
+        System.out.println(builder.chunks);
         // copy the sigs
         int pos = 0;
         boolean inserted = false;
