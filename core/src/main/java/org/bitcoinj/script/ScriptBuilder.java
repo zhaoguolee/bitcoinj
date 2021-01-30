@@ -488,16 +488,15 @@ public class ScriptBuilder {
         int totalChunks = inputChunks.size();
         ScriptChunk checkbitsChunk = inputChunks.get(0);
         byte[] checkbitsData = checkbitsChunk.data;
-        int checkbitsOpCode = checkbitsChunk.decodeOpN();
         int checkbits = 0;
         if(checkbitsData != null) {
             String checkbitsHex = Hex.toHexString(checkbitsData);
             if(!checkbitsHex.isEmpty())
                 checkbits = Integer.parseInt(checkbitsHex, 2);
             else
-                checkbits = checkbitsOpCode;
+                checkbits = checkbitsChunk.decodeOpN();
         } else {
-            checkbits = checkbitsOpCode;
+            checkbits = checkbitsChunk.decodeOpN();
         }
         System.out.println("Checkbits: " + checkbits);
         String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
