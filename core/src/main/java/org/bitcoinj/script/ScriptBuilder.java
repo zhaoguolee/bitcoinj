@@ -489,6 +489,7 @@ public class ScriptBuilder {
         ScriptChunk checkbitsChunk = inputChunks.get(0);
         byte[] checkbitsData = checkbitsChunk.data;
         int checkbits = 0;
+        System.out.println("Checkbits Chunk: " + checkbitsChunk.toString());
 
         if(checkbitsData != null) {
             String checkbitsHex = Hex.toHexString(checkbitsData);
@@ -499,8 +500,10 @@ public class ScriptBuilder {
         } else {
             checkbits = checkbitsChunk.decodeOpN();
         }
+        System.out.println("Checkbits: " + checkbits);
 
         String currentDummy = getSchnorrMultisigDummy(checkbits, redeemScript.getPubKeys().size());
+        System.out.println("Padded dummy: " + currentDummy);
         currentDummy = new StringBuilder(currentDummy).reverse().toString();
         System.out.println("Current dummy: " + currentDummy);
         String updatedDummy = updateSchnorrMultisigDummy(currentDummy, checkbitsIndex);
