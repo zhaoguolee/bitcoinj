@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.bitcoinj.wallet;
+package org.bitcoinj.wallet.selector;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.bitcoinj.core.*;
+import org.bitcoinj.wallet.CoinSelection;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -30,8 +31,8 @@ import java.util.List;
  * possible. This means that the transaction is the most likely to get confirmed. Note that this means we may end up
  * "spending" more priority than would be required to get the transaction we are creating confirmed.
  */
-public class DefaultCoinSelector implements CoinSelector {
-    protected DefaultCoinSelector() {
+public class SmallestValueCoinSelector implements CoinSelector {
+    protected SmallestValueCoinSelector() {
     }
 
     @Override
@@ -62,20 +63,13 @@ public class DefaultCoinSelector implements CoinSelector {
     }
 
     @VisibleForTesting
-    static void sortOutputs(ArrayList<TransactionOutput> outputs) {
+    public static void sortOutputs(ArrayList<TransactionOutput> outputs) {
         Collections.sort(outputs, new Comparator<TransactionOutput>() {
             @Override
             public int compare(TransactionOutput a, TransactionOutput b) {
-                int depth1 = a.getParentTransactionDepthInBlocks();
-                int depth2 = b.getParentTransactionDepthInBlocks();
                 Coin aValue = a.getValue();
                 Coin bValue = b.getValue();
-                BigInteger aCoinDepth = BigInteger.valueOf(aValue.value).multiply(BigInteger.valueOf(depth1));
-                BigInteger bCoinDepth = BigInteger.valueOf(bValue.value).multiply(BigInteger.valueOf(depth2));
-                int c1 = bCoinDepth.compareTo(aCoinDepth);
-                if (c1 != 0) return c1;
-                // The "coin*days" destroyed are equal, sort by value alone to get the lowest transaction size.
-                int c2 = bValue.compareTo(aValue);
+                int c2 = aValue.compareTo(bValue);
                 if (c2 != 0) return c2;
                 // They are entirely equivalent (possibly pending) so sort by hash to ensure a total ordering.
                 BigInteger aHash = a.getParentTransactionHash().toBigInteger();
@@ -107,16 +101,16 @@ public class DefaultCoinSelector implements CoinSelector {
                         (confidence.numBroadcastPeers() > 0 || tx.getParams().getId().equals(NetworkParameters.ID_REGTEST));
     }
 
-    private static DefaultCoinSelector instance;
+    private static SmallestValueCoinSelector instance;
 
     /**
      * Returns a global static instance of the selector.
      */
-    public static DefaultCoinSelector get() {
+    public static SmallestValueCoinSelector get() {
         // This doesn't have to be thread safe as the object has no state, so discarded duplicates are
         // harmless.
         if (instance == null)
-            instance = new DefaultCoinSelector();
+            instance = new SmallestValueCoinSelector();
         return instance;
     }
 }

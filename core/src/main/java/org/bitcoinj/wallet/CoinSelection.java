@@ -18,6 +18,7 @@ package org.bitcoinj.wallet;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.wallet.selector.CoinSelector;
 
 import java.util.Collection;
 import java.util.List;

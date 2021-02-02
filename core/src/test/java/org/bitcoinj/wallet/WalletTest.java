@@ -44,6 +44,8 @@ import org.bitcoinj.wallet.listeners.KeyChainEventListener;
 import org.bitcoinj.wallet.listeners.WalletChangeEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsReceivedEventListener;
 import org.bitcoinj.wallet.listeners.WalletCoinsSentEventListener;
+import org.bitcoinj.wallet.selector.DefaultCoinSelector;
+import org.bitcoinj.wallet.selector.KeyTimeCoinSelector;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.easymock.EasyMock;
 import org.junit.After;

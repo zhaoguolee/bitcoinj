@@ -22,7 +22,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import org.bitcoinj.utils.ListenerRegistration;
 import org.bitcoinj.utils.Threading;
-import org.bitcoinj.wallet.CoinSelector;
+import org.bitcoinj.wallet.selector.CoinSelector;
 import org.bitcoinj.wallet.Wallet;
 
 import javax.annotation.Nullable;
