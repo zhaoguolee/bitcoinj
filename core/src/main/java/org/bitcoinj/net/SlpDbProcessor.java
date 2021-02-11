@@ -9,8 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 public class SlpDbProcessor {
-    private String[] slpDbInstances = new String[]{"slpdb.fountainhead.cash", "slpserve.imaginary.cash"};
-    private String slpDbEndpoint = "/q/";
+    private final String[] slpDbInstances = new String[]{"slpdb.fountainhead.cash", "slpdb.bitcoin.com"};
+    private final String slpDbEndpoint = "/q/";
 
     public SlpDbProcessor() {
 
