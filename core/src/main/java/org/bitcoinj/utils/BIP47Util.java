@@ -18,6 +18,7 @@ import org.bitcoinj.signers.MissingSigResolutionSigner;
 import org.bitcoinj.signers.TransactionSigner;
 import org.bitcoinj.wallet.*;
 import org.bitcoinj.wallet.bip47.NotSecp256k1Exception;
+import org.bitcoinj.wallet.selector.CoinSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 

@@ -1521,14 +1521,24 @@ public class Script {
             Sha256Hash hash = Sha256Hash.of(messageByte);
 
             sigValid = ECKey.verify(hash.getBytes(), sig, pubKey);
-        } catch (Exception e1) {
+        } catch (VerificationException.NoncanonicalSignature e1) {
+            try {
+                SchnorrSignature sig = SchnorrSignature.decodeFromBitcoin(sigBytes);
+
+                Sha256Hash hash = Sha256Hash.of(messageByte);
+
+                sigValid = ECKey.verifySchnorr(hash.getBytes(), sig, pubKey);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch(Exception e) {
             // There is (at least) one exception that could be hit here (EOFException, if the sig is too short)
             // Because I can't verify there aren't more, we use a very generic Exception catch
 
             // This RuntimeException occurs when signing as we run partial/invalid scripts to see if they need more
             // signing work to be done inside LocalTransactionSigner.signInputs.
-            if (!e1.getMessage().contains("Reached past end of ASN.1 stream"))
-                log.warn("Signature checking failed!", e1);
+            if (!e.getMessage().contains("Reached past end of ASN.1 stream"))
+                log.warn("Signature checking failed!", e);
         }
 
         if (opcode == OP_CHECKDATASIG)
@@ -1581,8 +1591,8 @@ public class Script {
                         txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
                         txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
                 sigValid = ECKey.verifySchnorr(hash.getBytes(), sig, pubKey);
-            } catch (SignatureDecodeException signatureDecodeException) {
-                signatureDecodeException.printStackTrace();
+            } catch (Exception e1) {
+                e1.printStackTrace();
             }
         } catch (SignatureDecodeException e) {
             // This exception occurs when signing as we run partial/invalid scripts to see if they need more
@@ -1679,9 +1689,9 @@ public class Script {
                         usingSchnorr = true;
                         sigs.pollFirst();
                     }
-                } catch (SignatureDecodeException signatureDecodeException) {
+                } catch (Exception e1) {
                     usingSchnorr = false;
-                    signatureDecodeException.printStackTrace();
+                    e1.printStackTrace();
                 }
             } catch(Exception e) {
                 e.printStackTrace();

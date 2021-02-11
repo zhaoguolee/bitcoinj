@@ -263,7 +263,7 @@ public class SchnorrSignature {
         return bos.toByteArray();
     }
 
-    public static SchnorrSignature decodeFromBitcoin(byte[] bytes) throws SignatureDecodeException, VerificationException {
+    public static SchnorrSignature decodeFromBitcoin(byte[] bytes) throws VerificationException {
         byte[] signature = Arrays.copyOf(bytes, bytes.length-1);
         return new SchnorrSignature(signature, bytes[bytes.length-1]);
     }

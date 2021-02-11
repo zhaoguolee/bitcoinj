@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import org.bitcoinj.params.AbstractBitcoinNetParams;
+import org.bitcoinj.params.UnitTestParams;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.slf4j.Logger;
@@ -539,8 +540,10 @@ public class Block extends Message {
      */
     public BigInteger getDifficultyTargetAsInteger() throws VerificationException {
         BigInteger target = Utils.decodeCompactBits(difficultyTarget);
-        if (target.signum() <= 0 || target.compareTo(params.maxTarget) > 0)
-            throw new VerificationException("Difficulty target is bad: " + target.toString());
+        if(getParams().getId() != NetworkParameters.ID_UNITTESTNET) {
+            if (target.signum() <= 0 || target.compareTo(params.maxTarget) > 0)
+                throw new VerificationException("Difficulty target is bad: " + target.toString());
+        }
         return target;
     }
 
