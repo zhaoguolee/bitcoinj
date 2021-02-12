@@ -94,14 +94,14 @@ public class SlpAddress extends Address {
     /**
      * Returns an Address that represents the given P2SH script hash.
      */
-    public static CashAddress fromP2SHHash(NetworkParameters params, byte[] hash160) {
-        return new CashAddress(params, CashAddress.CashAddressType.Script, hash160);
+    public static SlpAddress fromP2SHHash(NetworkParameters params, byte[] hash160) {
+        return new SlpAddress(params, SlpAddress.CashAddressType.Script, hash160);
     }
 
     /**
      * Returns an Address that represents the script hash extracted from the given scriptPubKey
      */
-    public static CashAddress fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
+    public static SlpAddress fromP2SHScript(NetworkParameters params, Script scriptPubKey) {
         checkArgument(scriptPubKey.isPayToScriptHash(), "Not a P2SH script");
         return fromP2SHHash(params, scriptPubKey.getPubKeyHash());
     }
