@@ -416,9 +416,13 @@ public class SendRequest {
     public static SendRequest cancelFlipstarterPledge(Wallet wallet, TransactionOutput pledgeUtxo) throws InsufficientMoneyException {
         SendRequest req = new SendRequest();
         req.tx = new Transaction(wallet.getParams());
-        req.tx.addInput(pledgeUtxo);
-        Coin newUtxoAmount = Coin.valueOf(pledgeUtxo.getValue().value - 225L); //- 225 sats to ensure over 1 sat/byte, because bitcoincashj can get fucky with exactly 1 sat/byte
-        req.tx.addOutput(newUtxoAmount, wallet.freshReceiveAddress());
+        ArrayList<TransactionOutput> pledgeUtxos = new ArrayList<>();
+        pledgeUtxos.add(pledgeUtxo);
+        req.utxos = pledgeUtxos;
+        req.emptyWallet = true;
+        req.feePerKb = Coin.valueOf(1000L);
+        req.ensureMinRequiredFee = true;
+        req.tx.addOutput(Coin.ZERO, wallet.freshReceiveAddress());
         return req;
     }
 
