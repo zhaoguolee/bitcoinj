@@ -23,7 +23,7 @@ dependencies {
     api 'com.squareup.okhttp3:okhttp:3.12.12'
     implementation 'org.slf4j:slf4j-api:1.7.30'
     implementation 'net.jcip:jcip-annotations:1.0'
-    implementation 'org.apache.commons:commons-lang3:3.7'
+    api 'org.apache.commons:commons-lang3:3.7'
     compileOnly 'org.fusesource.leveldbjni:leveldbjni-all:1.8'
     testImplementation 'junit:junit:4.13'
     testImplementation 'org.easymock:easymock:3.2'
