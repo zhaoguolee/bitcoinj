@@ -19,6 +19,7 @@ package org.bitcoinj.wallet;
 
 import com.google.common.base.MoreObjects;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoin.protocols.payments.Protos.PaymentDetails;
@@ -411,7 +412,10 @@ public class SendRequest {
             comment = invoicePayload.data.comment;
         }
         FlipstarterPledgePayload pledgePayload = new FlipstarterPledgePayload(payloadInputs, new FlipstarterPledgePayload.Data(alias, comment), null);
-        String json = new Gson().toJson(pledgePayload);
+        GsonBuilder builder = new GsonBuilder();
+        builder.serializeNulls();
+        Gson gson = builder.create();
+        String json = gson.toJson(pledgePayload);
         String base64Payload = Base64.toBase64String(json.getBytes());
 
         txIn.verify(output);
