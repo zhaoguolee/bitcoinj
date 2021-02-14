@@ -371,6 +371,7 @@ public class SendRequest {
         pledgeInputReq.allowUnconfirmed();
         pledgeInputReq.tx = new Transaction(wallet.getParams());
         pledgeInputReq.tx.addOutput(Coin.valueOf(invoicePayload.donation.amount), wallet.freshReceiveAddress());
+        pledgeInputReq.memo = "flipstarter_pledge";
         wallet.completeTx(pledgeInputReq);
         wallet.commitTx(pledgeInputReq.tx);
 
