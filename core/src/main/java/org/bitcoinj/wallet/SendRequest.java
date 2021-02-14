@@ -402,8 +402,15 @@ public class SendRequest {
         FlipstarterPledgePayload.Input input = new FlipstarterPledgePayload.Input(txInOutpoint.getHash().toString(), txInOutpoint.getIndex(), txIn.getSequenceNumber(), unlockingScript);
         ArrayList<FlipstarterPledgePayload.Input> payloadInputs = new ArrayList<>();
         payloadInputs.add(input);
-
-        FlipstarterPledgePayload pledgePayload = new FlipstarterPledgePayload(payloadInputs, new FlipstarterPledgePayload.Data("", ""), null);
+        String alias = "";
+        if(invoicePayload.data.alias != null) {
+            alias = invoicePayload.data.alias;
+        }
+        String comment = "";
+        if(invoicePayload.data.comment != null) {
+            comment = invoicePayload.data.comment;
+        }
+        FlipstarterPledgePayload pledgePayload = new FlipstarterPledgePayload(payloadInputs, new FlipstarterPledgePayload.Data(alias, comment), null);
         String json = new Gson().toJson(pledgePayload);
         String base64Payload = Base64.toBase64String(json.getBytes());
 
