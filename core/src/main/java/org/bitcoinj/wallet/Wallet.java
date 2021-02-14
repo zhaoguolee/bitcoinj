@@ -3144,7 +3144,7 @@ public class Wallet extends BaseTaggableObject
         }
         if (pool == Pool.UNSPENT || pool == Pool.PENDING) {
             for (TransactionOutput output : tx.getOutputs()) {
-                if (output.isAvailableForSpending() && output.isMineOrWatched(this) && !output.isFrozen())
+                if (output.isAvailableForSpending() && output.isMineOrWatched(this))
                     myUnspents.add(output);
             }
         }
