@@ -40,4 +40,4 @@ compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 javadoc.options.encoding = 'UTF-8'
 
-mainClassName = 'wallettemplate.Main'
+mainClassName = 'wallettemplate.BchMain'
