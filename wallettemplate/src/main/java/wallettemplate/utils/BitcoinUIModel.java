@@ -21,12 +21,12 @@ import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.core.listeners.DownloadProgressTracker;
-import org.bitcoinj.wallet.Wallet;
-import org.bitcoinj.wallet.listeners.CurrentKeyChangeEventListener;
-import org.bitcoinj.wallet.listeners.WalletChangeEventListener;
+import org.bchj.core.Address;
+import org.bchj.core.Coin;
+import org.bchj.core.listeners.DownloadProgressTracker;
+import org.bchj.wallet.Wallet;
+import org.bchj.wallet.listeners.CurrentKeyChangeEventListener;
+import org.bchj.wallet.listeners.WalletChangeEventListener;
 
 import java.util.Date;
 

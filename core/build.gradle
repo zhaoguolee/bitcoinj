@@ -57,7 +57,7 @@ test {
     }
 }
 
-ext.moduleName = 'org.bitcoinj.core'
+ext.moduleName = 'org.bchj.core'
 
 jar {
     inputs.property("moduleName", moduleName)
